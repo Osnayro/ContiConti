@@ -222,10 +222,21 @@ const levelColors = {
 };
 
 // ===== SISTEMA DE SONIDO (Web Audio API) =====
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
+
+function ensureAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
 
 function playSound(type) {
     if (state.mode === 'normal' && type !== 'levelup' && type !== 'achievement') return;
+    ensureAudioContext();
+    if (!audioCtx) return;
     
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
@@ -299,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function createSpeedBonusToast() {
+    if (document.getElementById('speed-bonus-toast')) return;
     const toast = document.createElement('div');
     toast.className = 'speed-bonus-toast';
     toast.id = 'speed-bonus-toast';
@@ -324,17 +336,21 @@ function setupSplashScreen() {
 }
 
 function setupPowerups() {
-    document.getElementById('powerup-fifty').addEventListener('click', () => usePowerup('fifty'));
-    document.getElementById('powerup-time').addEventListener('click', () => usePowerup('time'));
-    document.getElementById('powerup-freeze').addEventListener('click', () => usePowerup('freeze'));
-    document.getElementById('powerup-hint').addEventListener('click', () => usePowerup('hint'));
+    document.getElementById('powerup-fifty')?.addEventListener('click', () => usePowerup('fifty'));
+    document.getElementById('powerup-time')?.addEventListener('click', () => usePowerup('time'));
+    document.getElementById('powerup-freeze')?.addEventListener('click', () => usePowerup('freeze'));
+    document.getElementById('powerup-hint')?.addEventListener('click', () => usePowerup('hint'));
 }
 
 // ===== NAVEGACIÓN =====
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const screen = document.getElementById(screenId);
-    if (screen) { screen.classList.add('active'); screen.classList.add('screen-expand'); setTimeout(() => screen.classList.remove('screen-expand'), 500); }
+    if (screen) { 
+        screen.classList.add('active'); 
+        screen.classList.add('screen-expand'); 
+        setTimeout(() => screen.classList.remove('screen-expand'), 500); 
+    }
     if (screenId === 'screen-badges') loadBadges();
     if (screenId === 'screen-leaderboard') loadLeaderboard();
 }
@@ -342,13 +358,15 @@ function showScreen(screenId) {
 function selectMode(mode) {
     state.mode = mode;
     document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('selected'));
-    document.getElementById(`mode-${mode}`).classList.add('selected');
-    document.getElementById('timer-display').style.display = mode === 'timed' ? 'flex' : 'none';
+    document.getElementById(`mode-${mode}`)?.classList.add('selected');
+    const timerDisplay = document.getElementById('timer-display');
+    if (timerDisplay) timerDisplay.style.display = mode === 'timed' ? 'flex' : 'none';
     updatePowerupButtons();
 }
 
 // ===== INICIO DEL JUEGO =====
 function startGame() {
+    ensureAudioContext();
     state.score = 0; state.levelScore = 0; state.lives = 3; state.streak = 0; state.maxStreak = 0;
     state.currentQuestion = 0; state.currentLevel = 1; state.answeredCorrectly = {}; state.topicScores = {};
     state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
@@ -373,7 +391,6 @@ function startLevel(levelNum) {
     const rawQuestions = levelQuestionsMap[levelNum] || fondoEmergenciaQuestions;
     state.questions = shuffleArray([...rawQuestions]).slice(0, 10);
     
-    // Activar pregunta bonus aleatoria (1 de cada 3 partidas)
     if (Math.random() < 0.33 && levelNum >= 2) {
         const bonusIndex = Math.floor(Math.random() * state.questions.length);
         state.questions[bonusIndex].isBonus = true;
@@ -398,6 +415,7 @@ function goToNextLevel() {
 
 function updateLevelDisplay() {
     const ld = document.getElementById('level-display');
+    if (!ld) return;
     ld.textContent = `Nivel ${state.currentLevel}`;
     ld.style.background = levelColors[state.currentLevel] || '#10B981';
 }
@@ -407,8 +425,7 @@ function shuffleArray(array) { const arr = [...array]; for (let i = arr.length -
 // ===== REACCIONES DEL CONEJO =====
 function updateRabbitReaction(reaction) {
     const rabbit = document.getElementById('rabbit-svg');
-    if (!rabbit) return;
-    rabbit.className = 'rabbit-svg ' + reaction;
+    if (rabbit) rabbit.className = 'rabbit-svg ' + reaction;
     
     const speech = document.getElementById('question-speech');
     const messages = {
@@ -446,17 +463,19 @@ function loadQuestion() {
     const feedbackBox = document.getElementById('feedback-box');
     const btnNext = document.getElementById('btn-next');
     
-    optionsGrid.innerHTML = ''; optionsGrid.style.display = 'none';
-    matchingContainer.innerHTML = ''; matchingContainer.style.display = 'none';
-    dragContainer.innerHTML = ''; dragContainer.style.display = 'none';
-    sliderContainer.innerHTML = ''; sliderContainer.style.display = 'none';
-    feedbackBox.className = 'feedback-box'; feedbackBox.innerHTML = '';
-    btnNext.style.display = 'none';
-    document.getElementById('question-image').style.display = 'none';
+    if (optionsGrid) { optionsGrid.innerHTML = ''; optionsGrid.style.display = 'none'; }
+    if (matchingContainer) { matchingContainer.innerHTML = ''; matchingContainer.style.display = 'none'; }
+    if (dragContainer) { dragContainer.innerHTML = ''; dragContainer.style.display = 'none'; }
+    if (sliderContainer) { sliderContainer.innerHTML = ''; sliderContainer.style.display = 'none'; }
+    if (feedbackBox) { feedbackBox.className = 'feedback-box'; feedbackBox.innerHTML = ''; }
+    if (btnNext) btnNext.style.display = 'none';
     
-    document.getElementById('question-text').textContent = question.question;
+    const qImg = document.getElementById('question-image');
+    if (qImg) qImg.style.display = 'none';
     
-    // Reacción según nivel
+    const qText = document.getElementById('question-text');
+    if (qText) qText.textContent = question.question;
+    
     if (state.currentLevel === 4) updateRabbitReaction('deep-think');
     else updateRabbitReaction('thinking');
     
@@ -470,8 +489,7 @@ function loadQuestion() {
     if (state.mode === 'timed') startTimer();
     updateProgress();
     
-    // Marcar pregunta bonus
-    if (question.isBonus && optionsGrid.style.display === 'flex') {
+    if (question.isBonus && optionsGrid && optionsGrid.style.display === 'flex') {
         document.querySelectorAll('.option-btn').forEach(btn => btn.classList.add('bonus-question'));
     }
 }
@@ -479,6 +497,7 @@ function loadQuestion() {
 // ===== TIPOS DE PREGUNTAS =====
 function loadMultipleChoice(question) {
     const optionsGrid = document.getElementById('options-grid');
+    if (!optionsGrid) return;
     optionsGrid.style.display = 'flex';
     const indices = question.options.map((_, i) => i);
     const shuffledIndices = shuffleArray(indices);
@@ -497,6 +516,7 @@ function loadMultipleChoice(question) {
 
 function loadMatching(question) {
     const matchingContainer = document.getElementById('matching-container');
+    if (!matchingContainer) return;
     matchingContainer.style.display = 'grid';
     let selectedLeft = null;
     const matches = {};
@@ -541,6 +561,7 @@ function loadMatching(question) {
 
 function loadSlider(question) {
     const sliderContainer = document.getElementById('slider-container');
+    if (!sliderContainer) return;
     sliderContainer.style.display = 'block';
     
     const valueDisplay = document.createElement('div'); valueDisplay.className = 'slider-value';
@@ -577,6 +598,7 @@ function loadSlider(question) {
 
 function loadDrag(question) {
     const dragContainer = document.getElementById('drag-container');
+    if (!dragContainer) return;
     dragContainer.style.display = 'flex';
     
     question.items.forEach((item, index) => {
@@ -629,6 +651,7 @@ function checkDragComplete(question) {
 
 // ===== MANEJO DE RESPUESTAS =====
 function checkMultipleAnswer(originalIndex, question) {
+    ensureAudioContext();
     const options = document.querySelectorAll('.option-btn');
     options.forEach(btn => btn.disabled = true);
     
@@ -640,28 +663,25 @@ function checkMultipleAnswer(originalIndex, question) {
     const responseTime = (Date.now() - state.questionStartTime) / 1000;
     
     if (originalIndex === question.correct) {
-        options[clickedDisplayIndex].classList.add('correct');
+        if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
         
-        // Bonus por velocidad
         if (responseTime < 3) {
             const speedBonus = Math.round(question.points * 0.5);
             totalPoints += speedBonus;
             showSpeedBonus(speedBonus);
         }
         
-        // Muestra explicación
         const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
         showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
         
         handleCorrectAnswer(totalPoints);
         playSound('correct');
-        effects.triggerConfetti();
+        if (typeof effects !== 'undefined' && effects.triggerConfetti) effects.triggerConfetti();
     } else {
-        options[clickedDisplayIndex].classList.add('incorrect');
-        options[correctDisplayIndex].classList.add('correct');
+        if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
+        if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
         
-        // Muestra explicación cuando falla
         showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
         
         handleIncorrectAnswer(question);
@@ -680,34 +700,36 @@ function handleCorrectAnswer(points) {
     if (state.streak > state.maxStreak) state.maxStreak = state.streak;
     
     const question = state.questions[state.currentQuestion];
-    if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
-    state.topicScores[question.topic].correct++;
-    state.topicScores[question.topic].total++;
+    if (question && question.topic) {
+        if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
+        state.topicScores[question.topic].correct++;
+        state.topicScores[question.topic].total++;
+    }
     
     updateScore(); updateStreak();
     
-    // Reacciones según racha
     if (state.streak >= 5) {
         updateRabbitReaction('impressed');
-        document.getElementById('streak-display').classList.add('on-fire');
-        effects.triggerCoinRain();
+        document.getElementById('streak-display')?.classList.add('on-fire');
+        if (typeof effects !== 'undefined' && effects.triggerCoinRain) effects.triggerCoinRain();
     } else if (state.streak >= 3) {
         updateRabbitReaction('impressed');
-        effects.triggerCoinRain();
-    } else {
-        updateRabbitReaction('correct');
+        if (typeof effects !== 'undefined' && effects.triggerCoinRain) effects.triggerCoinRain();
     }
     
-    document.getElementById('btn-next').style.display = 'block';
+    const btnNext = document.getElementById('btn-next');
+    if (btnNext) btnNext.style.display = 'block';
     checkBadges();
 }
 
 function handleIncorrectAnswer(question) {
     state.lives--; state.streak = 0; state.levelPerfect = false;
-    document.getElementById('streak-display').classList.remove('on-fire');
+    document.getElementById('streak-display')?.classList.remove('on-fire');
     
-    if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
-    state.topicScores[question.topic].total++;
+    if (question && question.topic) {
+        if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
+        state.topicScores[question.topic].total++;
+    }
     
     updateLives(); updateStreak();
     
@@ -715,21 +737,23 @@ function handleIncorrectAnswer(question) {
         updateRabbitReaction('sad');
         setTimeout(() => endLevel(), 1500);
     } else {
-        updateRabbitReaction('incorrect');
+        updateRabbitReaction('determined');
     }
     
-    document.getElementById('btn-next').style.display = 'block';
+    const btnNext = document.getElementById('btn-next');
+    if (btnNext) btnNext.style.display = 'block';
 }
 
 function showFeedback(message, type) {
     const fb = document.getElementById('feedback-box');
+    if (!fb) return;
     fb.textContent = message;
     fb.className = `feedback-box ${type}`;
 }
 
 function nextQuestion() {
     state.currentQuestion++;
-    document.getElementById('streak-display').classList.remove('on-fire');
+    document.getElementById('streak-display')?.classList.remove('on-fire');
     loadQuestion();
 }
 
@@ -738,41 +762,43 @@ function endLevel() {
     clearInterval(state.timerInterval);
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
     
-    // Calcular estrellas
-    const totalQ = state.totalQuestions;
-    const correctAnswers = state.levelScore / (state.questions[0]?.points || 100);
+    const totalQ = state.totalQuestions || 10;
+    const basePoints = (state.questions && state.questions[0] && state.questions[0].points) ? state.questions[0].points : 100;
+    const correctAnswers = state.levelScore / basePoints;
     const starCount = state.levelPerfect ? 3 : (correctAnswers >= totalQ * 0.7 ? 2 : 1);
     state.levelStars[state.currentLevel] = starCount;
     
-    // Verificar insignias
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('💯 ¡Nueva insignia: Puntaje Perfecto!'), 300);
         saveBadges();
     }
     if (state.lives === 3 && !state.badges.survivor) {
         state.badges.survivor = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('🛡️ ¡Nueva insignia: Sobreviviente!'), 300);
         saveBadges();
     }
     if (!state.powerupsUsedThisLevel && !state.badges.noPowerups) {
         state.badges.noPowerups = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('💪 ¡Nueva insignia: Poder Natural!'), 300);
         saveBadges();
     }
     
     if (state.currentLevel < 4) {
-        document.getElementById('transition-title').textContent = `${levelNames[state.currentLevel]} Completado`;
-        document.getElementById('transition-speech').textContent = `¡Excelente! Nivel ${state.currentLevel} superado 🎉`;
-        document.getElementById('level-score-display').textContent = state.levelScore;
+        const transTitle = document.getElementById('transition-title');
+        const transSpeech = document.getElementById('transition-speech');
+        const lvlScoreDisp = document.getElementById('level-score-display');
         
-        // Mostrar estrellas
+        if (transTitle) transTitle.textContent = `${levelNames[state.currentLevel]} Completado`;
+        if (transSpeech) transSpeech.textContent = `¡Excelente! Nivel ${state.currentLevel} superado 🎉`;
+        if (lvlScoreDisp) lvlScoreDisp.textContent = state.levelScore;
+        
         let starsHTML = '<div class="star-rating">';
         for (let i = 1; i <= 3; i++) {
             starsHTML += `<span class="star ${i <= starCount ? 'earned' : ''}">⭐</span>`;
@@ -788,64 +814,72 @@ function endLevel() {
             document.getElementById('level-stars').innerHTML = starsHTML;
         }
         
-        document.getElementById('btn-next-level').textContent = `Siguiente: ${levelNames[state.currentLevel + 1]} ➡️`;
+        const btnNextLevel = document.getElementById('btn-next-level');
+        if (btnNextLevel) btnNextLevel.textContent = `Siguiente: ${levelNames[state.currentLevel + 1]} ➡️`;
         
-        updateRabbitReaction(state.levelPerfect ? 'celebrating' : 'correct');
+        updateRabbitReaction(state.levelPerfect ? 'celebrating' : 'thinking');
         showScreen('screen-level-transition');
         playSound('levelup');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
     } else {
         updateRabbitReaction('graduate');
         showFinalResults();
         playSound('levelup');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
     }
 }
 
 function showFinalResults() {
-    document.getElementById('final-score').textContent = state.score;
+    const finalScore = document.getElementById('final-score');
+    if (finalScore) finalScore.textContent = state.score;
     
     const topicAnalysis = document.getElementById('topic-analysis');
-    topicAnalysis.innerHTML = '';
-    
-    const topicNames = {
-        'presupuesto': 'Presupuesto', 'ahorro': 'Ahorro', 'inversion': 'Inversión', 'credito': 'Crédito',
-        'contabilidad': 'Contabilidad', 'finanzas': 'Finanzas', 'fondo-emergencia': 'Fondo de Emergencia',
-        'tributacion': 'Tributación', 'nomina': 'Nómina', 'estados-financieros': 'Estados Financieros',
-        'analisis-financiero': 'Análisis Financiero', 'inventario': 'Inventarios',
-        'matematica-financiera': 'Matemática Financiera'
-    };
-    
-    const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#E63946', '#6366F1', '#14B8A6', '#F97316', '#84CC16'];
-    let colorIndex = 0;
-    
-    for (const [topic, scores] of Object.entries(state.topicScores)) {
-        const percentage = Math.round((scores.correct / scores.total) * 100);
-        const bar = document.createElement('div'); bar.className = 'topic-bar';
-        bar.innerHTML = `<span class="topic-label">${topicNames[topic] || topic}</span><div class="topic-progress"><div class="topic-fill" style="width:${percentage}%;background:${topicColors[colorIndex]}"></div></div><span class="topic-score">${percentage}%</span>`;
-        topicAnalysis.appendChild(bar);
-        colorIndex = (colorIndex + 1) % topicColors.length;
+    if (topicAnalysis) {
+        topicAnalysis.innerHTML = '';
+        
+        const topicNames = {
+            'presupuesto': 'Presupuesto', 'ahorro': 'Ahorro', 'inversion': 'Inversión', 'credito': 'Crédito',
+            'contabilidad': 'Contabilidad', 'finanzas': 'Finanzas', 'fondo-emergencia': 'Fondo de Emergencia',
+            'tributacion': 'Tributación', 'nomina': 'Nómina', 'estados-financieros': 'Estados Financieros',
+            'analisis-financiero': 'Análisis Financiero', 'inventario': 'Inventarios',
+            'matematica-financiera': 'Matemática Financiera'
+        };
+        
+        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#E63946', '#6366F1', '#14B8A6', '#F97316', '#84CC16'];
+        let colorIndex = 0;
+        
+        for (const [topic, scores] of Object.entries(state.topicScores)) {
+            const percentage = scores.total > 0 ? Math.round((scores.correct / scores.total) * 100) : 0;
+            const bar = document.createElement('div'); bar.className = 'topic-bar';
+            bar.innerHTML = `<span class="topic-label">${topicNames[topic] || topic}</span><div class="topic-progress"><div class="topic-fill" style="width:${percentage}%;background:${topicColors[colorIndex]}"></div></div><span class="topic-score">${percentage}%</span>`;
+            topicAnalysis.appendChild(bar);
+            colorIndex = (colorIndex + 1) % topicColors.length;
+        }
     }
     
     const shareBadges = document.getElementById('share-badges');
-    shareBadges.innerHTML = '';
-    for (const [badge, unlocked] of Object.entries(state.badges)) {
-        if (unlocked) {
-            const badgeEl = document.createElement('span'); badgeEl.className = 'share-badge';
-            badgeEl.textContent = getBadgeIcon(badge);
-            shareBadges.appendChild(badgeEl);
+    if (shareBadges) {
+        shareBadges.innerHTML = '';
+        for (const [badge, unlocked] of Object.entries(state.badges)) {
+            if (unlocked) {
+                const badgeEl = document.createElement('span'); badgeEl.className = 'share-badge';
+                badgeEl.textContent = getBadgeIcon(badge);
+                shareBadges.appendChild(badgeEl);
+            }
         }
     }
     
     const speech = document.getElementById('result-character-speech');
     const maxScore = 7000;
-    if (state.score >= maxScore * 0.9) speech.textContent = '¡Rendimiento excepcional! Conti Conti te admira. 🏆🐰';
-    else if (state.score >= maxScore * 0.7) speech.textContent = '¡Excelente resultado! Bases muy sólidas. 👏🐰';
-    else if (state.score >= maxScore * 0.4) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚🐰';
-    else speech.textContent = '¡El aprendizaje es un camino diario! 💡🐰';
+    if (speech) {
+        if (state.score >= maxScore * 0.9) speech.textContent = '¡Rendimiento excepcional! Conti Conti te admira. 🏆🐰';
+        else if (state.score >= maxScore * 0.7) speech.textContent = '¡Excelente resultado! Bases muy sólidas. 👏🐰';
+        else if (state.score >= maxScore * 0.4) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚🐰';
+        else speech.textContent = '¡El aprendizaje es un camino diario! 💡🐰';
+    }
     
     showScreen('screen-results');
-    effects.triggerFireworks();
+    if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
     saveToLeaderboard();
 }
 
@@ -854,7 +888,7 @@ function restartGame() {
     state.streak = 0; state.currentLevel = 1; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
     state.levelStars = {}; state.bonusQuestionActive = false;
     document.body.className = 'level-1';
-    document.getElementById('streak-display').classList.remove('on-fire');
+    document.getElementById('streak-display')?.classList.remove('on-fire');
     updateScore(); updateLives(); updateStreak(); updateProgress(); updateLevelDisplay();
     startGame();
 }
@@ -862,7 +896,7 @@ function restartGame() {
 function goToFinalScreen() {
     updateRabbitReaction('graduate');
     showScreen('screen-final');
-    effects.triggerFireworks();
+    if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
 }
 
 // ===== POWER-UPS =====
@@ -882,9 +916,16 @@ function usePowerup(type) {
     switch (type) {
         case 'fifty': applyFiftyFifty(); updateRabbitReaction('confident'); break;
         case 'time': if (state.mode === 'timed') { state.timer += 15; updateTimerDisplay(); } break;
-        case 'freeze': state.isFrozen = true; updateRabbitReaction('frozen');
-            document.getElementById('timer-display').style.backgroundColor = '#10B981';
-            setTimeout(() => { state.isFrozen = false; updateRabbitReaction('thinking'); document.getElementById('timer-display').style.backgroundColor = 'var(--azul-oscuro)'; }, 10000);
+        case 'freeze': 
+            state.isFrozen = true; 
+            updateRabbitReaction('frozen');
+            const td = document.getElementById('timer-display');
+            if (td) td.style.backgroundColor = '#10B981';
+            setTimeout(() => { 
+                state.isFrozen = false; 
+                updateRabbitReaction('thinking'); 
+                if (td) td.style.backgroundColor = 'var(--azul-oscuro)'; 
+            }, 10000);
             break;
         case 'hint': applyHint(); break;
     }
@@ -892,18 +933,25 @@ function usePowerup(type) {
 
 function applyFiftyFifty() {
     const question = state.questions[state.currentQuestion];
-    if (question.type !== 'multiple') return;
+    if (!question || question.type !== 'multiple') return;
     const options = document.querySelectorAll('.option-btn');
     const shuffledIndices = question._shuffledIndices;
     const correctDisplayIndex = shuffledIndices.indexOf(question.correct);
     const incorrectIndexes = [];
     options.forEach((btn, i) => { if (i !== correctDisplayIndex) incorrectIndexes.push(i); });
-    shuffleArray(incorrectIndexes).slice(0, 2).forEach(index => { options[index].style.opacity = '0.3'; options[index].style.pointerEvents = 'none'; });
+    shuffleArray(incorrectIndexes).slice(0, 2).forEach(index => { 
+        if (options[index]) {
+            options[index].style.opacity = '0.3'; 
+            options[index].style.pointerEvents = 'none'; 
+        }
+    });
 }
 
 function applyHint() {
     const question = state.questions[state.currentQuestion];
+    if (!question) return;
     const fb = document.getElementById('feedback-box');
+    if (!fb) return;
     fb.textContent = `💡 Pista: ${question.explanation.split('.')[0]}.`;
     fb.className = 'feedback-box correct';
 }
@@ -924,7 +972,7 @@ function updatePowerupButtons() {
 function startTimer() {
     updateTimerDisplay();
     const timerDisplay = document.getElementById('timer-display');
-    timerDisplay.classList.remove('warning');
+    if (timerDisplay) timerDisplay.classList.remove('warning');
     
     state.timerInterval = setInterval(() => {
         if (state.isFrozen) return;
@@ -932,7 +980,7 @@ function startTimer() {
         updateTimerDisplay();
         
         if (state.timer <= 5) {
-            timerDisplay.classList.add('warning');
+            if (timerDisplay) timerDisplay.classList.add('warning');
             updateRabbitReaction('nervous');
             playSound('tick');
         }
@@ -952,12 +1000,14 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-    document.getElementById('timer-display').textContent = `⏱️ ${state.timer}s`;
+    const td = document.getElementById('timer-display');
+    if (td) td.textContent = `⏱️ ${state.timer}s`;
 }
 
 // ===== UI UPDATES =====
 function updateScore() {
     const badge = document.getElementById('score-badge');
+    if (!badge) return;
     badge.textContent = `⭐ ${state.score} pts`;
     badge.classList.add('pop');
     setTimeout(() => badge.classList.remove('pop'), 300);
@@ -965,17 +1015,20 @@ function updateScore() {
 
 function updateLives() {
     const display = document.getElementById('lives-display');
+    if (!display) return;
     let hearts = '';
     for (let i = 0; i < 3; i++) hearts += i < state.lives ? '❤️' : '🖤';
     display.textContent = hearts;
 }
 
 function updateStreak() {
-    document.getElementById('streak-display').textContent = `🔥 ${state.streak}`;
+    const sd = document.getElementById('streak-display');
+    if (sd) sd.textContent = `🔥 ${state.streak}`;
 }
 
 function updateProgress() {
-    document.getElementById('progress-fill').style.width = `${(state.currentQuestion / state.totalQuestions) * 100}%`;
+    const pf = document.getElementById('progress-fill');
+    if (pf) pf.style.width = `${(state.currentQuestion / state.totalQuestions) * 100}%`;
 }
 
 // ===== INSIGNIAS =====
@@ -983,21 +1036,21 @@ function checkBadges() {
     if (state.score >= 2000 && !state.badges.financierPro) {
         state.badges.financierPro = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('🏆 ¡Nueva insignia: Financiero Pro!'), 300);
         saveBadges();
     }
     if (state.streak >= 5 && !state.badges.streaker) {
         state.badges.streaker = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('🔥 ¡Nueva insignia: Rachador!'), 300);
         saveBadges();
     }
     if (state.mode === 'timed' && (Date.now() - state.questionStartTime) < 3000 && !state.badges.speedDemon) {
         state.badges.speedDemon = true;
         playSound('achievement');
-        effects.triggerFireworks();
+        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
         setTimeout(() => alert('⚡ ¡Nueva insignia: Velocista!'), 300);
         saveBadges();
     }
