@@ -24,13 +24,14 @@
         <div class="splash-content">
             <img src="logo.jpg" alt="Conti Conti Logo" class="splash-logo" onerror="this.style.display='none'">
             <img src="conejo-uniforme.PNG" alt="Mascota Conti" class="conejo-uniforme-logo" onerror="this.style.display='none'">
-            <div class="splash-tag">🎓 Educación Financiera Interactiva</div>
+            <div class="splash-tag">📊 Especialidad de Contabilidad</div>
             <h1 class="splash-title">
-                Bienvenido a <span class="highlight-red-title">Conti Conti</span>
+                Desafío Interactivo:
+                <span class="highlight-red-title">Fondo de Emergencia</span>
             </h1>
             <div class="splash-credits-box">
                 <strong>🏆 Desafío de Contabilidad y Finanzas</strong><br>
-                <small>Demuestra tus conocimientos y conviértete en un experto financiero</small>
+                <small>Demuestra tus conocimientos en 4 niveles progresivos</small>
             </div>
             <div class="loader-bar">
                 <div class="loader-fill" id="loader-fill"></div>
@@ -56,6 +57,7 @@
             <div class="lives-display" id="lives-display">❤️❤️❤️</div>
             <div class="streak-display" id="streak-display">🔥 0</div>
             <div class="timer-display" id="timer-display">⏱️ 30s</div>
+            <div class="level-display" id="level-display" style="background: #10B981; color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.8rem;">🟢 Nivel 1</div>
         </div>
 
         <!-- Power-ups Bar -->
@@ -71,7 +73,6 @@
             </button>
         </div>
 
-        <!-- Pantallas -->
         <!-- Pantalla de Bienvenida -->
         <div class="screen active" id="screen-welcome">
             <div class="character-box">
@@ -90,19 +91,24 @@
                     <ellipse cx="72" cy="42" rx="5" ry="13" fill="#FFB6C1" class="ear-inner"/>
                 </svg>
                 <div class="character-speech" id="character-speech">
-                    ¡Hola! Soy Conti, tu guía financiero 🐰
+                    ¡Hola! Soy Conti Conti, tu guía financiero 🐰
                 </div>
             </div>
-            <h2 class="welcome-title">Desafío Financiero</h2>
-            <p class="welcome-sub">Pon a prueba tus conocimientos en contabilidad y finanzas</p>
+            <h2 class="welcome-title">¿Qué tanto sabes sobre finanzas?</h2>
+            <p class="welcome-sub">Completa los 4 niveles demostrando tus conocimientos</p>
+
+            <div class="splash-credits-box">
+                <b>🎓 Proyecto Presentado por:</b><br>
+                <b>Valeska Romero</b><br>
+                Estudiante de la especialidad de Contabilidad
+            </div>
 
             <div class="info-card">
-                <strong>🎯 Temas del desafío:</strong><br>
-                • Presupuesto y ahorro<br>
-                • Inversiones y riesgo<br>
-                • Crédito y deudas<br>
-                • Conceptos contables básicos<br>
-                • Educación financiera
+                <strong>🎯 Niveles del desafío:</strong><br>
+                🟢 <b>Nivel 1:</b> Fondo de Emergencia<br>
+                🔵 <b>Nivel 2:</b> Contabilidad y Nómina<br>
+                🟣 <b>Nivel 3:</b> Estados Financieros<br>
+                🔴 <b>Nivel 4:</b> Cálculos Técnicos Avanzados
             </div>
 
             <div class="mode-grid">
@@ -114,7 +120,7 @@
                 <div class="mode-card" id="mode-timed" onclick="selectMode('timed')">
                     <div class="mode-icon">⚡</div>
                     <div class="mode-title">Contrarreloj</div>
-                    <div class="mode-desc">30 segundos por pregunta</div>
+                    <div class="mode-desc">30s - 20s por pregunta</div>
                 </div>
             </div>
 
@@ -124,7 +130,7 @@
             <button class="main-btn secondary" onclick="showScreen('screen-badges')">
                 Ver Insignias 🏅
             </button>
-            <p class="credits">Desarrollado por RomeroAPP   | v1.0</p>
+            <p class="credits">Desarrollado por Romeroweb | v3.0</p>
         </div>
 
         <!-- Pantalla de Pregunta -->
@@ -158,8 +164,64 @@
             </button>
         </div>
 
-        <!-- Pantalla de Resultados -->
+        <!-- Pantalla de Transición entre Niveles -->
+        <div class="screen" id="screen-level-transition">
+            <div class="character-box">
+                <svg class="rabbit-svg correct" viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="60" cy="110" rx="35" ry="12" fill="#E2E8F0" opacity="0.6"/>
+                    <ellipse cx="60" cy="70" rx="30" ry="35" fill="#F5F5F5"/>
+                    <ellipse cx="50" cy="60" rx="4" ry="5" fill="#2D3748"/>
+                    <ellipse cx="70" cy="60" rx="4" ry="5" fill="#2D3748"/>
+                    <circle cx="51" cy="58" r="1.5" fill="white"/>
+                    <circle cx="71" cy="58" r="1.5" fill="white"/>
+                    <ellipse cx="60" cy="72" rx="6" ry="4" fill="#FFB6C1"/>
+                    <path d="M52 78 Q60 90 68 78" stroke="#2D3748" stroke-width="1.5" fill="none"/>
+                    <ellipse cx="48" cy="42" rx="8" ry="18" fill="#F5F5F5" class="ear ear-left"/>
+                    <ellipse cx="48" cy="42" rx="5" ry="13" fill="#FFE066" class="ear-inner"/>
+                    <ellipse cx="72" cy="42" rx="8" ry="18" fill="#F5F5F5" class="ear ear-right"/>
+                    <ellipse cx="72" cy="42" rx="5" ry="13" fill="#FFE066" class="ear-inner"/>
+                </svg>
+                <div class="character-speech" id="transition-speech">¡Excelente! Has completado el nivel 🎉</div>
+            </div>
+
+            <h2 class="welcome-title" id="transition-title">🟢 Nivel Completado</h2>
+            
+            <div class="share-card">
+                <div class="share-label">Puntuación del nivel</div>
+                <div class="share-score" id="level-score-display">0</div>
+                <div class="share-label">puntos</div>
+            </div>
+
+            <div class="teacher-tribute-card">
+                <div class="teacher-tribute-text">
+                    🌟 "La excelencia de la especialidad de Contabilidad se refleja en el compromiso, la dedicación y la calidad profesional de sus profesoras, quienes inspiran a sus estudiantes a dar siempre lo mejor de sí." ✨
+                </div>
+            </div>
+
+            <button class="main-btn pulse-ready" id="btn-next-level" onclick="goToNextLevel()">
+                Siguiente Nivel ➡️
+            </button>
+        </div>
+
+        <!-- Pantalla de Resultados Final -->
         <div class="screen" id="screen-results">
+            <div class="character-box">
+                <svg class="rabbit-svg correct" viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="60" cy="110" rx="35" ry="12" fill="#E2E8F0" opacity="0.6"/>
+                    <ellipse cx="60" cy="70" rx="30" ry="35" fill="#F5F5F5"/>
+                    <ellipse cx="50" cy="60" rx="4" ry="5" fill="#2D3748"/>
+                    <ellipse cx="70" cy="60" rx="4" ry="5" fill="#2D3748"/>
+                    <circle cx="51" cy="58" r="1.5" fill="white"/>
+                    <circle cx="71" cy="58" r="1.5" fill="white"/>
+                    <ellipse cx="60" cy="72" rx="6" ry="4" fill="#FFB6C1"/>
+                    <path d="M52 78 Q60 90 68 78" stroke="#2D3748" stroke-width="1.5" fill="none"/>
+                    <ellipse cx="48" cy="42" rx="8" ry="18" fill="#F5F5F5" class="ear ear-left"/>
+                    <ellipse cx="48" cy="42" rx="5" ry="13" fill="#FFE066" class="ear-inner"/>
+                    <ellipse cx="72" cy="42" rx="8" ry="18" fill="#F5F5F5" class="ear ear-right"/>
+                    <ellipse cx="72" cy="42" rx="5" ry="13" fill="#FFE066" class="ear-inner"/>
+                </svg>
+                <div class="character-speech" id="result-character-speech">¡Gran trabajo completando el desafío! 🐰🎉</div>
+            </div>
             <h2 class="welcome-title">🎉 ¡Desafío Completado!</h2>
             <div class="share-card" id="share-card">
                 <div class="share-label">Tu puntuación final</div>
@@ -172,10 +234,52 @@
                 <div id="topic-analysis"></div>
             </div>
             <div class="btn-group">
-                <button class="main-btn" onclick="restartGame()">Jugar de Nuevo 🔄</button>
+                <button class="main-btn" onclick="goToFinalScreen()">Ver Mensaje Final 📜</button>
                 <button class="main-btn secondary" onclick="shareResults()">Compartir 📤</button>
             </div>
             <button class="main-btn danger" onclick="showScreen('screen-welcome')">Volver al Inicio 🏠</button>
+        </div>
+
+        <!-- Pantalla Final con Agradecimiento -->
+        <div class="screen" id="screen-final">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <img src="conejo-uniforme.PNG" alt="Conti Conti" style="max-height: 100px;" onerror="this.style.display='none';">
+            </div>
+
+            <div class="info-card">
+                💡 <b>La Contabilidad en tu Vida Diaria:</b><br>
+                La contabilidad no solo se utiliza en las empresas. También nos ayuda a organizar nuestros ingresos, controlar nuestros gastos, ahorrar y prepararnos para enfrentar imprevistos mediante herramientas como el fondo de emergencia.
+            </div>
+
+            <div class="info-card" style="border-left-color: #10B981; background: #F0FDF4;">
+                📊 <b>¡Conoce la especialidad de Contabilidad!</b><br>
+                Si te interesa aprender a administrar el dinero, comprender cómo funcionan las empresas y desarrollar habilidades útiles para tu futuro, ¡te invitamos a conocer nuestra especialidad!
+            </div>
+
+            <div class="teacher-tribute-card">
+                <div class="teacher-tribute-text">
+                    🌟 "La excelencia de la especialidad de Contabilidad se refleja en el compromiso, la dedicación y la calidad profesional de sus profesoras, quienes inspiran a sus estudiantes a dar siempre lo mejor de sí." ✨
+                </div>
+            </div>
+
+            <p style="font-size: 0.82rem; font-weight: 700; color: var(--gris-texto); margin-top: 2px;">Especialidades de nuestro colegio:</p>
+            <div class="specialty-list">
+                <span class="specialty-tag">🍳 Gastronomía</span>
+                <span class="specialty-tag">👶 Atención de Párvulos</span>
+                <span class="specialty-tag" style="background: var(--verde-menta); border-color: #86EFAC;">📊 Contabilidad</span>
+                <span class="specialty-tag">🥫 Elaboración Ind. Alimentos</span>
+                <span class="specialty-tag">⚡ Electrónica</span>
+            </div>
+
+            <p style="font-size: 0.9rem; font-weight: 700; color: var(--azul-oscuro); margin: 6px 0;">
+                "¡Tu futuro comienza con una buena educación financiera!"
+            </p>
+
+            <button class="main-btn" onclick="restartGame()">🔄 Volver a Jugar</button>
+
+            <div class="credits">
+                ✨ Desarrollado por <b>Valeska Romero</b> – Estudiante de la especialidad de Contabilidad
+            </div>
         </div>
 
         <!-- Pantalla de Insignias -->
