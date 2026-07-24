@@ -1,3 +1,4 @@
+
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
@@ -413,7 +414,7 @@ function updateRabbitReaction(reaction) {
     const messages = {
         'thinking': ['¡Piensa bien tu respuesta! 🤔', 'Tú puedes hacerlo 💪', 'Analiza con cuidado 📊'],
         'nervous': ['¡El tiempo se acaba! ⏰', '¡Rápido! 😰', '¡No te congeles! ❄️'],
-        'bored': ['¡Despierta! ☕', '¡Vamos, tú puedes! 😴', '¡No te durmas! 💤'],
+        'bored': ['¡Despierta! ☕', '¡Vamos, tú puedes! 😴', '¡No te duermas! 💤'],
         'impressed': ['¡Impresionante racha! 🤩', '¡Eres increíble! 🌟', '¡Qué genio! 🧠'],
         'sad': ['¡No te rindas! 💪', '¡Aprende del error! 📚', '¡La próxima será! 🎯'],
         'celebrating': ['¡Perfecto! 🥳', '¡Nivel impecable! 🎉', '¡Eres el mejor! 🏆'],
@@ -655,6 +656,7 @@ function checkMultipleAnswer(originalIndex, question) {
         
         handleCorrectAnswer(totalPoints);
         playSound('correct');
+        effects.triggerConfetti();
     } else {
         options[clickedDisplayIndex].classList.add('incorrect');
         options[correctDisplayIndex].classList.add('correct');
@@ -688,15 +690,16 @@ function handleCorrectAnswer(points) {
     if (state.streak >= 5) {
         updateRabbitReaction('impressed');
         document.getElementById('streak-display').classList.add('on-fire');
+        effects.triggerCoinRain();
     } else if (state.streak >= 3) {
         updateRabbitReaction('impressed');
+        effects.triggerCoinRain();
     } else {
         updateRabbitReaction('correct');
     }
     
     document.getElementById('btn-next').style.display = 'block';
     checkBadges();
-    triggerCoinRain();
 }
 
 function handleIncorrectAnswer(question) {
@@ -745,18 +748,21 @@ function endLevel() {
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('💯 ¡Nueva insignia: Puntaje Perfecto!'), 300);
         saveBadges();
     }
     if (state.lives === 3 && !state.badges.survivor) {
         state.badges.survivor = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('🛡️ ¡Nueva insignia: Sobreviviente!'), 300);
         saveBadges();
     }
     if (!state.powerupsUsedThisLevel && !state.badges.noPowerups) {
         state.badges.noPowerups = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('💪 ¡Nueva insignia: Poder Natural!'), 300);
         saveBadges();
     }
@@ -787,11 +793,12 @@ function endLevel() {
         updateRabbitReaction(state.levelPerfect ? 'celebrating' : 'correct');
         showScreen('screen-level-transition');
         playSound('levelup');
-        launchConfetti();
+        effects.triggerFireworks();
     } else {
         updateRabbitReaction('graduate');
         showFinalResults();
         playSound('levelup');
+        effects.triggerFireworks();
     }
 }
 
@@ -805,7 +812,7 @@ function showFinalResults() {
         'presupuesto': 'Presupuesto', 'ahorro': 'Ahorro', 'inversion': 'Inversión', 'credito': 'Crédito',
         'contabilidad': 'Contabilidad', 'finanzas': 'Finanzas', 'fondo-emergencia': 'Fondo de Emergencia',
         'tributacion': 'Tributación', 'nomina': 'Nómina', 'estados-financieros': 'Estados Financieros',
-        'analisis-financiero': 'Análisis Financiero', 'inventario': 'Inventarios', 'inventarios': 'Inventarios',
+        'analisis-financiero': 'Análisis Financiero', 'inventario': 'Inventarios',
         'matematica-financiera': 'Matemática Financiera'
     };
     
@@ -838,7 +845,7 @@ function showFinalResults() {
     else speech.textContent = '¡El aprendizaje es un camino diario! 💡🐰';
     
     showScreen('screen-results');
-    launchConfetti();
+    effects.triggerFireworks();
     saveToLeaderboard();
 }
 
@@ -855,7 +862,7 @@ function restartGame() {
 function goToFinalScreen() {
     updateRabbitReaction('graduate');
     showScreen('screen-final');
-    launchConfetti();
+    effects.triggerFireworks();
 }
 
 // ===== POWER-UPS =====
@@ -869,7 +876,6 @@ function usePowerup(type) {
     updatePowerupButtons();
     playSound('powerup');
     
-    // Flash animation
     const btn = document.getElementById(`powerup-${type}`);
     if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 300); }
     
@@ -937,7 +943,6 @@ function startTimer() {
         }
     }, 1000);
     
-    // Verificar si el usuario tarda mucho
     state._boredTimeout = setTimeout(() => {
         const nextBtn = document.getElementById('btn-next');
         if (state.currentQuestion < state.totalQuestions && (!nextBtn || nextBtn.style.display === 'none')) {
@@ -978,18 +983,21 @@ function checkBadges() {
     if (state.score >= 2000 && !state.badges.financierPro) {
         state.badges.financierPro = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('🏆 ¡Nueva insignia: Financiero Pro!'), 300);
         saveBadges();
     }
     if (state.streak >= 5 && !state.badges.streaker) {
         state.badges.streaker = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('🔥 ¡Nueva insignia: Rachador!'), 300);
         saveBadges();
     }
     if (state.mode === 'timed' && (Date.now() - state.questionStartTime) < 3000 && !state.badges.speedDemon) {
         state.badges.speedDemon = true;
         playSound('achievement');
+        effects.triggerFireworks();
         setTimeout(() => alert('⚡ ¡Nueva insignia: Velocista!'), 300);
         saveBadges();
     }
@@ -1049,61 +1057,3 @@ function shareResults() {
     if (navigator.share) navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
     else { navigator.clipboard.writeText(text).then(() => alert('📋 ¡Copiado! Compártelo.')); }
 }
-
-// ===== EFECTOS VISUALES =====
-function launchConfetti() {
-    if (typeof confetti !== 'function') return;
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#A2D2FF', '#B8E9C0', '#FEF9D7', '#EC4899', '#8B5CF6'] });
-    setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.7 } }), 200);
-    setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.7 } }), 400);
-}
-
-function triggerCoinRain() {
-    const canvas = document.getElementById('effects-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    
-    const badgeRect = document.getElementById('score-badge').getBoundingClientRect();
-    const originX = badgeRect.left + badgeRect.width / 2;
-    const originY = badgeRect.top;
-    
-    let particles = [];
-    for (let i = 0; i < 20; i++) {
-        particles.push({
-            x: originX + (Math.random() - 0.5) * 80, y: originY,
-            vx: (Math.random() - 0.5) * 6, vy: Math.random() * 4 + 2,
-            size: Math.random() * 8 + 6, alpha: 1, gravity: 0.3,
-            rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.2
-        });
-    }
-    
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let active = false;
-        particles.forEach(p => {
-            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.rotation += p.rotSpeed;
-            if (p.y > canvas.height + 50) p.alpha -= 0.03;
-            if (p.alpha > 0) {
-                active = true;
-                ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha); ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
-                ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(0, 0, p.size, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = '#B8860B'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#B8860B'; ctx.font = `bold ${p.size * 0.8}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('$', 0, 1);
-                ctx.restore();
-            }
-        });
-        if (active) requestAnimationFrame(animate);
-    }
-    animate();
-}
-
-// ===== CANVAS =====
-(function() {
-    const canvas = document.getElementById('effects-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-})();
