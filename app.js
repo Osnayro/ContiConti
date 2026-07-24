@@ -1,4 +1,3 @@
-
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
@@ -12,6 +11,7 @@ const state = {
     mode: 'normal',
     timer: 30,
     timerInterval: null,
+    _boredTimeout: null,
     isFrozen: false,
     questions: [],
     answeredCorrectly: {},
@@ -343,6 +343,7 @@ function selectMode(mode) {
     document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('selected'));
     document.getElementById(`mode-${mode}`).classList.add('selected');
     document.getElementById('timer-display').style.display = mode === 'timed' ? 'flex' : 'none';
+    updatePowerupButtons();
 }
 
 // ===== INICIO DEL JUEGO =====
@@ -381,6 +382,7 @@ function startLevel(levelNum) {
     }
     
     state.totalQuestions = state.questions.length;
+    updatePowerupButtons();
     updateLevelDisplay(); updateScore(); updateLives(); updateStreak(); updateProgress();
     showScreen('screen-question');
     updateRabbitReaction('thinking');
@@ -411,7 +413,7 @@ function updateRabbitReaction(reaction) {
     const messages = {
         'thinking': ['¡Piensa bien tu respuesta! 🤔', 'Tú puedes hacerlo 💪', 'Analiza con cuidado 📊'],
         'nervous': ['¡El tiempo se acaba! ⏰', '¡Rápido! 😰', '¡No te congeles! ❄️'],
-        'bored': ['¡Despierta! ☕', '¡Vamos, tú puedes! 😴', '¡No te duermas! 💤'],
+        'bored': ['¡Despierta! ☕', '¡Vamos, tú puedes! 😴', '¡No te durmas! 💤'],
         'impressed': ['¡Impresionante racha! 🤩', '¡Eres increíble! 🌟', '¡Qué genio! 🧠'],
         'sad': ['¡No te rindas! 💪', '¡Aprende del error! 📚', '¡La próxima será! 🎯'],
         'celebrating': ['¡Perfecto! 🥳', '¡Nivel impecable! 🎉', '¡Eres el mejor! 🏆'],
@@ -431,6 +433,8 @@ function loadQuestion() {
     if (state.currentQuestion >= state.totalQuestions) { endLevel(); return; }
     
     clearInterval(state.timerInterval);
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    
     state.questionStartTime = Date.now();
     
     const question = state.questions[state.currentQuestion];
@@ -518,7 +522,10 @@ function loadMatching(question) {
                 if (selectedLeft.dataset.pairId === this.dataset.pairId) {
                     selectedLeft.classList.add('matched'); this.classList.add('matched');
                     matches[this.dataset.pairId] = true; selectedLeft = null;
-                    if (Object.keys(matches).length === question.pairs.length) handleCorrectAnswer(question.points);
+                    if (Object.keys(matches).length === question.pairs.length) {
+                        showFeedback(`¡Perfecto! ${question.explanation || 'Emparejaste todos los conceptos correctamente.'}`, 'correct');
+                        handleCorrectAnswer(question.points);
+                    }
                 } else {
                     const leftEl = selectedLeft;
                     leftEl.style.borderColor = 'var(--rojo-alerta)'; this.style.borderColor = 'var(--rojo-alerta)';
@@ -555,8 +562,13 @@ function loadSlider(question) {
     submitBtn.textContent = 'Confirmar Respuesta ✅';
     submitBtn.addEventListener('click', () => {
         const userAnswer = parseFloat(input.value);
-        if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) handleCorrectAnswer(question.points);
-        else handleIncorrectAnswer(question);
+        if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
+            showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
+            handleCorrectAnswer(question.points);
+        } else {
+            showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
+            handleIncorrectAnswer(question);
+        }
     });
     
     sliderContainer.appendChild(valueDisplay); sliderContainer.appendChild(track); sliderContainer.appendChild(submitBtn);
@@ -603,7 +615,15 @@ function checkDragComplete(question) {
         if (!zone.dataset.filled) allFilled = false;
         else if (parseInt(zone.dataset.filled) !== index) allCorrect = false;
     });
-    if (allFilled) { if (allCorrect) handleCorrectAnswer(question.points); else handleIncorrectAnswer(question); }
+    if (allFilled) { 
+        if (allCorrect) {
+            showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
+            handleCorrectAnswer(question.points); 
+        } else {
+            showFeedback(`Orden incorrecto. Revisa el flujo lógico de los procesos financieros.`, 'incorrect');
+            handleIncorrectAnswer(question); 
+        }
+    }
 }
 
 // ===== MANEJO DE RESPUESTAS =====
@@ -629,22 +649,26 @@ function checkMultipleAnswer(originalIndex, question) {
             showSpeedBonus(speedBonus);
         }
         
-        // Bonus por pregunta bonus
-        if (question.isBonus) {
-            showFeedback(question.explanation + ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.', 'bonus');
-        }
+        // Muestra explicación
+        const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
+        showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
         
         handleCorrectAnswer(totalPoints);
         playSound('correct');
     } else {
         options[clickedDisplayIndex].classList.add('incorrect');
         options[correctDisplayIndex].classList.add('correct');
+        
+        // Muestra explicación cuando falla
+        showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
+        
         handleIncorrectAnswer(question);
         playSound('incorrect');
         updateRabbitReaction('determined');
     }
     
     clearInterval(state.timerInterval);
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
 }
 
 function handleCorrectAnswer(points) {
@@ -709,6 +733,7 @@ function nextQuestion() {
 // ===== FIN DE NIVEL =====
 function endLevel() {
     clearInterval(state.timerInterval);
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
     
     // Calcular estrellas
     const totalQ = state.totalQuestions;
@@ -837,6 +862,7 @@ function goToFinalScreen() {
 function usePowerup(type) {
     if (state.powerups[type] <= 0) return;
     if (state.currentQuestion >= state.totalQuestions) return;
+    if ((type === 'time' || type === 'freeze') && state.mode !== 'timed') return;
     
     state.powerups[type]--;
     state.powerupsUsedThisLevel = true;
@@ -882,7 +908,9 @@ function updatePowerupButtons() {
         if (!btn) return;
         const small = btn.querySelector('small');
         if (small) small.textContent = `(${state.powerups[type]})`;
-        if (state.powerups[type] <= 0) btn.disabled = true;
+        
+        const isTimePowerupInNormalMode = (type === 'time' || type === 'freeze') && state.mode !== 'timed';
+        btn.disabled = state.powerups[type] <= 0 || isTimePowerupInNormalMode;
     });
 }
 
@@ -904,13 +932,15 @@ function startTimer() {
         }
         if (state.timer <= 0) {
             clearInterval(state.timerInterval);
+            showFeedback(`¡Tiempo agotado! ${state.questions[state.currentQuestion].explanation}`, 'incorrect');
             handleIncorrectAnswer(state.questions[state.currentQuestion]);
         }
     }, 1000);
     
     // Verificar si el usuario tarda mucho
     state._boredTimeout = setTimeout(() => {
-        if (state.currentQuestion < state.totalQuestions && !document.getElementById('btn-next').style.display || document.getElementById('btn-next').style.display === 'none') {
+        const nextBtn = document.getElementById('btn-next');
+        if (state.currentQuestion < state.totalQuestions && (!nextBtn || nextBtn.style.display === 'none')) {
             updateRabbitReaction('bored');
         }
     }, 15000);
