@@ -1,4 +1,14 @@
 
+
+
+/**
+ * ============================================================
+ * ContiGame Engine v3.0 — Producción
+ * Lógica del juego, control de estado y flujos financieros
+ * Para "Conti Conti - Desafío Financiero"
+ * ============================================================
+ */
+
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
@@ -223,8 +233,7 @@ const levelColors = {
 
 // ===== SISTEMA DE SONIDO (Delega en ContiEffectsManager) =====
 function playSound(type) {
-    // Sonidos esenciales siempre; los de celebración solo en modo timed
-    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'achievement', 'tick'];
+    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'achievement', 'tick', 'powerup'];
     if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
     if (window.effectsManager) {
         window.effectsManager.playSound(type);
@@ -238,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLeaderboard();
     setupPowerups();
     createSpeedBonusToast();
-    // Inyectar SVGs del conejo
     if (typeof injectRabbitSVGs === 'function') injectRabbitSVGs();
 });
 
@@ -256,9 +264,7 @@ function showSpeedBonus(points) {
     toast.textContent = `⚡ ¡Velocidad bonus! +${points} pts`;
     toast.classList.add('show');
     setTimeout(() => toast.classList.add('hide'), 1500);
-    setTimeout(() => {
-        toast.classList.remove('show', 'hide');
-    }, 2000);
+    setTimeout(() => { toast.classList.remove('show', 'hide'); }, 2000);
 }
 
 // Interfaz auxiliar para detonar ráfagas desde botones
@@ -293,7 +299,6 @@ function showScreen(screenId) {
     }
     if (screenId === 'screen-badges') loadBadges();
     if (screenId === 'screen-leaderboard') loadLeaderboard();
-    // Inyectar conejo si la pantalla lo requiere
     if (typeof injectRabbitSVGs === 'function') setTimeout(injectRabbitSVGs, 50);
 }
 
@@ -366,7 +371,6 @@ function shuffleArray(array) { const arr = [...array]; for (let i = arr.length -
 
 // ===== REACCIONES DEL CONEJO =====
 function updateRabbitReaction(reaction) {
-    // Actualizar todos los conejos visibles en pantalla
     document.querySelectorAll('.rabbit-svg').forEach(rabbit => {
         rabbit.className = 'rabbit-svg ' + reaction;
     });
@@ -472,6 +476,7 @@ function loadMatching(question) {
         div.dataset.pairId = item.id; div.dataset.side = 'left';
         div.addEventListener('click', function() {
             if (this.classList.contains('matched')) return;
+            if (window.effectsManager) window.effectsManager.ensureAudio();
             document.querySelectorAll('.matching-item[data-side="left"]').forEach(el => { if (!el.classList.contains('matched')) el.classList.remove('selected'); });
             this.classList.add('selected'); selectedLeft = this;
         });
@@ -483,11 +488,13 @@ function loadMatching(question) {
         div.dataset.pairId = item.id; div.dataset.side = 'right';
         div.addEventListener('click', function() {
             if (this.classList.contains('matched')) return;
+            if (window.effectsManager) window.effectsManager.ensureAudio();
             if (selectedLeft && !this.classList.contains('matched')) {
                 if (selectedLeft.dataset.pairId === this.dataset.pairId) {
                     selectedLeft.classList.add('matched'); this.classList.add('matched');
                     matches[this.dataset.pairId] = true; selectedLeft = null;
                     if (Object.keys(matches).length === question.pairs.length) {
+                        clearInterval(state.timerInterval);
                         showFeedback(`¡Perfecto! ${question.explanation || 'Emparejaste todos los conceptos correctamente.'}`, 'correct');
                         triggerVisualCoinsFromElement(matchingContainer, 16);
                         handleCorrectAnswer(question.points);
@@ -528,6 +535,8 @@ function loadSlider(question) {
     const submitBtn = document.createElement('button'); submitBtn.className = 'main-btn';
     submitBtn.textContent = 'Confirmar Respuesta ✅';
     submitBtn.addEventListener('click', () => {
+        if (window.effectsManager) window.effectsManager.ensureAudio();
+        clearInterval(state.timerInterval);
         const userAnswer = parseFloat(input.value);
         if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
             showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
@@ -553,6 +562,7 @@ function loadDrag(question) {
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
         dropZone.addEventListener('drop', (e) => {
+            if (window.effectsManager) window.effectsManager.ensureAudio();
             e.preventDefault(); dropZone.classList.remove('drag-over');
             const draggedIndex = e.dataTransfer.getData('text/plain');
             dropZone.textContent = `${index + 1}. ${question.items[draggedIndex]}`;
@@ -586,6 +596,7 @@ function checkDragComplete(question) {
         else if (parseInt(zone.dataset.filled) !== index) allCorrect = false;
     });
     if (allFilled) { 
+        clearInterval(state.timerInterval);
         if (allCorrect) {
             showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
             triggerVisualCoinsFromElement(dragContainer, 16);
@@ -609,6 +620,7 @@ function checkMultipleAnswer(originalIndex, question) {
     options.forEach((btn, i) => { if (parseInt(btn.dataset.originalIndex) === originalIndex) clickedDisplayIndex = i; });
     
     const responseTime = (Date.now() - state.questionStartTime) / 1000;
+    clearInterval(state.timerInterval);
     
     if (originalIndex === question.correct) {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
@@ -628,23 +640,14 @@ function checkMultipleAnswer(originalIndex, question) {
         
         const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
         showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
-        
         handleCorrectAnswer(totalPoints);
-        playSound('correct');
-        if (window.effectsManager) window.effectsManager.triggerConfetti();
     } else {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
         if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
         
         showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
-        
         handleIncorrectAnswer(question);
-        playSound('incorrect');
-        updateRabbitReaction('determined');
     }
-    
-    clearInterval(state.timerInterval);
-    if (state._boredTimeout) clearTimeout(state._boredTimeout);
 }
 
 function handleCorrectAnswer(points) {
@@ -661,6 +664,10 @@ function handleCorrectAnswer(points) {
     }
     
     updateScore(); updateStreak();
+    
+    // === DESPACHO CENTRALIZADO DE EFECTOS DE ACIERTO ===
+    playSound('correct');
+    if (window.effectsManager) window.effectsManager.triggerConfetti();
     
     if (state.streak >= 5) {
         updateRabbitReaction('impressed');
@@ -686,6 +693,9 @@ function handleIncorrectAnswer(question) {
     }
     
     updateLives(); updateStreak();
+    
+    // === DESPACHO CENTRALIZADO DE EFECTOS DE ERROR ===
+    playSound('incorrect');
     
     if (state.lives <= 0) {
         updateRabbitReaction('sad');
@@ -1076,4 +1086,3 @@ function shareResults() {
     if (navigator.share) navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
     else { navigator.clipboard.writeText(text).then(() => alert('📋 ¡Copiado! Compártelo.')); }
 }
-
