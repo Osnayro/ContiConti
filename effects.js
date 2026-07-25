@@ -34,11 +34,10 @@ class ContiEffectsManager {
         this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Banco de sonidos predefinidos con enlaces estables (Mixkit)
-        // Cada sonido tiene una URL única para evitar duplicados
         this.sfxUrls = {
             'sfx-coin-drop':      'https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav',
             'sfx-coin-sparkle':   'https://assets.mixkit.co/active_storage/sfx/2000/2000-84.wav',
-            'sfx-cash-register':  'https://assets.mixkit.co/active_storage/sfx/2015/2015-84.wav', // URL corregida (Efecto campana de tienda)
+            'sfx-cash-register':  'https://assets.mixkit.co/active_storage/sfx/2015/2015-84.wav', 
             'sfx-woosh-loss':     'https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav',
             'sfx-success-balance':'https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav',
             'sfx-danger-heart':   'https://assets.mixkit.co/active_storage/sfx/957/957-84.wav',
@@ -50,10 +49,10 @@ class ContiEffectsManager {
 
         // Cache de instancias de Audio
         this.audioCache = {};
-        this.activeAudioNodes = []; // Para tracking de clones activos
+        this.activeAudioNodes = []; 
         this.initAudioCache();
 
-        // Vinculación correcta del contexto (this) para evitar fallos en iOS
+        // Vinculación explícita del contexto (this) para iOS
         this._boundUnlockAudio = this._unlockAudio.bind(this);
         this.setupIOSAudioUnlock();
 
@@ -68,13 +67,10 @@ class ContiEffectsManager {
         if (this._motionMediaQuery.addEventListener) {
             this._motionMediaQuery.addEventListener('change', this._boundMotionChange);
         } else {
-            this._motionMediaQuery.addListener(this._boundMotionChange); // Safari legacy
+            this._motionMediaQuery.addListener(this._boundMotionChange); 
         }
     }
 
-    /**
-     * Precarga las instancias de audio con manejo de errores
-     */
     initAudioCache() {
         Object.keys(this.sfxUrls).forEach(id => {
             const audio = new Audio(this.sfxUrls[id]);
@@ -86,46 +82,34 @@ class ContiEffectsManager {
         });
     }
 
-    /**
-     * Escucha las interacciones iniciales del usuario para despertar el motor de audio en iOS/iPhone
-     */
     setupIOSAudioUnlock() {
         window.addEventListener('click', this._boundUnlockAudio);
         window.addEventListener('touchstart', this._boundUnlockAudio);
     }
 
     _unlockAudio() {
+        // Remoción inmediata para evitar ejecuciones duplicadas en ráfaga
+        window.removeEventListener('click', this._boundUnlockAudio);
+        window.removeEventListener('touchstart', this._boundUnlockAudio);
+
         const silentSound = new Audio();
         silentSound.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
         silentSound.play().then(() => {
             console.log("[ContiEffects] Audio desbloqueado con éxito para iPhone/iOS.");
             Object.values(this.audioCache).forEach(audio => audio.load());
-            
-            // Remover usando la referencia vinculada correcta
-            window.removeEventListener('click', this._boundUnlockAudio);
-            window.removeEventListener('touchstart', this._boundUnlockAudio);
         }).catch(err => {
-            console.warn("[ContiEffects] Esperando interacción explícita para el audio.", err);
+            console.warn("[ContiEffects] El intento de desbloqueo falló. Reincorporando listeners.", err);
+            // Si falla (ej. interacción inválida), re-acoplamos la seguridad
+            this.setupIOSAudioUnlock();
         });
     }
 
-    /**
-     * Ajusta el tamaño del canvas al de la ventana del dispositivo
-     */
     resizeCanvas() {
         if (!this._initialized) return;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
     }
 
-    /**
-     * Reproduce un sonido desde la caché con variación aleatoria de tono (Pitch)
-     * @param {string} id - ID del audio asignado en la caché
-     * @param {Object} opts - Opciones adicionales
-     * @param {number} opts.pitchMin - Pitch mínimo (default: 0.9)
-     * @param {number} opts.pitchMax - Pitch máximo (default: 1.15)
-     * @param {number} opts.volume - Volumen individual 0.0-1.0 (default: masterVolume)
-     */
     playSFX(id, opts = {}) {
         if (!this._initialized) return;
 
@@ -135,7 +119,6 @@ class ContiEffectsManager {
             return;
         }
 
-        // Limitar clones activos para evitar saturación de audio
         if (this.activeAudioNodes.length > 16) {
             const old = this.activeAudioNodes.shift();
             if (old && !old.paused) {
@@ -159,18 +142,12 @@ class ContiEffectsManager {
                 if (idx > -1) this.activeAudioNodes.splice(idx, 1);
             };
         }).catch(err => {
-            console.log("[ContiEffects] Audio bloqueado temporalmente por políticas del navegador:", err.message);
+            console.log("[ContiEffects] Audio bloqueado temporalmente por restricciones del navegador:", err.message);
             const idx = this.activeAudioNodes.indexOf(soundClone);
             if (idx > -1) this.activeAudioNodes.splice(idx, 1);
         });
     }
 
-    /**
-     * Dispara una ráfaga de monedas desde una posición hacia el marcador de puntos
-     * @param {number} startX - Coordenada X de origen
-     * @param {number} startY - Coordenada Y de origen
-     * @param {number} count - Cantidad de monedas a generar
-     */
     triggerCoinExplosion(startX, startY, count = 12) {
         if (!this._initialized) return;
 
@@ -180,7 +157,6 @@ class ContiEffectsManager {
             return;
         }
 
-        // Si el usuario prefiere reducir movimiento, solo reproduce sonidos
         if (this.reducedMotion) {
             this.playSFX('sfx-coin-drop');
             setTimeout(() => this.playSFX('sfx-cash-register'), count * 45);
@@ -191,7 +167,6 @@ class ContiEffectsManager {
         const targetX = rect.left + rect.width / 2;
         const targetY = rect.top + rect.height / 2;
 
-        // Limitar partículas totales para evitar lag
         if (this.particles.length + count > this.maxParticles) {
             const excess = (this.particles.length + count) - this.maxParticles;
             this.particles.splice(0, excess);
@@ -224,17 +199,11 @@ class ContiEffectsManager {
         this.timeouts.push(finalT);
     }
 
-    /**
-     * Efecto de pérdida / woosh
-     * @param {number} x - Coordenada X
-     * @param {number} y - Coordenada Y
-     */
     triggerLossEffect(x, y) {
         if (!this._initialized) return;
         this.playSFX('sfx-woosh-loss', { pitchMin: 0.7, pitchMax: 1.0 });
         if (this.reducedMotion) return;
 
-        // Partículas de "X" rojas que caen
         for (let i = 0; i < 8; i++) {
             this.particles.push({
                 x: x,
@@ -257,11 +226,6 @@ class ContiEffectsManager {
         if (!this.isLooping) this.startLoop();
     }
 
-    /**
-     * Efecto de éxito / logro
-     * @param {number} x - Coordenada X
-     * @param {number} y - Coordenada Y
-     */
     triggerSuccessEffect(x, y) {
         if (!this._initialized) return;
         this.playSFX('sfx-success-balance', { pitchMin: 1.0, pitchMax: 1.2 });
@@ -289,18 +253,12 @@ class ContiEffectsManager {
         if (!this.isLooping) this.startLoop();
     }
 
-    /**
-     * Inicia el bucle de animación solo si no está corriendo
-     */
     startLoop() {
         if (!this._initialized || this.isLooping) return;
         this.isLooping = true;
         this.loop();
     }
 
-    /**
-     * Bucle principal de física y dibujo (60 FPS) - Se pausa automáticamente sin partículas
-     */
     loop() {
         if (!this._initialized) {
             this.isLooping = false;
@@ -308,7 +266,6 @@ class ContiEffectsManager {
         }
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         let hasParticles = false;
 
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -363,9 +320,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Dibuja una partícula individual según su tipo
-     */
     _drawParticle(p) {
         this.ctx.save();
         this.ctx.translate(p.x, p.y);
@@ -420,9 +374,6 @@ class ContiEffectsManager {
         this.ctx.restore();
     }
 
-    /**
-     * Anima el badge de puntos cuando una moneda llega al destino
-     */
     _animateScoreBadge() {
         const scoreBadge = document.getElementById(this.scoreBadgeId);
         if (scoreBadge) {
@@ -432,32 +383,18 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Cambia el volumen maestro de todos los efectos
-     * @param {number} vol - Volumen entre 0.0 y 1.0
-     */
     setVolume(vol) {
         this.masterVolume = Math.max(0, Math.min(1, vol));
     }
 
-    /**
-     * Cambia el límite máximo de partículas
-     * @param {number} limit - Nuevo límite
-     */
     setMaxParticles(limit) {
         this.maxParticles = Math.max(10, limit);
     }
 
-    /**
-     * Limpia todas las partículas activas inmediatamente
-     */
     clearParticles() {
         this.particles = [];
     }
 
-    /**
-     * Destruye completamente el motor, limpiando todos los recursos
-     */
     destroy() {
         if (!this._initialized) return;
 
@@ -498,5 +435,4 @@ class ContiEffectsManager {
     }
 }
 
-// Inicializar globalmente para que app.js pueda invocarlo
 window.effectsManager = new ContiEffectsManager();
