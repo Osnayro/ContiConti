@@ -1,558 +1,638 @@
+
 /**
- * Conti Conti - Motor de Efectos Visuales (VFX) y Sonido (SFX)
- * Versión 2.5 — Audio Sintetizado Avanzado (ADSR, Armónicos y Paneo Espacial)
- * Desarrollado para optimizar el Game Feel en Canvas 2D sin dependencias externas.
+ * ============================================================
+ * ContiEffectsManager v3.0 — Producción
+ * Efectos visuales (Canvas 2D) + Sonidos (Web Audio API) + Toasts
+ * Para "Conti Conti - Desafío Financiero"
+ * ============================================================
+ * 
+ * Uso:
+ *   const fx = new ContiEffectsManager({
+ *       canvasId: 'effects-canvas',
+ *       scoreBadgeId: 'score-badge',
+ *       maxParticles: 300,
+ *       masterVolume: 0.8
+ *   });
+ *   fx.triggerCoinExplosion(400, 300, 15);
+ *   fx.triggerToast('¡Nueva insignia!', { icon: '🏆' });
  */
 
 class ContiEffectsManager {
-    /**
-     * @param {Object} options - Configuración opcional
-     * @param {string} options.canvasId - ID del canvas (default: 'effects-canvas')
-     * @param {string} options.scoreBadgeId - ID del badge de puntos (default: 'score-badge')
-     * @param {number} options.maxParticles - Límite máximo de partículas (default: 150)
-     * @param {number} options.masterVolume - Volumen maestro 0.0-1.0 (default: 0.8)
-     */
-    constructor(options = {}) {
-        this.canvasId = options.canvasId || 'effects-canvas';
-        this.scoreBadgeId = options.scoreBadgeId || 'score-badge';
-        this.maxParticles = options.maxParticles || 150;
-        this.masterVolume = options.masterVolume !== undefined ? options.masterVolume : 0.8;
-
-        this.canvas = document.getElementById(this.canvasId);
-        if (!this.canvas) {
-            console.warn(`[ContiEffects] Canvas con id "${this.canvasId}" no encontrado.`);
-            this._initialized = false;
-            return;
+    
+    constructor(config = {}) {
+        // Canvas
+        this.canvas = document.getElementById(config.canvasId || 'effects-canvas');
+        this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+        if (this.canvas) {
+            this.resizeCanvas();
+            window.addEventListener('resize', () => this.resizeCanvas());
         }
-        this._initialized = true;
 
-        this.ctx = this.canvas.getContext('2d');
+        // Score badge (las monedas vuelan hacia él)
+        this.scoreBadge = config.scoreBadgeId 
+            ? document.getElementById(config.scoreBadgeId) 
+            : null;
+
+        // Configuración
+        this.maxParticles = config.maxParticles || 300;
+        this.masterVolume = Math.min(1, Math.max(0, config.masterVolume ?? 0.8));
+
+        // Estado interno
         this.particles = [];
-        this.animationFrameId = null;
-        this.isLooping = false;
-        this.timeouts = [];
-        this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.floatingTexts = [];
+        this.animationId = null;
+        this.isRunning = false;
+        this.audioCtx = null;
 
-        // ── MOTOR DE AUDIO AVANZADO (WEB AUDIO API) ──
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Nodo de ganancia maestra
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = this.masterVolume;
-        
-        // Compresor dinámico para evitar que el audio sature al acumular sonidos
-        this.compressor = this.audioContext.createDynamicsCompressor();
-        this.compressor.threshold.value = -24;
-        this.compressor.knee.value = 30;
-        this.compressor.ratio.value = 12;
-        this.compressor.attack.value = 0.003;
-        this.compressor.release.value = 0.25;
-
-        this.masterGain.connect(this.compressor);
-        this.compressor.connect(this.audioContext.destination);
-
-        this.activeAudioNodes = []; // Tracking de osciladores activos para limitar polifonía
-        this.sfxPresets = this._buildPresets();
-
-        // Desbloqueo de contexto para iOS / Safari
-        this._boundUnlockAudio = this._unlockAudio.bind(this);
-        this.setupIOSAudioUnlock();
-
-        // Listeners de interfaz y resize
-        this._boundResize = () => this.resizeCanvas();
-        window.addEventListener('resize', this._boundResize);
-        this.resizeCanvas();
-
-        this._motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-        this._boundMotionChange = (e) => { this.reducedMotion = e.matches; };
-        if (this._motionMediaQuery.addEventListener) {
-            this._motionMediaQuery.addEventListener('change', this._boundMotionChange);
-        } else {
-            this._motionMediaQuery.addListener(this._boundMotionChange);
-        }
-    }
-
-    /**
-     * Diccionario de presets avanzados con envolventes ADSR y armónicos (del archivo truncado)
-     */
-    _buildPresets() {
-        return {
-            'sfx-coin-drop': {
-                type: 'sine',
-                freqStart: 1200, freqEnd: 1800,
-                attack: 0.005, decay: 0.08, sustain: 0.0, release: 0.05,
-                volume: 0.6, vibrato: 8, vibratoDepth: 15,
-                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.15 }]
-            },
-            'sfx-coin-sparkle': {
-                type: 'sine',
-                freqStart: 2000, freqEnd: 2500,
-                attack: 0.001, decay: 0.12, sustain: 0.0, release: 0.08,
-                volume: 0.5, vibrato: 12, vibratoDepth: 20,
-                harmonics: [{ ratio: 2.5, gain: 0.2 }]
-            },
-            'sfx-cash-register': {
-                type: 'square',
-                freqStart: 800, freqEnd: 600,
-                attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.2,
-                volume: 0.5, noiseMix: 0.15, noiseFilter: 2000,
-                harmonics: [{ ratio: 1.5, gain: 0.4 }, { ratio: 2.5, gain: 0.2 }]
-            },
-            'sfx-success-balance': {
-                type: 'sine',
-                freqStart: 523.25, freqEnd: 783.99,
-                attack: 0.02, decay: 0.6, sustain: 0.3, release: 0.5,
-                volume: 0.6, vibrato: 3, vibratoDepth: 10,
-                harmonics: [{ ratio: 1.25, gain: 0.3 }, { ratio: 1.5, gain: 0.3 }, { ratio: 2, gain: 0.2 }]
-            },
-            'sfx-level-up': {
-                type: 'sine',
-                freqStart: 440, freqEnd: 880,
-                attack: 0.03, decay: 0.8, sustain: 0.4, release: 0.6,
-                volume: 0.55, vibrato: 4, vibratoDepth: 20,
-                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.2 }]
-            },
-            'sfx-woosh-loss': {
-                type: 'sine',
-                freqStart: 600, freqEnd: 100,
-                attack: 0.001, decay: 0.5, sustain: 0.0, release: 0.3,
-                volume: 0.5, noiseMix: 0.4, noiseFilter: 2000,
-                harmonics: [{ ratio: 0.5, gain: 0.3 }]
-            },
-            'sfx-danger-heart': {
-                type: 'sawtooth',
-                freqStart: 150, freqEnd: 80,
-                attack: 0.001, decay: 0.3, sustain: 0.1, release: 0.2,
-                volume: 0.6, noiseMix: 0.2, noiseFilter: 800,
-                harmonics: [{ ratio: 1.5, gain: 0.4 }]
-            },
-            'sfx-error-buzz': {
-                type: 'square',
-                freqStart: 200, freqEnd: 150,
-                attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.1,
-                volume: 0.5, noiseMix: 0.1, noiseFilter: 1000,
-                harmonics: [{ ratio: 1.3, gain: 0.3 }]
-            },
-            'sfx-notification': {
-                type: 'sine',
-                freqStart: 800, freqEnd: 1000,
-                attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.15,
-                volume: 0.45, vibrato: 6, vibratoDepth: 12,
-                harmonics: [{ ratio: 2, gain: 0.2 }]
-            },
-            'sfx-achievement': {
-                type: 'sine',
-                freqStart: 523, freqEnd: 1046,
-                attack: 0.02, decay: 1.0, sustain: 0.3, release: 0.8,
-                volume: 0.5, vibrato: 2, vibratoDepth: 8,
-                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.15 }]
-            }
+        // Paletas de colores
+        this.colors = {
+            coin:     ['#FFD700', '#FFA500', '#FFC107', '#FFB300', '#F59E0B', '#FFF8DC'],
+            confetti: ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#A8E6CF', '#FF8A5C', '#3B82F6', '#F472B6', '#84CC16', '#F97316'],
+            firework: ['#FF4500', '#FFD700', '#FF6347', '#FFA500', '#FFFFFF', '#FF1493', '#00FF88'],
+            magic:    ['#A78BFA', '#818CF8', '#C4B5FD', '#6366F1', '#DDD6FE'],
         };
+
+        // Exponer al scope global
+        window.effectsManager = this;
+
+        // Arrancar loop de animación
+        this.startLoop();
+
+        console.log('🎨 ContiEffectsManager v3.0 listo | Partículas máx:', this.maxParticles, '| Volumen:', this.masterVolume);
     }
 
-    setupIOSAudioUnlock() {
-        window.addEventListener('click', this._boundUnlockAudio);
-        window.addEventListener('touchstart', this._boundUnlockAudio);
-    }
-
-    _unlockAudio() {
-        window.removeEventListener('click', this._boundUnlockAudio);
-        window.removeEventListener('touchstart', this._boundUnlockAudio);
-
-        if (this.audioContext && this.audioContext.state === 'suspended') {
-            this.audioContext.resume().then(() => {
-                console.log("[ContiEffects] AudioContext nativo activado en iOS/Dispositivo.");
-            });
-        }
-    }
-
-    /**
-     * Generador procedural en tiempo real utilizando nodos nativos del AudioContext
-     * Soporta paneo horizontal automático basado en la posición X de la pantalla.
-     */
-    playSFX(id, opts = {}) {
-        if (!this._initialized) return;
-        if (this.audioContext.state === 'suspended') this.audioContext.resume();
-
-        const preset = this.sfxPresets[id];
-        if (!preset) {
-            console.warn(`[ContiEffects] Preset no encontrado: ${id}`);
-            return;
-        }
-
-        // Limitar voces concurrentes máximas (Polifonía controlada)
-        if (this.activeAudioNodes.length >= 24) {
-            const old = this.activeAudioNodes.shift();
-            if (old) { try { old.stop(); old.disconnect(); } catch(e){} }
-        }
-
-        const now = this.audioContext.currentTime;
-        const duration = preset.attack + preset.decay + preset.sustain + preset.release;
-
-        // 1. Nodo de volumen local (Envolvente ADSR)
-        const gainNode = this.audioContext.createGain();
-        const baseVol = opts.volume !== undefined ? opts.volume : 1.0;
-        const targetVol = baseVol * preset.volume;
-
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(targetVol, now + preset.attack);
-        gainNode.gain.exponentialRampToValueAtTime(targetVol * preset.sustain + 0.001, now + preset.attack + preset.decay);
-        gainNode.gain.setValueAtTime(targetVol * preset.sustain, now + preset.attack + preset.decay + preset.sustain);
-        gainNode.gain.linearRampToValueAtTime(0, now + duration);
-
-        // 2. Nodo de Paneo Estéreo Estructural (Spatial Audio 2D)
-        const panNode = this.audioContext.createStereoPanner();
-        if (opts.x !== undefined) {
-            // Convierte coordenadas de pantalla a rango -1.0 (Izquierda) a 1.0 (Derecha)
-            const screenRatio = (opts.x / window.innerWidth) * 2 - 1;
-            panNode.pan.value = Math.max(-1, Math.min(1, screenRatio));
-        } else {
-            panNode.pan.value = 0;
-        }
-
-        // 3. Oscilador Principal
-        const osc = this.audioContext.createOscillator();
-        osc.type = preset.type;
-
-        // Modulación de Pitch por variación aleatoria
-        const pitchMin = opts.pitchMin !== undefined ? opts.pitchMin : 0.95;
-        const pitchMax = opts.pitchMax !== undefined ? opts.pitchMax : 1.05;
-        const randomPitch = pitchMin + Math.random() * (pitchMax - pitchMin);
-
-        osc.frequency.setValueAtTime(preset.freqStart * randomPitch, now);
-        osc.frequency.exponentialRampToValueAtTime(preset.freqEnd * randomPitch, now + duration);
-
-        // Conexiones de nodos
-        osc.connect(gainNode);
-        gainNode.connect(panNode);
-        panNode.connect(this.masterGain);
-
-        osc.start(now);
-        osc.stop(now + duration + 0.1);
-        this.activeAudioNodes.push(osc);
-
-        // 4. Generación de Armónicos Concurrentes
-        if (preset.harmonics && preset.harmonics.length > 0) {
-            preset.harmonics.forEach(h => {
-                const hOsc = this.audioContext.createOscillator();
-                const hGain = this.audioContext.createGain();
-                
-                hOsc.type = preset.type;
-                hOsc.frequency.setValueAtTime(preset.freqStart * h.ratio * randomPitch, now);
-                hOsc.frequency.exponentialRampToValueAtTime(preset.freqEnd * h.ratio * randomPitch, now + duration);
-
-                hGain.gain.setValueAtTime(0, now);
-                hGain.gain.linearRampToValueAtTime(targetVol * h.gain, now + preset.attack);
-                hGain.gain.linearRampToValueAtTime(0, now + duration);
-
-                hOsc.connect(hGain);
-                hGain.connect(panNode);
-                
-                hOsc.start(now);
-                hOsc.stop(now + duration + 0.1);
-            });
-        }
-
-        // 5. Inyección de Ruido (Simulación de fricción/explosiones del archivo truncado)
-        if (preset.noiseMix > 0) {
-            const bufferSize = this.audioContext.sampleRate * duration;
-            const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-            const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
-            }
-
-            const noiseNode = this.audioContext.createBufferSource();
-            noiseNode.buffer = noiseBuffer;
-
-            const noiseGain = this.audioContext.createGain();
-            noiseGain.gain.setValueAtTime(targetVol * preset.noiseMix, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-            noiseNode.connect(noiseGain);
-            noiseGain.connect(panNode);
-            noiseNode.start(now);
-            noiseNode.stop(now + duration);
-        }
-
-        // Limpieza de tracking al finalizar
-        setTimeout(() => {
-            const idx = this.activeAudioNodes.indexOf(osc);
-            if (idx > -1) this.activeAudioNodes.splice(idx, 1);
-            osc.disconnect();
-            gainNode.disconnect();
-            panNode.disconnect();
-        }, (duration + 0.2) * 1000);
-    }
-
-    triggerCoinExplosion(startX, startY, count = 12) {
-        if (!this._initialized) return;
-
-        const scoreBadge = document.getElementById(this.scoreBadgeId);
-        if (!scoreBadge) {
-            console.warn(`[ContiEffects] Score badge con id "${this.scoreBadgeId}" no encontrado.`);
-            return;
-        }
-
-        if (this.reducedMotion) {
-            this.playSFX('sfx-coin-drop', { x: startX });
-            setTimeout(() => this.playSFX('sfx-cash-register', { x: window.innerWidth / 2 }), count * 45);
-            return;
-        }
-
-        const rect = scoreBadge.getBoundingClientRect();
-        const targetX = rect.left + rect.width / 2;
-        const targetY = rect.top + rect.height / 2;
-
-        if (this.particles.length + count > this.maxParticles) {
-            this.particles.splice(0, (this.particles.length + count) - this.maxParticles);
-        }
-
-        for (let i = 0; i < count; i++) {
-            const t = setTimeout(() => {
-                const currentX = startX + (Math.random() - 0.5) * 20;
-                this.particles.push({
-                    x: currentX,
-                    y: startY,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: -Math.random() * 10 - 5,
-                    radius: Math.random() * 3 + 7,
-                    gravity: 0.4,
-                    targetX: targetX,
-                    targetY: targetY,
-                    speed: 0.08,
-                    isAttracted: false,
-                    life: 0,
-                    rotation: Math.random() * Math.PI * 2,
-                    rotationSpeed: (Math.random() - 0.5) * 0.3
-                });
-                // Inyecta la posición X de la moneda para el paneo estéreo
-                this.playSFX('sfx-coin-drop', { x: currentX });
-                if (!this.isLooping) this.startLoop();
-            }, i * 60);
-            this.timeouts.push(t);
-        }
-
-        const finalT = setTimeout(() => this.playSFX('sfx-cash-register', { x: targetX }), count * 45);
-        this.timeouts.push(finalT);
-    }
-
-    triggerLossEffect(x, y) {
-        if (!this._initialized) return;
-        this.playSFX('sfx-woosh-loss', { pitchMin: 0.7, pitchMax: 1.0, x: x });
-        if (this.reducedMotion) return;
-
-        for (let i = 0; i < 8; i++) {
-            this.particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 6,
-                vy: -Math.random() * 6 - 2,
-                radius: Math.random() * 2 + 4,
-                gravity: 0.3,
-                targetX: null,
-                targetY: null,
-                speed: 0,
-                isAttracted: false,
-                life: 0,
-                maxLife: 60,
-                rotation: Math.random() * Math.PI * 2,
-                rotationSpeed: (Math.random() - 0.5) * 0.2,
-                type: 'loss'
-            });
-        }
-        if (!this.isLooping) this.startLoop();
-    }
-
-    triggerSuccessEffect(x, y) {
-        if (!this._initialized) return;
-        this.playSFX('sfx-success-balance', { pitchMin: 1.0, pitchMax: 1.1, x: x });
-        if (this.reducedMotion) return;
-
-        for (let i = 0; i < 10; i++) {
-            this.particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: -Math.random() * 8 - 3,
-                radius: Math.random() * 2 + 3,
-                gravity: 0.2,
-                targetX: null,
-                targetY: null,
-                speed: 0,
-                isAttracted: false,
-                life: 0,
-                maxLife: 50,
-                rotation: Math.random() * Math.PI * 2,
-                rotationSpeed: (Math.random() - 0.5) * 0.3,
-                type: 'success'
-            });
-        }
-        if (!this.isLooping) this.startLoop();
-    }
+    // ================================================================
+    //  CANVAS — Gestión del lienzo
+    // ================================================================
 
     resizeCanvas() {
-        if (!this._initialized) return;
+        if (!this.canvas) return;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
     }
 
     startLoop() {
-        if (!this._initialized || this.isLooping) return;
-        this.isLooping = true;
-        this.loop();
+        if (this.isRunning || !this.canvas) return;
+        this.isRunning = true;
+        const loop = () => {
+            if (!this.isRunning) return;
+            this._update();
+            this._draw();
+            this.animationId = requestAnimationFrame(loop);
+        };
+        this.animationId = requestAnimationFrame(loop);
     }
 
-    loop() {
-        if (!this._initialized) {
-            this.isLooping = false;
-            return;
+    stopLoop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
         }
+    }
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        let hasParticles = false;
-
+    _update() {
+        // Partículas
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            let p = this.particles[i];
-            p.life++;
-            hasParticles = true;
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.vx *= p.friction;
+            p.vy *= p.friction;
+            p.rotation += p.rotationSpeed;
+            p.life -= p.decay;
 
-            if (p.type === 'loss' || p.type === 'success') {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += p.gravity;
-                p.rotation += p.rotationSpeed;
-                p.radius *= 0.97;
-
-                if (p.life > p.maxLife || p.radius < 0.5) {
-                    this.particles.splice(i, 1);
-                    continue;
-                }
-            } else {
-                if (!p.isAttracted) {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += p.gravity;
-                    p.rotation += p.rotationSpeed;
-
-                    if (p.vy > 1 || p.life > 40) p.isAttracted = true;
-                } else {
-                    p.x += (p.targetX - p.x) * p.speed;
-                    p.y += (p.targetY - p.y) * p.speed;
-                    p.rotation += 0.2;
-                    if (p.radius > 3) p.radius -= 0.1;
-                }
-
-                const dist = Math.hypot(p.targetX - p.x, p.targetY - p.y);
-                if (dist < 15) {
-                    this.particles.splice(i, 1);
-                    this._animateScoreBadge();
-                    continue;
-                }
+            // Atracción al score badge (solo monedas en fase final)
+            if (p.attractTo && this.scoreBadge && p.life < p.maxLife * 0.6) {
+                const r = this.scoreBadge.getBoundingClientRect();
+                const tx = r.left + r.width / 2;
+                const ty = r.top + r.height / 2;
+                const dx = tx - p.x;
+                const dy = ty - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                p.vx += (dx / dist) * 0.1;
+                p.vy += (dy / dist) * 0.1;
             }
 
-            this._drawParticle(p);
-        }
-
-        if (hasParticles) {
-            this.animationFrameId = requestAnimationFrame(() => this.loop());
-        } else {
-            this.isLooping = false;
-            this.animationFrameId = null;
-        }
-    }
-
-    _drawParticle(p) {
-        this.ctx.save();
-        this.ctx.translate(p.x, p.y);
-        this.ctx.rotate(p.rotation);
-
-        if (p.type === 'loss') {
-            this.ctx.strokeStyle = '#FF4444';
-            this.ctx.lineWidth = 2;
-            this.ctx.shadowBlur = 6;
-            this.ctx.shadowColor = '#FF0000';
-            const r = p.radius;
-            this.ctx.beginPath();
-            this.ctx.moveTo(-r, -r); this.ctx.lineTo(r, r);
-            this.ctx.moveTo(r, -r); this.ctx.lineTo(-r, r);
-            this.ctx.stroke();
-        } else if (p.type === 'success') {
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.shadowBlur = 8;
-            this.ctx.shadowColor = '#FFA500';
-            this.ctx.beginPath();
-            const spikes = 5;
-            const outerRadius = p.radius;
-            const innerRadius = p.radius * 0.5;
-            for (let s = 0; s < spikes * 2; s++) {
-                const angle = (Math.PI / spikes) * s - Math.PI / 2;
-                const radius = s % 2 === 0 ? outerRadius : innerRadius;
-                this.ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+            if (p.life <= 0 || p.y > this.canvas.height + 120 || p.x < -120 || p.x > this.canvas.width + 120) {
+                this.particles.splice(i, 1);
             }
-            this.ctx.closePath();
-            this.ctx.fill();
-        } else {
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.shadowBlur = 8;
-            this.ctx.shadowColor = '#FFA500';
-            this.ctx.fill();
-
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, p.radius * 0.7, 0, Math.PI * 2);
-            this.ctx.strokeStyle = '#B8860B';
-            this.ctx.lineWidth = 1.5;
-            this.ctx.stroke();
-
-            this.ctx.fillStyle = '#B8860B';
-            this.ctx.font = `bold ${p.radius * 1.1}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText('$', 0, 0);
         }
 
-        this.ctx.restore();
-    }
+        // Limitar a máximo
+        while (this.particles.length > this.maxParticles) {
+            this.particles.shift();
+        }
 
-    _animateScoreBadge() {
-        const scoreBadge = document.getElementById(this.scoreBadgeId);
-        if (scoreBadge) {
-            scoreBadge.classList.remove('pop-anim');
-            void scoreBadge.offsetWidth;
-            scoreBadge.classList.add('pop-anim');
+        // Textos flotantes
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+            const ft = this.floatingTexts[i];
+            ft.y += ft.vy;
+            ft.life -= ft.decay;
+            ft.alpha = Math.max(0, ft.life / ft.maxLife);
+            if (ft.life <= 0) {
+                this.floatingTexts.splice(i, 1);
+            }
         }
     }
 
-    setVolume(vol) {
-        this.masterVolume = Math.max(0, Math.min(1, vol));
-        if (this.masterGain) this.masterGain.gain.value = this.masterVolume;
+    _draw() {
+        if (!this.ctx) return;
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Partículas
+        for (const p of this.particles) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.scale(p.scale, p.scale);
+
+            switch (p.type) {
+                case 'coin':
+                    this._drawCoin(ctx, p);
+                    break;
+                case 'confetti':
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+                    break;
+                case 'circle':
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'star':
+                    this._drawStar(ctx, p);
+                    break;
+                default:
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            }
+            ctx.restore();
+        }
+
+        // Textos flotantes
+        for (const ft of this.floatingTexts) {
+            ctx.save();
+            ctx.globalAlpha = ft.alpha;
+            ctx.font = `${ft.fontWeight} ${ft.fontSize}px 'Poppins', sans-serif`;
+            ctx.fillStyle = ft.color;
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(ft.text, ft.x, ft.y);
+            ctx.restore();
+        }
     }
 
-    destroy() {
-        if (!this._initialized) return;
+    _drawCoin(ctx, p) {
+        const grad = ctx.createRadialGradient(0, 0, p.size * 0.15, 0, 0, p.size);
+        grad.addColorStop(0, '#FFFDE7');
+        grad.addColorStop(0.45, '#FFD700');
+        grad.addColorStop(1, '#B8860B');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#8B6914';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.fillStyle = '#8B6914';
+        ctx.font = `bold ${p.size * 1.3}px 'Poppins', sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', 0, 0);
+    }
 
-        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
-        this.isLooping = false;
+    _drawStar(ctx, p) {
+        const spikes = 5;
+        const outerR = p.size;
+        const innerR = p.size * 0.4;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerR : innerR;
+            const angle = (i * Math.PI) / spikes - Math.PI / 2;
+            const sx = Math.cos(angle) * radius;
+            const sy = Math.sin(angle) * radius;
+            i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
 
-        this.timeouts.forEach(id => clearTimeout(id));
-        this.timeouts = [];
+    // ================================================================
+    //  API PÚBLICA — EFECTOS VISUALES
+    // ================================================================
 
-        this.activeAudioNodes.forEach(node => {
-            try { node.stop(); node.disconnect(); } catch (e) {}
+    /**
+     * 💰 Explosión de monedas que vuelan hacia el score
+     * @param {number} x     - Posición X
+     * @param {number} y     - Posición Y
+     * @param {number} count - Cantidad (default: 12, máx: 40)
+     */
+    triggerCoinExplosion(x, y, count = 12) {
+        if (!this.canvas) return;
+        count = Math.min(count, 40);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 9;
+            this.particles.push({
+                type: 'coin',
+                x: x + (Math.random() - 0.5) * 20,
+                y: y + (Math.random() - 0.5) * 20,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 5,
+                gravity: 0.18,
+                friction: 0.985,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.35,
+                scale: 0.55 + Math.random() * 0.9,
+                size: 10 + Math.random() * 9,
+                life: 1,
+                maxLife: 1,
+                decay: 0.005 + Math.random() * 0.01,
+                color: this.colors.coin[Math.floor(Math.random() * this.colors.coin.length)],
+                attractTo: true,
+            });
+        }
+    }
+
+    /**
+     * 💥 Explosión circular genérica
+     * @param {number} x      - Posición X
+     * @param {number} y      - Posición Y
+     * @param {number} scale  - Escala (default: 1.0)
+     * @param {string} color  - Color base (default: '#FFD700')
+     */
+    triggerExplosion(x, y, scale = 1.0, color = '#FFD700') {
+        if (!this.canvas) return;
+        const count = Math.floor(22 * scale);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (2 + Math.random() * 7) * scale;
+            this.particles.push({
+                type: 'circle',
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                gravity: 0.12,
+                friction: 0.955,
+                rotation: 0,
+                rotationSpeed: 0,
+                scale: 0.45 + Math.random() * 0.85,
+                size: 3 + Math.random() * 9 * scale,
+                life: 1,
+                maxLife: 1,
+                decay: 0.014 + Math.random() * 0.022,
+                color: color,
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * 🎊 Lluvia de confeti desde arriba
+     * @param {number} duration - Duración en ms (default: 2500)
+     * @param {number} density  - Partículas por frame (default: 3)
+     */
+    triggerConfetti(duration = 2500, density = 3) {
+        if (!this.canvas) return;
+        const startTime = performance.now();
+        const colors = this.colors.confetti;
+
+        const spawn = (now) => {
+            if (now - startTime > duration) return;
+            for (let i = 0; i < density; i++) {
+                this.particles.push({
+                    type: 'confetti',
+                    x: Math.random() * this.canvas.width,
+                    y: -25,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: 2 + Math.random() * 5,
+                    gravity: 0.06,
+                    friction: 0.994,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.25,
+                    scale: 0.7 + Math.random() * 1.3,
+                    size: 8 + Math.random() * 14,
+                    life: 1,
+                    maxLife: 1,
+                    decay: 0.003 + Math.random() * 0.006,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    attractTo: false,
+                });
+            }
+            requestAnimationFrame(spawn);
+        };
+        requestAnimationFrame(spawn);
+    }
+
+    /**
+     * 🎆 Fuegos artificiales
+     * @param {number} count - Número de explosiones (default: 3)
+     */
+    triggerFireworks(count = 3) {
+        if (!this.canvas) return;
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                const x = this.canvas.width * (0.2 + Math.random() * 0.6);
+                const y = this.canvas.height * (0.12 + Math.random() * 0.28);
+                this._burstFirework(x, y);
+            }, i * 350 + Math.random() * 250);
+        }
+    }
+
+    _burstFirework(x, y) {
+        const colors = this.colors.firework;
+        const count = 45 + Math.floor(Math.random() * 35);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 8;
+            this.particles.push({
+                type: 'star',
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                gravity: 0.09,
+                friction: 0.965,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.12,
+                scale: 0.35 + Math.random() * 0.7,
+                size: 4 + Math.random() * 7,
+                life: 1,
+                maxLife: 1,
+                decay: 0.009 + Math.random() * 0.016,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * 📝 Texto flotante que sube y se desvanece
+     * @param {number} x       - Posición X
+     * @param {number} y       - Posición Y
+     * @param {string} text    - Texto
+     * @param {Object} options - { color, fontSize, fontWeight }
+     */
+    triggerFloatingText(x, y, text, options = {}) {
+        if (!this.canvas) return;
+        this.floatingTexts.push({
+            x, y, text,
+            vy: -1.6,
+            life: 1,
+            maxLife: 1,
+            decay: 0.011,
+            alpha: 1,
+            color: options.color || '#FFD700',
+            fontSize: options.fontSize || 28,
+            fontWeight: options.fontWeight || '800',
         });
-        this.activeAudioNodes = [];
+    }
 
-        window.removeEventListener('resize', this._boundResize);
-        window.removeEventListener('click', this._boundUnlockAudio);
-        window.removeEventListener('touchstart', this._boundUnlockAudio);
+    /**
+     * 🪙 Lluvia de monedas desde arriba (rachas)
+     */
+    triggerCoinRain() {
+        if (!this.canvas) return;
+        const count = 30;
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                this.particles.push({
+                    type: 'coin',
+                    x: Math.random() * this.canvas.width,
+                    y: -35,
+                    vx: (Math.random() - 0.5) * 3.5,
+                    vy: 3 + Math.random() * 6,
+                    gravity: 0.14,
+                    friction: 0.994,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.25,
+                    scale: 0.45 + Math.random() * 0.55,
+                    size: 7 + Math.random() * 7,
+                    life: 1,
+                    maxLife: 1,
+                    decay: 0.004 + Math.random() * 0.007,
+                    color: this.colors.coin[Math.floor(Math.random() * this.colors.coin.length)],
+                    attractTo: false,
+                });
+            }, i * 45);
+        }
+    }
 
-        if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.particles = [];
-        this._initialized = false;
-        console.log("[ContiEffects] Motor destruido correctamente.");
+    /**
+     * ⚡ Destello de pantalla
+     * @param {number} duration - ms (default: 200)
+     */
+    triggerScreenFlash(duration = 200) {
+        const flash = document.createElement('div');
+        flash.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white; z-index: 998; pointer-events: none;
+            opacity: 0.55; transition: opacity ${duration}ms ease-out;
+        `;
+        document.body.appendChild(flash);
+        requestAnimationFrame(() => { flash.style.opacity = '0'; });
+        setTimeout(() => flash.remove(), duration + 60);
+    }
+
+    // ================================================================
+    //  API PÚBLICA — SISTEMA DE TOASTS
+    // ================================================================
+
+    /**
+     * 🔔 Toast animado (reemplaza alert)
+     * @param {string} message        - Texto
+     * @param {Object} options        - { icon, bg, duration, position }
+     */
+    triggerToast(message, options = {}) {
+        const {
+            icon = '🎉',
+            bg = 'linear-gradient(135deg, #1E3A63, #2563EB)',
+            duration = 3000,
+            position = 'top'
+        } = options;
+
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.style.cssText = `
+                position: fixed; left: 50%; transform: translateX(-50%);
+                z-index: 2000; display: flex; flex-direction: column;
+                gap: 12px; pointer-events: none;
+            `;
+            document.body.appendChild(container);
+        }
+        container.style.top = position === 'center' ? '40%' : '8%';
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background: ${bg}; color: white; padding: 15px 26px;
+            border-radius: 18px; font-weight: 700; font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif; text-align: center;
+            box-shadow: 0 14px 35px rgba(0,0,0,0.28);
+            pointer-events: auto;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            display: flex; align-items: center; gap: 12px;
+            white-space: nowrap; letter-spacing: 0.3px;
+        `;
+        toast.innerHTML = `<span style="font-size:1.6rem; line-height:1">${icon}</span> ${message}`;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideOut 0.4s ease-in forwards';
+            setTimeout(() => toast.remove(), 400);
+        }, duration);
+    }
+
+    // ================================================================
+    //  API PÚBLICA — SONIDOS
+    // ================================================================
+
+    ensureAudio() {
+        if (!this.audioCtx) {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+        }
+    }
+
+    /**
+     * 🔊 Reproduce sonido sintetizado
+     * @param {string} type - 'correct'|'incorrect'|'levelup'|'achievement'|'powerup'|'tick'|'coin'|'explosion'
+     */
+    playSound(type) {
+        this.ensureAudio();
+        if (!this.audioCtx) return;
+
+        const now = this.audioCtx.currentTime;
+        const vol = this.masterVolume;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+
+        switch (type) {
+            case 'correct':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523, now);
+                osc.frequency.setValueAtTime(659, now + 0.08);
+                osc.frequency.setValueAtTime(784, now + 0.16);
+                gain.gain.setValueAtTime(0.18 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+                break;
+
+            case 'incorrect':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.38);
+                gain.gain.setValueAtTime(0.12 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+                osc.start(now); osc.stop(now + 0.42);
+                break;
+
+            case 'levelup':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523, now);
+                osc.frequency.setValueAtTime(659, now + 0.12);
+                osc.frequency.setValueAtTime(784, now + 0.24);
+                osc.frequency.setValueAtTime(1047, now + 0.36);
+                gain.gain.setValueAtTime(0.22 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6);
+                break;
+
+            case 'achievement':
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(660, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                osc.frequency.setValueAtTime(1100, now + 0.2);
+                osc.frequency.setValueAtTime(1320, now + 0.3);
+                gain.gain.setValueAtTime(0.17 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+                break;
+
+            case 'powerup':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(880, now + 0.12);
+                gain.gain.setValueAtTime(0.15 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+                break;
+
+            case 'tick':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1000, now);
+                gain.gain.setValueAtTime(0.06 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                osc.start(now); osc.stop(now + 0.06);
+                break;
+
+            case 'coin':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1400, now);
+                osc.frequency.setValueAtTime(1800, now + 0.04);
+                gain.gain.setValueAtTime(0.1 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+                break;
+
+            case 'explosion':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(28, now + 0.5);
+                gain.gain.setValueAtTime(0.25 * vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                osc.start(now); osc.stop(now + 0.55);
+                break;
+
+            default:
+                osc.start(now); osc.stop(now);
+        }
+    }
+
+    // ================================================================
+    //  CONVENIENCIA — Integración con app.js
+    // ================================================================
+
+    triggerCoinExplosionFromElement(element, count = 12) {
+        if (!element || !this.canvas) return;
+        const rect = element.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        this.triggerCoinExplosion(x, y, count);
+        this.playSound('coin');
+    }
+
+    setScoreBadge(elementOrId) {
+        if (typeof elementOrId === 'string') {
+            this.scoreBadge = document.getElementById(elementOrId);
+        } else {
+            this.scoreBadge = elementOrId;
+        }
     }
 }
 
-window.effectsManager = new ContiEffectsManager();
+// ================================================================
+//  INICIALIZACIÓN AUTOMÁTICA
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.effectsManager) {
+        window.effectsManager = new ContiEffectsManager({
+            canvasId: 'effects-canvas',
+            scoreBadgeId: 'score-badge',
+            maxParticles: 300,
+            masterVolume: 0.8,
+        });
+    }
+});
