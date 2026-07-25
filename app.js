@@ -1,3 +1,4 @@
+
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
@@ -220,82 +221,13 @@ const levelColors = {
     4: '#EF4444'
 };
 
-// ===== SISTEMA DE SONIDO (Web Audio API) =====
-let audioCtx = null;
-
-function ensureAudioContext() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-}
-
+// ===== SISTEMA DE SONIDO (Delega en ContiEffectsManager) =====
 function playSound(type) {
-    if (state.mode === 'normal' && type !== 'levelup' && type !== 'achievement') return;
-    ensureAudioContext();
-    if (!audioCtx) return;
-    
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    
-    switch(type) {
-        case 'correct':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(523, now);
-            osc.frequency.setValueAtTime(659, now + 0.1);
-            osc.frequency.setValueAtTime(784, now + 0.2);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-            break;
-        case 'incorrect':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(200, now);
-            osc.frequency.setValueAtTime(150, now + 0.2);
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-            osc.start(now); osc.stop(now + 0.4);
-            break;
-        case 'levelup':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(523, now);
-            osc.frequency.setValueAtTime(659, now + 0.15);
-            osc.frequency.setValueAtTime(784, now + 0.3);
-            osc.frequency.setValueAtTime(1047, now + 0.45);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-            osc.start(now); osc.stop(now + 0.6);
-            break;
-        case 'achievement':
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(660, now);
-            osc.frequency.setValueAtTime(880, now + 0.1);
-            osc.frequency.setValueAtTime(1100, now + 0.2);
-            osc.frequency.setValueAtTime(1320, now + 0.3);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            osc.start(now); osc.stop(now + 0.5);
-            break;
-        case 'powerup':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(440, now);
-            osc.frequency.setValueAtTime(880, now + 0.15);
-            gain.gain.setValueAtTime(0.12, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-            break;
-        case 'tick':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1000, now);
-            gain.gain.setValueAtTime(0.05, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-            osc.start(now); osc.stop(now + 0.05);
-            break;
+    // Sonidos esenciales siempre; los de celebración solo en modo timed
+    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'achievement', 'tick'];
+    if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
+    if (window.effectsManager) {
+        window.effectsManager.playSound(type);
     }
 }
 
@@ -306,6 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLeaderboard();
     setupPowerups();
     createSpeedBonusToast();
+    // Inyectar SVGs del conejo
+    if (typeof injectRabbitSVGs === 'function') injectRabbitSVGs();
 });
 
 function createSpeedBonusToast() {
@@ -327,13 +261,10 @@ function showSpeedBonus(points) {
     }, 2000);
 }
 
-// Interfaz auxiliar para detonar ráfagas físicas desde botones
+// Interfaz auxiliar para detonar ráfagas desde botones
 function triggerVisualCoinsFromElement(element, count = 12) {
-    if (element && window.effectsManager) {
-        const rect = element.getBoundingClientRect();
-        const clickX = rect.left + rect.width / 2;
-        const clickY = rect.top + rect.height / 2;
-        window.effectsManager.triggerCoinExplosion(clickX, clickY, count);
+    if (window.effectsManager) {
+        window.effectsManager.triggerCoinExplosionFromElement(element, count);
     }
 }
 
@@ -362,6 +293,8 @@ function showScreen(screenId) {
     }
     if (screenId === 'screen-badges') loadBadges();
     if (screenId === 'screen-leaderboard') loadLeaderboard();
+    // Inyectar conejo si la pantalla lo requiere
+    if (typeof injectRabbitSVGs === 'function') setTimeout(injectRabbitSVGs, 50);
 }
 
 function selectMode(mode) {
@@ -375,7 +308,7 @@ function selectMode(mode) {
 
 // ===== INICIO DEL JUEGO =====
 function startGame() {
-    ensureAudioContext();
+    if (window.effectsManager) window.effectsManager.ensureAudio();
     state.score = 0; state.levelScore = 0; state.lives = 3; state.streak = 0; state.maxStreak = 0;
     state.currentQuestion = 0; state.currentLevel = 1; state.answeredCorrectly = {}; state.topicScores = {};
     state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
@@ -433,8 +366,10 @@ function shuffleArray(array) { const arr = [...array]; for (let i = arr.length -
 
 // ===== REACCIONES DEL CONEJO =====
 function updateRabbitReaction(reaction) {
-    const rabbit = document.getElementById('rabbit-svg');
-    if (rabbit) rabbit.className = 'rabbit-svg ' + reaction;
+    // Actualizar todos los conejos visibles en pantalla
+    document.querySelectorAll('.rabbit-svg').forEach(rabbit => {
+        rabbit.className = 'rabbit-svg ' + reaction;
+    });
     
     const speech = document.getElementById('question-speech');
     const messages = {
@@ -554,10 +489,7 @@ function loadMatching(question) {
                     matches[this.dataset.pairId] = true; selectedLeft = null;
                     if (Object.keys(matches).length === question.pairs.length) {
                         showFeedback(`¡Perfecto! ${question.explanation || 'Emparejaste todos los conceptos correctamente.'}`, 'correct');
-                        
-                        // EFECTOS CANVAS: Lluvia desde el centro de la grilla de emparejamiento
                         triggerVisualCoinsFromElement(matchingContainer, 16);
-                        
                         handleCorrectAnswer(question.points);
                     }
                 } else {
@@ -599,10 +531,7 @@ function loadSlider(question) {
         const userAnswer = parseFloat(input.value);
         if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
             showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
-            
-            // EFECTOS CANVAS: Monedas desde el botón de enviar
             triggerVisualCoinsFromElement(submitBtn, 14);
-            
             handleCorrectAnswer(question.points);
         } else {
             showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
@@ -659,10 +588,7 @@ function checkDragComplete(question) {
     if (allFilled) { 
         if (allCorrect) {
             showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
-            
-            // EFECTOS CANVAS: Monedas desde la zona del drag container
             triggerVisualCoinsFromElement(dragContainer, 16);
-            
             handleCorrectAnswer(question.points); 
         } else {
             showFeedback(`Orden incorrecto. Revisa el flujo lógico de los procesos financieros.`, 'incorrect');
@@ -673,7 +599,7 @@ function checkDragComplete(question) {
 
 // ===== MANEJO DE RESPUESTAS =====
 function checkMultipleAnswer(originalIndex, question) {
-    ensureAudioContext();
+    if (window.effectsManager) window.effectsManager.ensureAudio();
     const options = document.querySelectorAll('.option-btn');
     options.forEach(btn => btn.disabled = true);
     
@@ -687,16 +613,15 @@ function checkMultipleAnswer(originalIndex, question) {
     if (originalIndex === question.correct) {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
-        let coinCount = 12; // Cantidad base de monedas
+        let coinCount = 12;
         
         if (responseTime < 3) {
             const speedBonus = Math.round(question.points * 0.5);
             totalPoints += speedBonus;
-            coinCount += 8; // Recompensa extra: más monedas por velocidad
+            coinCount += 8;
             showSpeedBonus(speedBonus);
         }
         
-        // EFECTOS CANVAS INTEGRADO: Disparador desde el botón clickeado
         if (options[clickedDisplayIndex]) {
             triggerVisualCoinsFromElement(options[clickedDisplayIndex], coinCount);
         }
@@ -706,7 +631,7 @@ function checkMultipleAnswer(originalIndex, question) {
         
         handleCorrectAnswer(totalPoints);
         playSound('correct');
-        if (typeof effects !== 'undefined' && effects.triggerConfetti) effects.triggerConfetti();
+        if (window.effectsManager) window.effectsManager.triggerConfetti();
     } else {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
         if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
@@ -740,10 +665,10 @@ function handleCorrectAnswer(points) {
     if (state.streak >= 5) {
         updateRabbitReaction('impressed');
         document.getElementById('streak-display')?.classList.add('on-fire');
-        if (typeof effects !== 'undefined' && effects.triggerCoinRain) effects.triggerCoinRain();
+        if (window.effectsManager) window.effectsManager.triggerCoinRain();
     } else if (state.streak >= 3) {
         updateRabbitReaction('impressed');
-        if (typeof effects !== 'undefined' && effects.triggerCoinRain) effects.triggerCoinRain();
+        if (window.effectsManager) window.effectsManager.triggerCoinRain();
     }
     
     const btnNext = document.getElementById('btn-next');
@@ -800,22 +725,28 @@ function endLevel() {
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('💯 ¡Nueva insignia: Puntaje Perfecto!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Puntaje Perfecto!', { icon: '💯', bg: 'linear-gradient(135deg, #FFD700, #FFA500)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
     if (state.lives === 3 && !state.badges.survivor) {
         state.badges.survivor = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('🛡️ ¡Nueva insignia: Sobreviviente!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Sobreviviente!', { icon: '🛡️', bg: 'linear-gradient(135deg, #10B981, #059669)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
     if (!state.powerupsUsedThisLevel && !state.badges.noPowerups) {
         state.badges.noPowerups = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('💪 ¡Nueva insignia: Poder Natural!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Poder Natural!', { icon: '💪', bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
     
@@ -849,12 +780,12 @@ function endLevel() {
         updateRabbitReaction(state.levelPerfect ? 'celebrating' : 'thinking');
         showScreen('screen-level-transition');
         playSound('levelup');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
     } else {
         updateRabbitReaction('graduate');
         showFinalResults();
         playSound('levelup');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
     }
 }
 
@@ -908,7 +839,7 @@ function showFinalResults() {
     }
     
     showScreen('screen-results');
-    if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
+    if (window.effectsManager) window.effectsManager.triggerFireworks();
     saveToLeaderboard();
 }
 
@@ -925,7 +856,7 @@ function restartGame() {
 function goToFinalScreen() {
     updateRabbitReaction('graduate');
     showScreen('screen-final');
-    if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
+    if (window.effectsManager) window.effectsManager.triggerFireworks();
 }
 
 // ===== POWER-UPS =====
@@ -1065,22 +996,28 @@ function checkBadges() {
     if (state.score >= 2000 && !state.badges.financierPro) {
         state.badges.financierPro = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('🏆 ¡Nueva insignia: Financiero Pro!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Financiero Pro!', { icon: '🏆', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
     if (state.streak >= 5 && !state.badges.streaker) {
         state.badges.streaker = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('🔥 ¡Nueva insignia: Rachador!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Rachador!', { icon: '🔥', bg: 'linear-gradient(135deg, #EF4444, #DC2626)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
     if (state.mode === 'timed' && (Date.now() - state.questionStartTime) < 3000 && !state.badges.speedDemon) {
         state.badges.speedDemon = true;
         playSound('achievement');
-        if (typeof effects !== 'undefined' && effects.triggerFireworks) effects.triggerFireworks();
-        setTimeout(() => alert('⚡ ¡Nueva insignia: Velocista!'), 300);
+        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        setTimeout(() => {
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Velocista!', { icon: '⚡', bg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', duration: 3500 });
+        }, 300);
         saveBadges();
     }
 }
@@ -1139,3 +1076,4 @@ function shareResults() {
     if (navigator.share) navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
     else { navigator.clipboard.writeText(text).then(() => alert('📋 ¡Copiado! Compártelo.')); }
 }
+
