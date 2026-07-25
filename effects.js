@@ -11,6 +11,22 @@ class ContiEffectsManager {
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
         this.animationFrameId = null;
+
+        // Banco de sonidos predefinidos con enlaces estables externos (Mixkit)
+        this.sfxUrls = {
+            'sfx-coin-drop': 'https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav',
+            'sfx-woosh-loss': 'https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav',
+            'sfx-success-balance': 'https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav',
+            'sfx-danger-heart': 'https://assets.mixkit.co/active_storage/sfx/957/957-84.wav',
+            'sfx-cash-register': 'https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav' // Sonido alternativo estable
+        };
+
+        // Cache de instancias de Audio
+        this.audioCache = {};
+        this.initAudioCache();
+        
+        // Habilitar el desbloqueo automático para iPhone/iOS
+        this.setupIOSAudioUnlock();
         
         // Inicializar dimensiones y listeners
         this.resizeCanvas();
@@ -18,6 +34,44 @@ class ContiEffectsManager {
         
         // Iniciar el bucle de renderizado
         this.loop();
+    }
+
+    /**
+     * Precarga las instancias de audio con las nuevas URLs estables
+     */
+    initAudioCache() {
+        Object.keys(this.sfxUrls).forEach(id => {
+            this.audioCache[id] = new Audio(this.sfxUrls[id]);
+            this.audioCache[id].preload = 'auto';
+        });
+    }
+
+    /**
+     * Escucha las interacciones iniciales del usuario para despertar el motor de audio en iOS/iPhone
+     */
+    setupIOSAudioUnlock() {
+        const unlock = () => {
+            // Reproducir un micro-silencio nativo para validar los permisos del navegador
+            const silentSound = new Audio();
+            silentSound.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
+            silentSound.play().then(() => {
+                console.log("Audio desbloqueado con éxito para iPhone/iOS.");
+                
+                // Forzar precarga inicial en caliente de los efectos reales
+                Object.values(this.audioCache).forEach(audio => {
+                    audio.load();
+                });
+
+                // Remover los listeners inmediatamente
+                window.removeEventListener('click', unlock);
+                window.removeEventListener('touchstart', unlock);
+            }).catch(err => {
+                console.warn("Esperando interacción interactiva explícita para el audio.", err);
+            });
+        };
+
+        window.addEventListener('click', unlock);
+        window.addEventListener('touchstart', unlock);
     }
 
     /**
@@ -29,29 +83,28 @@ class ContiEffectsManager {
     }
 
     /**
-     * Reproduce un sonido del banco con variación aleatoria de tono (Pitch)
-     * @param {string} id - ID del elemento HTMLAudio
+     * Reproduce un sonido desde la caché en la nube con variación aleatoria de tono (Pitch)
+     * @param {string} id - ID del audio asignado en la caché
      */
     playSFX(id) {
-        const audio = document.getElementById(id);
-        if (!audio) return;
+        const baseAudio = this.audioCache[id];
+        if (!baseAudio) return;
 
-        // Clonar el nodo permite superponer el mismo sonido sin cortar el anterior
-        const soundClone = audio.cloneNode();
+        // Clonar el nodo dinámicamente para soportar polifonía (superposición de sonidos)
+        const soundClone = baseAudio.cloneNode();
         
-        // Pitch Randomization: Variación sutil entre 0.9 y 1.15
+        // Pitch Randomization: Variación sutil entre 0.9 y 1.15 para mayor dinamismo
         const randomPitch = 0.9 + Math.random() * 0.25;
         soundClone.playbackRate = randomPitch;
         
         soundClone.play().catch(err => {
-            // Manejar bloqueo de autoplay del navegador si el usuario no ha interactuado
-            console.log("Audio esperando interacción del usuario.");
+            console.log("Audio bloqueado temporalmente por políticas del navegador:", err.message);
         });
     }
 
     /**
      * Dispara una ráfaga de monedas desde una posición hacia el marcador de puntos
-     * @param {number} startX - Coordenada X de origen (ej. el botón presionado)
+     * @param {number} startX - Coordenada X de origen
      * @param {number} startY - Coordenada Y de origen
      * @param {number} count - Cantidad de monedas a generar
      */
@@ -59,36 +112,32 @@ class ContiEffectsManager {
         const scoreBadge = document.getElementById('score-badge');
         if (!scoreBadge) return;
 
-        // Obtener la posición exacta en pantalla del marcador de puntos (destino)
         const rect = scoreBadge.getBoundingClientRect();
         const targetX = rect.left + rect.width / 2;
         const targetY = rect.top + rect.height / 2;
 
         for (let i = 0; i < count; i++) {
-            // Retraso escalonado para que las monedas no salgan todas al mismo milisegundo
             setTimeout(() => {
                 this.particles.push({
                     x: startX,
                     y: startY,
-                    vx: (Math.random() - 0.5) * 8,       // Velocidad horizontal inicial
-                    vy: -Math.random() * 10 - 5,        // Impulso vertical inicial (hacia arriba)
-                    radius: Math.random() * 3 + 7,       // Tamaño de la moneda
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: -Math.random() * 10 - 5,
+                    radius: Math.random() * 3 + 7,
                     gravity: 0.4,
                     targetX: targetX,
                     targetY: targetY,
-                    speed: 0.08,                        // Factor de atracción magnética
-                    isAttracted: false,                 // Cambia a true tras perder el impulso inicial
+                    speed: 0.08,
+                    isAttracted: false,
                     life: 0,
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.3
                 });
 
-                // Reproducir el sonido metálico de la moneda individual
                 this.playSFX('sfx-coin-drop');
-            }, i * 60); // 60ms entre cada moneda
+            }, i * 60);
         }
         
-        // Hacia el final de la ráfaga, suena la caja registradora
         setTimeout(() => this.playSFX('sfx-cash-register'), count * 45);
     }
 
@@ -103,47 +152,39 @@ class ContiEffectsManager {
             p.life++;
 
             if (!p.isAttracted) {
-                // Fase 1: Movimiento parabólico natural (Física de gravedad)
                 p.x += p.vx;
                 p.y += p.vy;
                 p.vy += p.gravity;
                 p.rotation += p.rotationSpeed;
 
-                // Cuando empieza a caer, se activa el magnetismo hacia el marcador
                 if (p.vy > 1 || p.life > 40) {
                     p.isAttracted = true;
                 }
             } else {
-                // Fase 2: Magnetismo. Interpolación lineal hacia el objetivo del marcador
                 p.x += (p.targetX - p.x) * p.speed;
                 p.y += (p.targetY - p.y) * p.speed;
-                p.rotation += 0.2; // Gira más rápido al ser atraída
+                p.rotation += 0.2;
                 
-                // Hacerse ligeramente más pequeña al acercarse al marcador
                 if (p.radius > 3) p.radius -= 0.1;
             }
 
-            // Dibujar la moneda estilo Cartoon/Didáctico
             this.ctx.save();
             this.ctx.translate(p.x, p.y);
             this.ctx.rotate(p.rotation);
             
-            // Cuerpo de la moneda (Círculo Dorado)
             this.ctx.beginPath();
             this.ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#FFD700'; // Oro brillante
+            this.ctx.fillStyle = '#FFD700';
             this.ctx.shadowBlur = 8;
             this.ctx.shadowColor = '#FFA500';
             this.ctx.fill();
             
-            // Borde interno para relieve visual
             this.ctx.beginPath();
             this.ctx.arc(0, 0, p.radius * 0.7, 0, Math.PI * 2);
             this.ctx.strokeStyle = '#B8860B';
             this.ctx.lineWidth = 1.5;
             this.ctx.stroke();
 
-            // Símbolo de moneda simplificado ($ o barra interior)
             this.ctx.fillStyle = '#B8860B';
             this.ctx.font = `bold ${p.radius * 1.1}px Arial`;
             this.ctx.textAlign = 'center';
@@ -152,16 +193,14 @@ class ContiEffectsManager {
 
             this.ctx.restore();
 
-            // Condición de destrucción: llegó al objetivo
             const dist = Math.hypot(p.targetX - p.x, p.targetY - p.y);
             if (dist < 15) {
                 this.particles.splice(i, 1);
                 
-                // Hacer un sutil efecto de pulsación visual en el marcador HTML real
                 const scoreBadge = document.getElementById('score-badge');
                 if (scoreBadge) {
                     scoreBadge.classList.remove('pop-anim');
-                    void scoreBadge.offsetWidth; // Truco CSS para reiniciar animación
+                    void scoreBadge.offsetWidth; 
                     scoreBadge.classList.add('pop-anim');
                 }
             }
