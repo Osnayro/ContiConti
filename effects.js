@@ -1,7 +1,7 @@
 /**
  * Conti Conti - Motor de Efectos Visuales (VFX) y Sonido (SFX)
- * Versión Refactorizada con Audio Sintetizado Nativo (Cero dependencias externas)
- * Desarrollado para optimizar el Game Feel en Canvas 2D
+ * Versión 2.5 — Audio Sintetizado Avanzado (ADSR, Armónicos y Paneo Espacial)
+ * Desarrollado para optimizar el Game Feel en Canvas 2D sin dependencias externas.
  */
 
 class ContiEffectsManager {
@@ -10,17 +10,17 @@ class ContiEffectsManager {
      * @param {string} options.canvasId - ID del canvas (default: 'effects-canvas')
      * @param {string} options.scoreBadgeId - ID del badge de puntos (default: 'score-badge')
      * @param {number} options.maxParticles - Límite máximo de partículas (default: 150)
-     * @param {number} options.masterVolume - Volumen maestro 0.0-1.0 (default: 1.0)
+     * @param {number} options.masterVolume - Volumen maestro 0.0-1.0 (default: 0.8)
      */
     constructor(options = {}) {
         this.canvasId = options.canvasId || 'effects-canvas';
         this.scoreBadgeId = options.scoreBadgeId || 'score-badge';
         this.maxParticles = options.maxParticles || 150;
-        this.masterVolume = options.masterVolume !== undefined ? options.masterVolume : 1.0;
+        this.masterVolume = options.masterVolume !== undefined ? options.masterVolume : 0.8;
 
         this.canvas = document.getElementById(this.canvasId);
         if (!this.canvas) {
-            console.warn(`[ContiEffects] Canvas con id "${this.canvasId}" no encontrado. El motor no se inicializará.`);
+            console.warn(`[ContiEffects] Canvas con id "${this.canvasId}" no encontrado.`);
             this._initialized = false;
             return;
         }
@@ -33,139 +33,121 @@ class ContiEffectsManager {
         this.timeouts = [];
         this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // Inicializar el contexto de audio nativo del navegador
+        // ── MOTOR DE AUDIO AVANZADO (WEB AUDIO API) ──
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.audioCache = {};
-        this.activeAudioNodes = []; 
         
-        // Generar y almacenar los efectos en memoria
-        this.initAudioCache();
+        // Nodo de ganancia maestra
+        this.masterGain = this.audioContext.createGain();
+        this.masterGain.gain.value = this.masterVolume;
+        
+        // Compresor dinámico para evitar que el audio sature al acumular sonidos
+        this.compressor = this.audioContext.createDynamicsCompressor();
+        this.compressor.threshold.value = -24;
+        this.compressor.knee.value = 30;
+        this.compressor.ratio.value = 12;
+        this.compressor.attack.value = 0.003;
+        this.compressor.release.value = 0.25;
 
-        // Vinculación explícita del contexto (this) para iOS
+        this.masterGain.connect(this.compressor);
+        this.compressor.connect(this.audioContext.destination);
+
+        this.activeAudioNodes = []; // Tracking de osciladores activos para limitar polifonía
+        this.sfxPresets = this._buildPresets();
+
+        // Desbloqueo de contexto para iOS / Safari
         this._boundUnlockAudio = this._unlockAudio.bind(this);
         this.setupIOSAudioUnlock();
 
-        // Inicializar dimensiones y listeners
+        // Listeners de interfaz y resize
         this._boundResize = () => this.resizeCanvas();
         window.addEventListener('resize', this._boundResize);
         this.resizeCanvas();
 
-        // Escuchar cambios en prefers-reduced-motion
         this._motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         this._boundMotionChange = (e) => { this.reducedMotion = e.matches; };
         if (this._motionMediaQuery.addEventListener) {
             this._motionMediaQuery.addEventListener('change', this._boundMotionChange);
         } else {
-            this._motionMediaQuery.addListener(this._boundMotionChange); 
+            this._motionMediaQuery.addListener(this._boundMotionChange);
         }
     }
 
-    initAudioCache() {
-        // Fórmulas matemáticas puras para sintetizar los SFX en tiempo real
-        const sfxDefinitions = {
-            'sfx-coin-drop': (ctx) => {
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < buffer.length; i++) {
-                    let t = i / ctx.sampleRate;
-                    data[i] = Math.sin(2 * Math.PI * 3200 * t) * Math.exp(-30 * t);
-                }
-                return buffer;
+    /**
+     * Diccionario de presets avanzados con envolventes ADSR y armónicos (del archivo truncado)
+     */
+    _buildPresets() {
+        return {
+            'sfx-coin-drop': {
+                type: 'sine',
+                freqStart: 1200, freqEnd: 1800,
+                attack: 0.005, decay: 0.08, sustain: 0.0, release: 0.05,
+                volume: 0.6, vibrato: 8, vibratoDepth: 15,
+                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.15 }]
             },
-            'sfx-cash-register': (ctx) => {
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < buffer.length; i++) {
-                    let t = i / ctx.sampleRate;
-                    data[i] = (Math.sin(2 * Math.PI * 1500 * t) + Math.sin(2 * Math.PI * 2200 * t)) * Math.exp(-12 * t);
-                }
-                return buffer;
+            'sfx-coin-sparkle': {
+                type: 'sine',
+                freqStart: 2000, freqEnd: 2500,
+                attack: 0.001, decay: 0.12, sustain: 0.0, release: 0.08,
+                volume: 0.5, vibrato: 12, vibratoDepth: 20,
+                harmonics: [{ ratio: 2.5, gain: 0.2 }]
             },
-            'sfx-woosh-loss': (ctx) => {
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < buffer.length; i++) {
-                    let t = i / ctx.sampleRate;
-                    let f_sweep = 800 * Math.exp(-6 * t);
-                    data[i] = Math.sin(2 * Math.PI * f_sweep * t) * Math.exp(-4 * t);
-                }
-                return buffer;
+            'sfx-cash-register': {
+                type: 'square',
+                freqStart: 800, freqEnd: 600,
+                attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.2,
+                volume: 0.5, noiseMix: 0.15, noiseFilter: 2000,
+                harmonics: [{ ratio: 1.5, gain: 0.4 }, { ratio: 2.5, gain: 0.2 }]
             },
-            'sfx-success-balance': (ctx) => {
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < buffer.length; i++) {
-                    let t = i / ctx.sampleRate;
-                    data[i] = (Math.sin(2 * Math.PI * 523.25 * t) + Math.sin(2 * Math.PI * 659.25 * t) + Math.sin(2 * Math.PI * 783.99 * t)) * Math.exp(-5 * t);
-                }
-                return buffer;
+            'sfx-success-balance': {
+                type: 'sine',
+                freqStart: 523.25, freqEnd: 783.99,
+                attack: 0.02, decay: 0.6, sustain: 0.3, release: 0.5,
+                volume: 0.6, vibrato: 3, vibratoDepth: 10,
+                harmonics: [{ ratio: 1.25, gain: 0.3 }, { ratio: 1.5, gain: 0.3 }, { ratio: 2, gain: 0.2 }]
+            },
+            'sfx-level-up': {
+                type: 'sine',
+                freqStart: 440, freqEnd: 880,
+                attack: 0.03, decay: 0.8, sustain: 0.4, release: 0.6,
+                volume: 0.55, vibrato: 4, vibratoDepth: 20,
+                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.2 }]
+            },
+            'sfx-woosh-loss': {
+                type: 'sine',
+                freqStart: 600, freqEnd: 100,
+                attack: 0.001, decay: 0.5, sustain: 0.0, release: 0.3,
+                volume: 0.5, noiseMix: 0.4, noiseFilter: 2000,
+                harmonics: [{ ratio: 0.5, gain: 0.3 }]
+            },
+            'sfx-danger-heart': {
+                type: 'sawtooth',
+                freqStart: 150, freqEnd: 80,
+                attack: 0.001, decay: 0.3, sustain: 0.1, release: 0.2,
+                volume: 0.6, noiseMix: 0.2, noiseFilter: 800,
+                harmonics: [{ ratio: 1.5, gain: 0.4 }]
+            },
+            'sfx-error-buzz': {
+                type: 'square',
+                freqStart: 200, freqEnd: 150,
+                attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.1,
+                volume: 0.5, noiseMix: 0.1, noiseFilter: 1000,
+                harmonics: [{ ratio: 1.3, gain: 0.3 }]
+            },
+            'sfx-notification': {
+                type: 'sine',
+                freqStart: 800, freqEnd: 1000,
+                attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.15,
+                volume: 0.45, vibrato: 6, vibratoDepth: 12,
+                harmonics: [{ ratio: 2, gain: 0.2 }]
+            },
+            'sfx-achievement': {
+                type: 'sine',
+                freqStart: 523, freqEnd: 1046,
+                attack: 0.02, decay: 1.0, sustain: 0.3, release: 0.8,
+                volume: 0.5, vibrato: 2, vibratoDepth: 8,
+                harmonics: [{ ratio: 2, gain: 0.3 }, { ratio: 3, gain: 0.15 }]
             }
         };
-
-        // Mapeo y conversión a objetos de Audio (Blobs binarios temporales)
-        Object.keys(sfxDefinitions).forEach(id => {
-            try {
-                const buffer = sfxDefinitions[id](this.audioContext);
-                const wavBytes = this._bufferToWav(buffer);
-                const blob = new Blob([wavBytes], { type: 'audio/wav' });
-                const url = URL.createObjectURL(blob);
-                
-                const audio = new Audio(url);
-                audio.preload = 'auto';
-                this.audioCache[id] = audio;
-            } catch (e) {
-                console.warn(`[ContiEffects] Error sintetizando el audio nativo: ${id}`, e);
-            }
-        });
-
-        // Asignamos alias para mantener la compatibilidad con los IDs que no se generan de forma única
-        this.audioCache['sfx-coin-sparkle'] = this.audioCache['sfx-coin-drop'];
-        this.audioCache['sfx-danger-heart'] = this.audioCache['sfx-woosh-loss'];
-        this.audioCache['sfx-level-up'] = this.audioCache['sfx-success-balance'];
-        this.audioCache['sfx-error-buzz'] = this.audioCache['sfx-woosh-loss'];
-        this.audioCache['sfx-notification'] = this.audioCache['sfx-coin-drop'];
-        this.audioCache['sfx-achievement'] = this.audioCache['sfx-cash-register'];
-    }
-
-    // Compilador interno para estructurar los datos binarios en un contenedor ejecutable (.wav)
-    _bufferToWav(buffer) {
-        let numOfChan = buffer.numberOfChannels,
-            length = buffer.length * numOfChan * 2 + 44,
-            bufferArr = new ArrayBuffer(length),
-            view = new DataView(bufferArr),
-            channels = [], i, sample,
-            offset = 0,
-            pos = 0;
-
-        function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
-        function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
-
-        setUint32(0x46464952); // "RIFF"
-        setUint32(length - 8); // Longitud del archivo
-        setUint32(0x45564157); // "WAVE"
-        setUint32(0x20746d66); // "fmt " chunk
-        setUint32(16);         
-        setUint16(1);          // Formato PCM sin compresión
-        setUint16(numOfChan);
-        setUint32(buffer.sampleRate);
-        setUint32(buffer.sampleRate * 2 * numOfChan); 
-        setUint16(numOfChan * 2);                     
-        setUint16(16);                                // 16 bits
-        setUint32(0x61746164);                        // "data" chunk
-        setUint32(length - pos - 4);                  
-
-        for (i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
-
-        while (pos < length) {
-            for (i = 0; i < numOfChan; i++) {
-                sample = Math.max(-1, Math.min(1, channels[i][offset]));
-                sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-                view.setInt16(pos, sample, true);
-                pos += 2;
-            }
-            offset++;
-        }
-        return bufferArr;
     }
 
     setupIOSAudioUnlock() {
@@ -177,66 +159,130 @@ class ContiEffectsManager {
         window.removeEventListener('click', this._boundUnlockAudio);
         window.removeEventListener('touchstart', this._boundUnlockAudio);
 
-        // Desbloqueo del AudioContext de la Web Audio API
         if (this.audioContext && this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
-
-        const silentSound = new Audio();
-        silentSound.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
-        silentSound.play().then(() => {
-            console.log("[ContiEffects] Audio desbloqueado con éxito para iPhone/iOS.");
-            Object.values(this.audioCache).forEach(audio => {
-                if(audio) audio.load();
+            this.audioContext.resume().then(() => {
+                console.log("[ContiEffects] AudioContext nativo activado en iOS/Dispositivo.");
             });
-        }).catch(err => {
-            console.warn("[ContiEffects] Falló el desbloqueo. Reincorporando listeners de seguridad.", err);
-            this.setupIOSAudioUnlock();
-        });
+        }
     }
 
-    resizeCanvas() {
-        if (!this._initialized) return;
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-    }
-
+    /**
+     * Generador procedural en tiempo real utilizando nodos nativos del AudioContext
+     * Soporta paneo horizontal automático basado en la posición X de la pantalla.
+     */
     playSFX(id, opts = {}) {
         if (!this._initialized) return;
+        if (this.audioContext.state === 'suspended') this.audioContext.resume();
 
-        const baseAudio = this.audioCache[id];
-        if (!baseAudio) {
-            console.warn(`[ContiEffects] Sonido no encontrado en el sintetizador: ${id}`);
+        const preset = this.sfxPresets[id];
+        if (!preset) {
+            console.warn(`[ContiEffects] Preset no encontrado: ${id}`);
             return;
         }
 
-        if (this.activeAudioNodes.length > 16) {
+        // Limitar voces concurrentes máximas (Polifonía controlada)
+        if (this.activeAudioNodes.length >= 24) {
             const old = this.activeAudioNodes.shift();
-            if (old && !old.paused) {
-                old.pause();
-                old.src = '';
-            }
+            if (old) { try { old.stop(); old.disconnect(); } catch(e){} }
         }
 
-        const soundClone = baseAudio.cloneNode();
-        const pitchMin = opts.pitchMin !== undefined ? opts.pitchMin : 0.9;
-        const pitchMax = opts.pitchMax !== undefined ? opts.pitchMax : 1.15;
+        const now = this.audioContext.currentTime;
+        const duration = preset.attack + preset.decay + preset.sustain + preset.release;
+
+        // 1. Nodo de volumen local (Envolvente ADSR)
+        const gainNode = this.audioContext.createGain();
+        const baseVol = opts.volume !== undefined ? opts.volume : 1.0;
+        const targetVol = baseVol * preset.volume;
+
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(targetVol, now + preset.attack);
+        gainNode.gain.exponentialRampToValueAtTime(targetVol * preset.sustain + 0.001, now + preset.attack + preset.decay);
+        gainNode.gain.setValueAtTime(targetVol * preset.sustain, now + preset.attack + preset.decay + preset.sustain);
+        gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+        // 2. Nodo de Paneo Estéreo Estructural (Spatial Audio 2D)
+        const panNode = this.audioContext.createStereoPanner();
+        if (opts.x !== undefined) {
+            // Convierte coordenadas de pantalla a rango -1.0 (Izquierda) a 1.0 (Derecha)
+            const screenRatio = (opts.x / window.innerWidth) * 2 - 1;
+            panNode.pan.value = Math.max(-1, Math.min(1, screenRatio));
+        } else {
+            panNode.pan.value = 0;
+        }
+
+        // 3. Oscilador Principal
+        const osc = this.audioContext.createOscillator();
+        osc.type = preset.type;
+
+        // Modulación de Pitch por variación aleatoria
+        const pitchMin = opts.pitchMin !== undefined ? opts.pitchMin : 0.95;
+        const pitchMax = opts.pitchMax !== undefined ? opts.pitchMax : 1.05;
         const randomPitch = pitchMin + Math.random() * (pitchMax - pitchMin);
-        soundClone.playbackRate = randomPitch;
-        soundClone.volume = (opts.volume !== undefined ? opts.volume : 1.0) * this.masterVolume;
 
-        this.activeAudioNodes.push(soundClone);
+        osc.frequency.setValueAtTime(preset.freqStart * randomPitch, now);
+        osc.frequency.exponentialRampToValueAtTime(preset.freqEnd * randomPitch, now + duration);
 
-        soundClone.play().then(() => {
-            soundClone.onended = () => {
-                const idx = this.activeAudioNodes.indexOf(soundClone);
-                if (idx > -1) this.activeAudioNodes.splice(idx, 1);
-            };
-        }).catch(err => {
-            console.log("[ContiEffects] Reproducción pospuesta hasta interacción del usuario:", err.message);
-            const idx = this.activeAudioNodes.indexOf(soundClone);
+        // Conexiones de nodos
+        osc.connect(gainNode);
+        gainNode.connect(panNode);
+        panNode.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.1);
+        this.activeAudioNodes.push(osc);
+
+        // 4. Generación de Armónicos Concurrentes
+        if (preset.harmonics && preset.harmonics.length > 0) {
+            preset.harmonics.forEach(h => {
+                const hOsc = this.audioContext.createOscillator();
+                const hGain = this.audioContext.createGain();
+                
+                hOsc.type = preset.type;
+                hOsc.frequency.setValueAtTime(preset.freqStart * h.ratio * randomPitch, now);
+                hOsc.frequency.exponentialRampToValueAtTime(preset.freqEnd * h.ratio * randomPitch, now + duration);
+
+                hGain.gain.setValueAtTime(0, now);
+                hGain.gain.linearRampToValueAtTime(targetVol * h.gain, now + preset.attack);
+                hGain.gain.linearRampToValueAtTime(0, now + duration);
+
+                hOsc.connect(hGain);
+                hGain.connect(panNode);
+                
+                hOsc.start(now);
+                hOsc.stop(now + duration + 0.1);
+            });
+        }
+
+        // 5. Inyección de Ruido (Simulación de fricción/explosiones del archivo truncado)
+        if (preset.noiseMix > 0) {
+            const bufferSize = this.audioContext.sampleRate * duration;
+            const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseNode = this.audioContext.createBufferSource();
+            noiseNode.buffer = noiseBuffer;
+
+            const noiseGain = this.audioContext.createGain();
+            noiseGain.gain.setValueAtTime(targetVol * preset.noiseMix, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            noiseNode.connect(noiseGain);
+            noiseGain.connect(panNode);
+            noiseNode.start(now);
+            noiseNode.stop(now + duration);
+        }
+
+        // Limpieza de tracking al finalizar
+        setTimeout(() => {
+            const idx = this.activeAudioNodes.indexOf(osc);
             if (idx > -1) this.activeAudioNodes.splice(idx, 1);
-        });
+            osc.disconnect();
+            gainNode.disconnect();
+            panNode.disconnect();
+        }, (duration + 0.2) * 1000);
     }
 
     triggerCoinExplosion(startX, startY, count = 12) {
@@ -249,8 +295,8 @@ class ContiEffectsManager {
         }
 
         if (this.reducedMotion) {
-            this.playSFX('sfx-coin-drop');
-            setTimeout(() => this.playSFX('sfx-cash-register'), count * 45);
+            this.playSFX('sfx-coin-drop', { x: startX });
+            setTimeout(() => this.playSFX('sfx-cash-register', { x: window.innerWidth / 2 }), count * 45);
             return;
         }
 
@@ -259,14 +305,14 @@ class ContiEffectsManager {
         const targetY = rect.top + rect.height / 2;
 
         if (this.particles.length + count > this.maxParticles) {
-            const excess = (this.particles.length + count) - this.maxParticles;
-            this.particles.splice(0, excess);
+            this.particles.splice(0, (this.particles.length + count) - this.maxParticles);
         }
 
         for (let i = 0; i < count; i++) {
             const t = setTimeout(() => {
+                const currentX = startX + (Math.random() - 0.5) * 20;
                 this.particles.push({
-                    x: startX,
+                    x: currentX,
                     y: startY,
                     vx: (Math.random() - 0.5) * 8,
                     vy: -Math.random() * 10 - 5,
@@ -280,19 +326,20 @@ class ContiEffectsManager {
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.3
                 });
-                this.playSFX('sfx-coin-drop');
+                // Inyecta la posición X de la moneda para el paneo estéreo
+                this.playSFX('sfx-coin-drop', { x: currentX });
                 if (!this.isLooping) this.startLoop();
             }, i * 60);
             this.timeouts.push(t);
         }
 
-        const finalT = setTimeout(() => this.playSFX('sfx-cash-register'), count * 45);
+        const finalT = setTimeout(() => this.playSFX('sfx-cash-register', { x: targetX }), count * 45);
         this.timeouts.push(finalT);
     }
 
     triggerLossEffect(x, y) {
         if (!this._initialized) return;
-        this.playSFX('sfx-woosh-loss', { pitchMin: 0.7, pitchMax: 1.0 });
+        this.playSFX('sfx-woosh-loss', { pitchMin: 0.7, pitchMax: 1.0, x: x });
         if (this.reducedMotion) return;
 
         for (let i = 0; i < 8; i++) {
@@ -319,7 +366,7 @@ class ContiEffectsManager {
 
     triggerSuccessEffect(x, y) {
         if (!this._initialized) return;
-        this.playSFX('sfx-success-balance', { pitchMin: 1.0, pitchMax: 1.2 });
+        this.playSFX('sfx-success-balance', { pitchMin: 1.0, pitchMax: 1.1, x: x });
         if (this.reducedMotion) return;
 
         for (let i = 0; i < 10; i++) {
@@ -342,6 +389,12 @@ class ContiEffectsManager {
             });
         }
         if (!this.isLooping) this.startLoop();
+    }
+
+    resizeCanvas() {
+        if (!this._initialized) return;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
 
     startLoop() {
@@ -382,9 +435,7 @@ class ContiEffectsManager {
                     p.vy += p.gravity;
                     p.rotation += p.rotationSpeed;
 
-                    if (p.vy > 1 || p.life > 40) {
-                        p.isAttracted = true;
-                    }
+                    if (p.vy > 1 || p.life > 40) p.isAttracted = true;
                 } else {
                     p.x += (p.targetX - p.x) * p.speed;
                     p.y += (p.targetY - p.y) * p.speed;
@@ -476,33 +527,20 @@ class ContiEffectsManager {
 
     setVolume(vol) {
         this.masterVolume = Math.max(0, Math.min(1, vol));
-    }
-
-    setMaxParticles(limit) {
-        this.maxParticles = Math.max(10, limit);
-    }
-
-    clearParticles() {
-        this.particles = [];
+        if (this.masterGain) this.masterGain.gain.value = this.masterVolume;
     }
 
     destroy() {
         if (!this._initialized) return;
 
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
+        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
         this.isLooping = false;
 
         this.timeouts.forEach(id => clearTimeout(id));
         this.timeouts = [];
 
-        this.activeAudioNodes.forEach(audio => {
-            if(audio) {
-                audio.pause();
-                audio.src = '';
-            }
+        this.activeAudioNodes.forEach(node => {
+            try { node.stop(); node.disconnect(); } catch (e) {}
         });
         this.activeAudioNodes = [];
 
@@ -510,20 +548,9 @@ class ContiEffectsManager {
         window.removeEventListener('click', this._boundUnlockAudio);
         window.removeEventListener('touchstart', this._boundUnlockAudio);
 
-        if (this._motionMediaQuery) {
-            if (this._motionMediaQuery.removeEventListener) {
-                this._motionMediaQuery.removeEventListener('change', this._boundMotionChange);
-            } else {
-                this._motionMediaQuery.removeListener(this._boundMotionChange);
-            }
-        }
-
-        if (this.ctx) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        }
+        if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.particles = [];
         this._initialized = false;
-
         console.log("[ContiEffects] Motor destruido correctamente.");
     }
 }
