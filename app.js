@@ -1,4 +1,3 @@
-
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
@@ -165,7 +164,7 @@ const nivel2Questions = [
     { id: 204, topic: 'tributacion', type: 'multiple', question: 'Si en un mes generas $200 de Débito Fiscal y pagaste $120 de Crédito Fiscal, ¿cuánto debes pagar al fisco?', options: ['$80', '$320', '$120', '$0 (Queda saldo a favor)'], correct: 0, explanation: 'Impuesto a pagar = Débito Fiscal ($200) menos Crédito Fiscal ($120) = $80.', points: 150 },
     { id: 205, topic: 'nomina', type: 'multiple', question: '¿Cuál es la diferencia entre el Sueldo Bruto y el Sueldo Líquido?', options: ['El Sueldo Bruto es el total pactado; el Líquido es lo que recibe el trabajador tras descuentos de ley', 'El Sueldo Líquido es antes de impuestos y el Bruto es después', 'El Sueldo Bruto se paga en efectivo y el Líquido mediante cheque', 'Son exactamente el mismo monto'], correct: 0, explanation: 'El Sueldo Bruto incluye todos los haberes. Al restarle las retenciones legales se obtiene el Sueldo Líquido.', points: 150 },
     { id: 206, topic: 'contabilidad', type: 'multiple', question: '¿Cuál de las siguientes cuentas es de naturaleza ACREEDORA (aumenta por el Haber)?', options: ['Cuentas por Pagar (Pasivo)', 'Caja Chica (Activo)', 'Gastos de Arriendo (Gasto)', 'Banco (Activo)'], correct: 0, explanation: 'Las cuentas de Pasivo, Patrimonio e Ingresos nacen y aumentan por el Haber.', points: 150 },
-    { id: 207, topic: 'contabilidad', type: 'multiple', question: '¿Para qué sirve el Libro Mayor en la contabilidad diaria?', options: ['Para agrupar los saldos individuales y movimientos de cada cuenta contable', 'Para anotar las facturas del día en orden cronológico', 'Para calcular el sueldo de los trabajadores', 'Para pagar los impuestos directamente'], correct: 0, explanation: 'El Libro Mayor clasifica las operaciones por cada cuenta específica para conocer su saldo.', points: 150 },
+    { id: 207, topic: 'contabilidad', type: 'multiple', question: '¿Para qué sirve el Libro Mayor en la contabilidad diaria?', options: ['Para agrupar los saldos individuales y movimientos de cada cuenta contable', 'Para anotar las facturas del día en orden cronológico', 'Para calcular el sueldo de los trabajadores', 'Para pagar los impuestos directamente'], correct: 0, explanation: 'El Libro Mayor classifies las operaciones por cada cuenta específica para conocer su saldo.', points: 150 },
     { id: 208, topic: 'contabilidad', type: 'multiple', question: 'Se compra un equipo de oficina por $1.000 a crédito firmando una letra. ¿Qué cuenta de pasivo aumenta?', options: ['Documentos por Pagar', 'Cuentas por Cobrar', 'Capital Social', 'Gastos Operativos'], correct: 0, explanation: 'Al existir un compromiso formal respaldado por un documento, la deuda se registra en Documentos por Pagar.', points: 150 },
     { id: 209, topic: 'nomina', type: 'multiple', question: '¿Qué representan los "Haberes No Imponibles" en una planilla de remuneraciones?', options: ['Asignaciones que no sufren descuentos legales, como la movilización o colación', 'El sueldo base antes de calcular las horas extras', 'Los préstamos que la empresa le otorga al trabajador', 'Los impuestos cobrados directamente por el gobierno'], correct: 0, explanation: 'Son compensaciones por gastos de trabajo sobre los cuales no se aplican retenciones.', points: 150 },
     { id: 210, topic: 'contabilidad', type: 'multiple', question: '¿Cuál es el principio contable de la "Partida Doble"?', options: ['No hay deudor sin acreedor: la suma del Debe debe ser igual a la suma del Haber', 'Todas las compras se deben hacer por duplicado', 'Los impuestos se pagan dos veces al año', 'Las ganancias siempre deben duplicar a las pérdidas'], correct: 0, explanation: 'La partida doble garantiza el equilibrio patrimonial en todo asiento contable.', points: 150 }
@@ -326,6 +325,16 @@ function showSpeedBonus(points) {
     setTimeout(() => {
         toast.classList.remove('show', 'hide');
     }, 2000);
+}
+
+// Interfaz auxiliar para detonar ráfagas físicas desde botones
+function triggerVisualCoinsFromElement(element, count = 12) {
+    if (element && window.effectsManager) {
+        const rect = element.getBoundingClientRect();
+        const clickX = rect.left + rect.width / 2;
+        const clickY = rect.top + rect.height / 2;
+        window.effectsManager.triggerCoinExplosion(clickX, clickY, count);
+    }
 }
 
 function setupSplashScreen() {
@@ -545,6 +554,10 @@ function loadMatching(question) {
                     matches[this.dataset.pairId] = true; selectedLeft = null;
                     if (Object.keys(matches).length === question.pairs.length) {
                         showFeedback(`¡Perfecto! ${question.explanation || 'Emparejaste todos los conceptos correctamente.'}`, 'correct');
+                        
+                        // EFECTOS CANVAS: Lluvia desde el centro de la grilla de emparejamiento
+                        triggerVisualCoinsFromElement(matchingContainer, 16);
+                        
                         handleCorrectAnswer(question.points);
                     }
                 } else {
@@ -586,6 +599,10 @@ function loadSlider(question) {
         const userAnswer = parseFloat(input.value);
         if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
             showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
+            
+            // EFECTOS CANVAS: Monedas desde el botón de enviar
+            triggerVisualCoinsFromElement(submitBtn, 14);
+            
             handleCorrectAnswer(question.points);
         } else {
             showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
@@ -632,6 +649,7 @@ function loadDrag(question) {
 }
 
 function checkDragComplete(question) {
+    const dragContainer = document.getElementById('drag-container');
     const dropZones = document.querySelectorAll('.drop-zone');
     let allFilled = true, allCorrect = true;
     dropZones.forEach((zone, index) => {
@@ -641,6 +659,10 @@ function checkDragComplete(question) {
     if (allFilled) { 
         if (allCorrect) {
             showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
+            
+            // EFECTOS CANVAS: Monedas desde la zona del drag container
+            triggerVisualCoinsFromElement(dragContainer, 16);
+            
             handleCorrectAnswer(question.points); 
         } else {
             showFeedback(`Orden incorrecto. Revisa el flujo lógico de los procesos financieros.`, 'incorrect');
@@ -665,11 +687,18 @@ function checkMultipleAnswer(originalIndex, question) {
     if (originalIndex === question.correct) {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
+        let coinCount = 12; // Cantidad base de monedas
         
         if (responseTime < 3) {
             const speedBonus = Math.round(question.points * 0.5);
             totalPoints += speedBonus;
+            coinCount += 8; // Recompensa extra: más monedas por velocidad
             showSpeedBonus(speedBonus);
+        }
+        
+        // EFECTOS CANVAS INTEGRADO: Disparador desde el botón clickeado
+        if (options[clickedDisplayIndex]) {
+            triggerVisualCoinsFromElement(options[clickedDisplayIndex], coinCount);
         }
         
         const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
@@ -956,18 +985,6 @@ function applyHint() {
     fb.className = 'feedback-box correct';
 }
 
-function updatePowerupButtons() {
-    ['fifty', 'time', 'freeze', 'hint'].forEach(type => {
-        const btn = document.getElementById(`powerup-${type}`);
-        if (!btn) return;
-        const small = btn.querySelector('small');
-        if (small) small.textContent = `(${state.powerups[type]})`;
-        
-        const isTimePowerupInNormalMode = (type === 'time' || type === 'freeze') && state.mode !== 'timed';
-        btn.disabled = state.powerups[type] <= 0 || isTimePowerupInNormalMode;
-    });
-}
-
 // ===== TEMPORIZADOR =====
 function startTimer() {
     updateTimerDisplay();
@@ -1029,6 +1046,18 @@ function updateStreak() {
 function updateProgress() {
     const pf = document.getElementById('progress-fill');
     if (pf) pf.style.width = `${(state.currentQuestion / state.totalQuestions) * 100}%`;
+}
+
+function updatePowerupButtons() {
+    ['fifty', 'time', 'freeze', 'hint'].forEach(type => {
+        const btn = document.getElementById(`powerup-${type}`);
+        if (!btn) return;
+        const small = btn.querySelector('small');
+        if (small) small.textContent = `(${state.powerups[type]})`;
+        
+        const isTimePowerupInNormalMode = (type === 'time' || type === 'freeze') && state.mode !== 'timed';
+        btn.disabled = state.powerups[type] <= 0 || isTimePowerupInNormalMode;
+    });
 }
 
 // ===== INSIGNIAS =====
