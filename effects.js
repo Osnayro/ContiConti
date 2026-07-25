@@ -1,6 +1,6 @@
 /**
  * Conti Conti - Motor de Efectos Visuales (VFX) y Sonido (SFX)
- * Versión Refactorizada - Corrección de Defectos y Mejoras
+ * Versión Refactorizada con Audio Sintetizado Nativo (Cero dependencias externas)
  * Desarrollado para optimizar el Game Feel en Canvas 2D
  */
 
@@ -33,23 +33,12 @@ class ContiEffectsManager {
         this.timeouts = [];
         this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // Banco de sonidos predefinidos con enlaces estables (Mixkit)
-        this.sfxUrls = {
-            'sfx-coin-drop':      'https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav',
-            'sfx-coin-sparkle':   'https://assets.mixkit.co/active_storage/sfx/2000/2000-84.wav',
-            'sfx-cash-register':  'https://assets.mixkit.co/active_storage/sfx/2015/2015-84.wav', 
-            'sfx-woosh-loss':     'https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav',
-            'sfx-success-balance':'https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav',
-            'sfx-danger-heart':   'https://assets.mixkit.co/active_storage/sfx/957/957-84.wav',
-            'sfx-level-up':       'https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav',
-            'sfx-error-buzz':     'https://assets.mixkit.co/active_storage/sfx/2009/2009-84.wav',
-            'sfx-notification':   'https://assets.mixkit.co/active_storage/sfx/2011/2011-84.wav',
-            'sfx-achievement':    'https://assets.mixkit.co/active_storage/sfx/2015/2015-84.wav'
-        };
-
-        // Cache de instancias de Audio
+        // Inicializar el contexto de audio nativo del navegador
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.audioCache = {};
         this.activeAudioNodes = []; 
+        
+        // Generar y almacenar los efectos en memoria
         this.initAudioCache();
 
         // Vinculación explícita del contexto (this) para iOS
@@ -72,14 +61,111 @@ class ContiEffectsManager {
     }
 
     initAudioCache() {
-        Object.keys(this.sfxUrls).forEach(id => {
-            const audio = new Audio(this.sfxUrls[id]);
-            audio.preload = 'auto';
-            audio.onerror = () => {
-                console.warn(`[ContiEffects] No se pudo cargar el audio: ${id} (${this.sfxUrls[id]})`);
-            };
-            this.audioCache[id] = audio;
+        // Fórmulas matemáticas puras para sintetizar los SFX en tiempo real
+        const sfxDefinitions = {
+            'sfx-coin-drop': (ctx) => {
+                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    let t = i / ctx.sampleRate;
+                    data[i] = Math.sin(2 * Math.PI * 3200 * t) * Math.exp(-30 * t);
+                }
+                return buffer;
+            },
+            'sfx-cash-register': (ctx) => {
+                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    let t = i / ctx.sampleRate;
+                    data[i] = (Math.sin(2 * Math.PI * 1500 * t) + Math.sin(2 * Math.PI * 2200 * t)) * Math.exp(-12 * t);
+                }
+                return buffer;
+            },
+            'sfx-woosh-loss': (ctx) => {
+                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    let t = i / ctx.sampleRate;
+                    let f_sweep = 800 * Math.exp(-6 * t);
+                    data[i] = Math.sin(2 * Math.PI * f_sweep * t) * Math.exp(-4 * t);
+                }
+                return buffer;
+            },
+            'sfx-success-balance': (ctx) => {
+                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    let t = i / ctx.sampleRate;
+                    data[i] = (Math.sin(2 * Math.PI * 523.25 * t) + Math.sin(2 * Math.PI * 659.25 * t) + Math.sin(2 * Math.PI * 783.99 * t)) * Math.exp(-5 * t);
+                }
+                return buffer;
+            }
+        };
+
+        // Mapeo y conversión a objetos de Audio (Blobs binarios temporales)
+        Object.keys(sfxDefinitions).forEach(id => {
+            try {
+                const buffer = sfxDefinitions[id](this.audioContext);
+                const wavBytes = this._bufferToWav(buffer);
+                const blob = new Blob([wavBytes], { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
+                
+                const audio = new Audio(url);
+                audio.preload = 'auto';
+                this.audioCache[id] = audio;
+            } catch (e) {
+                console.warn(`[ContiEffects] Error sintetizando el audio nativo: ${id}`, e);
+            }
         });
+
+        // Asignamos alias para mantener la compatibilidad con los IDs que no se generan de forma única
+        this.audioCache['sfx-coin-sparkle'] = this.audioCache['sfx-coin-drop'];
+        this.audioCache['sfx-danger-heart'] = this.audioCache['sfx-woosh-loss'];
+        this.audioCache['sfx-level-up'] = this.audioCache['sfx-success-balance'];
+        this.audioCache['sfx-error-buzz'] = this.audioCache['sfx-woosh-loss'];
+        this.audioCache['sfx-notification'] = this.audioCache['sfx-coin-drop'];
+        this.audioCache['sfx-achievement'] = this.audioCache['sfx-cash-register'];
+    }
+
+    // Compilador interno para estructurar los datos binarios en un contenedor ejecutable (.wav)
+    _bufferToWav(buffer) {
+        let numOfChan = buffer.numberOfChannels,
+            length = buffer.length * numOfChan * 2 + 44,
+            bufferArr = new ArrayBuffer(length),
+            view = new DataView(bufferArr),
+            channels = [], i, sample,
+            offset = 0,
+            pos = 0;
+
+        function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+        function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); // Longitud del archivo
+        setUint32(0x45564157); // "WAVE"
+        setUint32(0x20746d66); // "fmt " chunk
+        setUint32(16);         
+        setUint16(1);          // Formato PCM sin compresión
+        setUint16(numOfChan);
+        setUint32(buffer.sampleRate);
+        setUint32(buffer.sampleRate * 2 * numOfChan); 
+        setUint16(numOfChan * 2);                     
+        setUint16(16);                                // 16 bits
+        setUint32(0x61746164);                        // "data" chunk
+        setUint32(length - pos - 4);                  
+
+        for (i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+
+        while (pos < length) {
+            for (i = 0; i < numOfChan; i++) {
+                sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(pos, sample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+        return bufferArr;
     }
 
     setupIOSAudioUnlock() {
@@ -88,18 +174,23 @@ class ContiEffectsManager {
     }
 
     _unlockAudio() {
-        // Remoción inmediata para evitar ejecuciones duplicadas en ráfaga
         window.removeEventListener('click', this._boundUnlockAudio);
         window.removeEventListener('touchstart', this._boundUnlockAudio);
+
+        // Desbloqueo del AudioContext de la Web Audio API
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
 
         const silentSound = new Audio();
         silentSound.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
         silentSound.play().then(() => {
             console.log("[ContiEffects] Audio desbloqueado con éxito para iPhone/iOS.");
-            Object.values(this.audioCache).forEach(audio => audio.load());
+            Object.values(this.audioCache).forEach(audio => {
+                if(audio) audio.load();
+            });
         }).catch(err => {
-            console.warn("[ContiEffects] El intento de desbloqueo falló. Reincorporando listeners.", err);
-            // Si falla (ej. interacción inválida), re-acoplamos la seguridad
+            console.warn("[ContiEffects] Falló el desbloqueo. Reincorporando listeners de seguridad.", err);
             this.setupIOSAudioUnlock();
         });
     }
@@ -115,7 +206,7 @@ class ContiEffectsManager {
 
         const baseAudio = this.audioCache[id];
         if (!baseAudio) {
-            console.warn(`[ContiEffects] Sonido no encontrado: ${id}`);
+            console.warn(`[ContiEffects] Sonido no encontrado en el sintetizador: ${id}`);
             return;
         }
 
@@ -142,7 +233,7 @@ class ContiEffectsManager {
                 if (idx > -1) this.activeAudioNodes.splice(idx, 1);
             };
         }).catch(err => {
-            console.log("[ContiEffects] Audio bloqueado temporalmente por restricciones del navegador:", err.message);
+            console.log("[ContiEffects] Reproducción pospuesta hasta interacción del usuario:", err.message);
             const idx = this.activeAudioNodes.indexOf(soundClone);
             if (idx > -1) this.activeAudioNodes.splice(idx, 1);
         });
@@ -408,8 +499,10 @@ class ContiEffectsManager {
         this.timeouts = [];
 
         this.activeAudioNodes.forEach(audio => {
-            audio.pause();
-            audio.src = '';
+            if(audio) {
+                audio.pause();
+                audio.src = '';
+            }
         });
         this.activeAudioNodes = [];
 
