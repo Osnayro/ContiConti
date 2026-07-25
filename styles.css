@@ -1,4 +1,3 @@
-
 :root {
     --azul-pastel: #A2D2FF;
     --azul-oscuro: #1E3A63;
@@ -32,7 +31,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -90,6 +89,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 .splash-content {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 35px 25px;
     border-radius: var(--borde-radio);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -299,11 +299,11 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     display: flex;
     align-items: center;
     gap: 3px;
+    position: relative;
 }
 
 .streak-display.on-fire {
     animation: streakFire 0.5s infinite ease-in-out;
-    box-shadow: 0 0 20px rgba(255, 107, 53, 0.8), 0 0 40px rgba(255, 107, 53, 0.4);
 }
 
 .timer-display {
@@ -409,13 +409,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 /* 😴 Aburrido */
 .rabbit-svg.bored .ear-left { transform: rotate(-25deg) translateY(5px); }
 .rabbit-svg.bored .ear-right { transform: rotate(25deg) translateY(5px); }
-.rabbit-svg.bored .eye-left, .rabbit-svg.bored .eye-right { 
-    ry: 2px;
-    transition: ry 0.5s ease;
-}
-.rabbit-svg.bored .mouth { 
-    d: path("M 54 74 Q 60 72 66 74");
-}
+.rabbit-svg.bored .ear-inner { fill: #E2E8F0 !important; }
 
 /* 🤩 Impresionado */
 .rabbit-svg.impressed .ear-left { animation: earHelicopter 0.3s infinite linear; }
@@ -445,14 +439,12 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 .rabbit-svg.confident .ear-left { transform: rotate(-25deg) translateY(-5px); }
 .rabbit-svg.confident .ear-right { transform: rotate(-10deg) translateY(-3px); }
 .rabbit-svg.confident .sunglasses { opacity: 1; }
-.rabbit-svg.confident .mouth { d: path("M 52 74 Q 58 80 64 74"); }
 
 /* 🥶 Congelado */
 .rabbit-svg.frozen .ear-left { transform: rotate(-10deg); }
 .rabbit-svg.frozen .ear-right { transform: rotate(10deg); }
 .rabbit-svg.frozen .ear-inner { fill: #BFDBFE !important; }
-.rabbit-svg.frozen { filter: drop-shadow(0px 0px 10px rgba(100,200,255,0.8)) hue-rotate(180deg); }
-.rabbit-svg.frozen { animation: frozenShake 0.3s infinite ease-in-out; }
+.rabbit-svg.frozen { filter: drop-shadow(0px 0px 10px rgba(100,200,255,0.8)) hue-rotate(180deg); animation: frozenShake 0.3s infinite ease-in-out; }
 .rabbit-svg.frozen .ice-crystal { opacity: 1; animation: iceSparkle 1s infinite ease-in-out; }
 
 /* 😤 Determinado */
@@ -466,7 +458,6 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 .rabbit-svg.graduate .graduation-cap { opacity: 1; transform: translateY(0); }
 .rabbit-svg.graduate .ear-inner { fill: #FFD700 !important; }
 
-/* Elementos decorativos del conejo */
 .eye-star, .tear, .question-mark, .sunglasses, .ice-crystal, .eye-fire, .graduation-cap {
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -783,7 +774,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 
 .powerup-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 12 rgba(245, 158, 11, 0.3);
 }
 
 .powerup-btn:disabled {
@@ -1297,8 +1288,8 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 }
 
 @keyframes streakFire {
-    0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 53, 0.6); }
-    50% { box-shadow: 0 0 25px rgba(255, 107, 53, 1), 0 0 50px rgba(255, 107, 53, 0.6); }
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
 }
 
 @keyframes timerPulse {
