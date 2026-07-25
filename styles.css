@@ -1,3 +1,4 @@
+
 :root {
     --azul-pastel: #A2D2FF;
     --azul-oscuro: #1E3A63;
@@ -366,6 +367,11 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     position: relative;
 }
 
+.rabbit-svg-container {
+    width: 105px;
+    height: 105px;
+}
+
 .rabbit-svg {
     width: 105px;
     height: 105px;
@@ -398,9 +404,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 .rabbit-svg.thinking .ear-left { animation: earWiggle 1s infinite ease-in-out; }
 .rabbit-svg.thinking .ear-right { animation: earWiggle 1s infinite ease-in-out 0.5s; }
 
-/* ===== NUEVAS REACCIONES ===== */
-
-/* 😰 Nervioso - Timer bajo */
+/* 😰 Nervioso */
 .rabbit-svg.nervous .ear-left { animation: earShake 0.15s infinite ease-in-out; }
 .rabbit-svg.nervous .ear-right { animation: earShake 0.15s infinite ease-in-out 0.075s; }
 .rabbit-svg.nervous .eye-pupil { animation: eyeDilate 0.3s infinite ease-in-out; }
@@ -774,7 +778,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 
 .powerup-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12 rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .powerup-btn:disabled {
@@ -884,7 +888,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     margin-top: 2px;
 }
 
-/* ===== BADGES / ACHIEVEMENTS ===== */
+/* ===== BADGES ===== */
 .badges-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1171,6 +1175,43 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     transform: translateX(-50%) translateY(-100px);
 }
 
+/* ===== TOASTS (reemplazo de alert) ===== */
+#toast-container {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+@keyframes toastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.85);
+    }
+    60% {
+        transform: translateY(4px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toastSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes loadProgress {
     0% { width: 0%; }
@@ -1410,6 +1451,11 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     }
     
     .rabbit-svg {
+        width: 85px;
+        height: 85px;
+    }
+
+    .rabbit-svg-container {
         width: 85px;
         height: 85px;
     }
