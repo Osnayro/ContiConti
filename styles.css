@@ -345,11 +345,18 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     justify-content: center;
     align-items: center;
     text-align: center;
-    animation: slideIn 0.4s ease-out;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.screen:not(.active) {
+    opacity: 0;
+    transform: translateX(-12px);
+    pointer-events: none;
 }
 
 .screen.active {
     display: flex;
+    animation: slideIn 0.35s ease-out forwards;
 }
 
 /* ===== ONDA EXPANSIVA ===== */
@@ -431,7 +438,7 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 /* 🥳 Celebración */
 .rabbit-svg.celebrating .ear-left { animation: earWave 0.4s infinite ease-in-out; }
 .rabbit-svg.celebrating .ear-right { animation: earWave 0.4s infinite ease-in-out 0.2s; }
-.rabbit-svg.celebrating { animation: celebrationJump 0.3s infinite ease-in-out; }
+.rabbit-svg.celebrating { animation: celebrationJump 0.4s ease-in-out 6; }
 .rabbit-svg.celebrating .ear-inner { fill: #FFD700 !important; }
 
 /* 🤔 Pensando profundamente */
@@ -1212,6 +1219,62 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     }
 }
 
+/* ================================================================
+   📱 FEEDBACK TÁCTIL (:active)
+   En móvil no hay hover, así que :active da respuesta al toque
+   ================================================================ */
+
+.option-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    background: #DBEAFE;
+    transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.mode-card:active {
+    transform: scale(0.96);
+    transition: transform 0.08s ease;
+}
+
+.powerup-btn:active:not(:disabled) {
+    transform: scale(0.93);
+    transition: transform 0.08s ease;
+}
+
+.main-btn:active:not(:disabled) {
+    transform: scale(0.96);
+    transition: transform 0.08s ease;
+}
+
+.skip-splash-btn:active {
+    transform: scale(0.94);
+    transition: transform 0.08s ease;
+}
+
+.draggable-item:active {
+    transform: scale(0.94);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.matching-item:active:not(.matched) {
+    transform: scale(0.96);
+    transition: transform 0.08s ease;
+}
+
+/* ================================================================
+   ⌨️  ACCESIBILIDAD: :focus-visible para navegación por teclado
+   ================================================================ */
+
+.option-btn:focus-visible,
+.mode-card:focus-visible,
+.powerup-btn:focus-visible,
+.main-btn:focus-visible,
+.skip-splash-btn:focus-visible {
+    outline: 3px solid #3B82F6;
+    outline-offset: 3px;
+    border-radius: 14px;
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes loadProgress {
     0% { width: 0%; }
@@ -1429,8 +1492,9 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     }
     
     .option-btn {
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+        min-height: 48px;
     }
     
     .mode-grid {
@@ -1458,5 +1522,20 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
     .rabbit-svg-container {
         width: 85px;
         height: 85px;
+    }
+
+    .matching-item {
+        min-height: 44px;
+        padding: 10px 8px;
+    }
+
+    .powerup-btn {
+        min-height: 38px;
+        padding: 7px 12px;
+    }
+
+    .main-btn {
+        min-height: 48px;
+        padding: 13px 24px;
     }
 }
