@@ -1,11 +1,22 @@
-
 /**
  * ============================================================
- * ContiEffectsManager v3.0 — Producción
- * Efectos visuales (Canvas 2D) + Sonidos (Web Audio API) + Toasts
+ * ContiEffectsManager v4.0 — Producción
+ * Efectos visuales (Canvas 2D) + Sonidos (Web Audio API, motor mejorado) + Toasts
  * Para "Conti Conti - Desafío Financiero"
  * ============================================================
- * 
+ *
+ * Novedades v4.0 sobre v3.0:
+ *   - Bus de audio: masterGain -> compressor -> destination (evita clipping)
+ *   - Envolventes ADSR reales en vez de simples rampas
+ *   - Osciladores en capas (detune) para timbres más ricos
+ *   - Filtros (lowpass/highpass) con barridos para carácter percusivo
+ *   - Generador de ruido blanco filtrado para impactos/explosiones
+ *   - Reverb algorítmico (impulse response generada por código, sin archivos)
+ *   - Variación aleatoria de pitch/timing en sonidos repetitivos
+ *
+ * API pública 100% compatible con v3.0 (playSound, triggerToast,
+ * triggerCoinExplosion, etc. no cambian su firma).
+ *
  * Uso:
  *   const fx = new ContiEffectsManager({
  *       canvasId: 'effects-canvas',
@@ -18,7 +29,7 @@
  */
 
 class ContiEffectsManager {
-    
+
     constructor(config = {}) {
         // Canvas
         this.canvas = document.getElementById(config.canvasId || 'effects-canvas');
@@ -29,8 +40,8 @@ class ContiEffectsManager {
         }
 
         // Score badge (las monedas vuelan hacia él)
-        this.scoreBadge = config.scoreBadgeId 
-            ? document.getElementById(config.scoreBadgeId) 
+        this.scoreBadge = config.scoreBadgeId
+            ? document.getElementById(config.scoreBadgeId)
             : null;
 
         // Configuración
@@ -42,7 +53,15 @@ class ContiEffectsManager {
         this.floatingTexts = [];
         this.animationId = null;
         this.isRunning = false;
+
+        // Audio engine (se crea de forma perezosa en ensureAudio())
         this.audioCtx = null;
+        this.masterGain = null;
+        this.compressor = null;
+        this.reverbNode = null;
+        this.reverbWetGain = null;
+        this.reverbDryGain = null;
+        this.noiseBuffer = null;
 
         // Paletas de colores
         this.colors = {
@@ -58,7 +77,7 @@ class ContiEffectsManager {
         // Arrancar loop de animación
         this.startLoop();
 
-        console.log('🎨 ContiEffectsManager v3.0 listo | Partículas máx:', this.maxParticles, '| Volumen:', this.masterVolume);
+        console.log('🎨 ContiEffectsManager v4.0 listo | Partículas máx:', this.maxParticles, '| Volumen:', this.masterVolume);
     }
 
     // ================================================================
@@ -228,12 +247,6 @@ class ContiEffectsManager {
     //  API PÚBLICA — EFECTOS VISUALES
     // ================================================================
 
-    /**
-     * 💰 Explosión de monedas que vuelan hacia el score
-     * @param {number} x     - Posición X
-     * @param {number} y     - Posición Y
-     * @param {number} count - Cantidad (default: 12, máx: 40)
-     */
     triggerCoinExplosion(x, y, count = 12) {
         if (!this.canvas) return;
         count = Math.min(count, 40);
@@ -261,13 +274,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * 💥 Explosión circular genérica
-     * @param {number} x      - Posición X
-     * @param {number} y      - Posición Y
-     * @param {number} scale  - Escala (default: 1.0)
-     * @param {string} color  - Color base (default: '#FFD700')
-     */
     triggerExplosion(x, y, scale = 1.0, color = '#FFD700') {
         if (!this.canvas) return;
         const count = Math.floor(22 * scale);
@@ -294,11 +300,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * 🎊 Lluvia de confeti desde arriba
-     * @param {number} duration - Duración en ms (default: 2500)
-     * @param {number} density  - Partículas por frame (default: 3)
-     */
     triggerConfetti(duration = 2500, density = 3) {
         if (!this.canvas) return;
         const startTime = performance.now();
@@ -331,10 +332,6 @@ class ContiEffectsManager {
         requestAnimationFrame(spawn);
     }
 
-    /**
-     * 🎆 Fuegos artificiales
-     * @param {number} count - Número de explosiones (default: 3)
-     */
     triggerFireworks(count = 3) {
         if (!this.canvas) return;
         for (let i = 0; i < count; i++) {
@@ -372,13 +369,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * 📝 Texto flotante que sube y se desvanece
-     * @param {number} x       - Posición X
-     * @param {number} y       - Posición Y
-     * @param {string} text    - Texto
-     * @param {Object} options - { color, fontSize, fontWeight }
-     */
     triggerFloatingText(x, y, text, options = {}) {
         if (!this.canvas) return;
         this.floatingTexts.push({
@@ -394,9 +384,6 @@ class ContiEffectsManager {
         });
     }
 
-    /**
-     * 🪙 Lluvia de monedas desde arriba (rachas)
-     */
     triggerCoinRain() {
         if (!this.canvas) return;
         const count = 30;
@@ -424,10 +411,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * ⚡ Destello de pantalla
-     * @param {number} duration - ms (default: 200)
-     */
     triggerScreenFlash(duration = 200) {
         const flash = document.createElement('div');
         flash.style.cssText = `
@@ -444,11 +427,6 @@ class ContiEffectsManager {
     //  API PÚBLICA — SISTEMA DE TOASTS
     // ================================================================
 
-    /**
-     * 🔔 Toast animado (reemplaza alert)
-     * @param {string} message        - Texto
-     * @param {Object} options        - { icon, bg, duration, position }
-     */
     triggerToast(message, options = {}) {
         const {
             icon = '🎉',
@@ -492,20 +470,162 @@ class ContiEffectsManager {
     }
 
     // ================================================================
-    //  API PÚBLICA — SONIDOS
+    //  MOTOR DE AUDIO — Infraestructura (v4.0)
     // ================================================================
 
+    /**
+     * Crea (si hace falta) el AudioContext y el bus maestro:
+     *   fuentes -> masterGain -> compressor -> destination
+     * y una rama paralela de reverb: masterGain -> reverbWet -> convolver -> compressor
+     */
     ensureAudio() {
         if (!this.audioCtx) {
             this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Bus maestro
+            this.masterGain = this.audioCtx.createGain();
+            this.masterGain.gain.value = 1;
+
+            this.compressor = this.audioCtx.createDynamicsCompressor();
+            this.compressor.threshold.value = -18;
+            this.compressor.knee.value = 20;
+            this.compressor.ratio.value = 4;
+            this.compressor.attack.value = 0.003;
+            this.compressor.release.value = 0.25;
+
+            // Rama seca (dry)
+            this.reverbDryGain = this.audioCtx.createGain();
+            this.reverbDryGain.gain.value = 1;
+
+            // Rama de reverb (wet), con impulse response generada por código
+            this.reverbNode = this.audioCtx.createConvolver();
+            this.reverbNode.buffer = this._buildImpulseResponse(1.6, 2.2);
+            this.reverbWetGain = this.audioCtx.createGain();
+            this.reverbWetGain.gain.value = 0.22; // cantidad de reverb por defecto
+
+            this.masterGain.connect(this.reverbDryGain);
+            this.reverbDryGain.connect(this.compressor);
+
+            this.masterGain.connect(this.reverbNode);
+            this.reverbNode.connect(this.reverbWetGain);
+            this.reverbWetGain.connect(this.compressor);
+
+            this.compressor.connect(this.audioCtx.destination);
+
+            // Buffer de ruido blanco reutilizable (para percusión/explosiones)
+            this.noiseBuffer = this._buildNoiseBuffer(1.0);
         }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
     }
 
+    /** Genera una impulse response sintética para el ConvolverNode (sin archivos externos) */
+    _buildImpulseResponse(duration = 1.5, decay = 2.0) {
+        const rate = this.audioCtx.sampleRate;
+        const length = Math.max(1, Math.floor(rate * duration));
+        const impulse = this.audioCtx.createBuffer(2, length, rate);
+        for (let ch = 0; ch < 2; ch++) {
+            const data = impulse.getChannelData(ch);
+            for (let i = 0; i < length; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+            }
+        }
+        return impulse;
+    }
+
+    /** Genera un buffer de ruido blanco de la duración indicada (en segundos) */
+    _buildNoiseBuffer(duration = 1.0) {
+        const rate = this.audioCtx.sampleRate;
+        const length = Math.max(1, Math.floor(rate * duration));
+        const buffer = this.audioCtx.createBuffer(1, length, rate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+    }
+
     /**
-     * 🔊 Reproduce sonido sintetizado
+     * Aplica una envolvente ADSR a un AudioParam de ganancia.
+     * @param {AudioParam} gainParam
+     * @param {number} startTime
+     * @param {Object} env - { peak, attack, decay, sustain, sustainTime, release }
+     */
+    _applyADSR(gainParam, startTime, env) {
+        const { peak, attack = 0.01, decay = 0.1, sustain = 0.4, sustainTime = 0.05, release = 0.2 } = env;
+        const t = startTime;
+        gainParam.cancelScheduledValues(t);
+        gainParam.setValueAtTime(0.0001, t);
+        gainParam.exponentialRampToValueAtTime(Math.max(peak, 0.0001), t + attack);
+        gainParam.exponentialRampToValueAtTime(Math.max(peak * sustain, 0.0001), t + attack + decay);
+        gainParam.setValueAtTime(Math.max(peak * sustain, 0.0001), t + attack + decay + sustainTime);
+        gainParam.exponentialRampToValueAtTime(0.0001, t + attack + decay + sustainTime + release);
+        return t + attack + decay + sustainTime + release;
+    }
+
+    /**
+     * Crea un oscilador conectado (opcionalmente) a un filtro y a una ganancia propia,
+     * mezclado hacia el masterGain. Devuelve { osc, gain, filter } para configurarlo.
+     */
+    _createVoice({ type = 'sine', detune = 0, filterType = null, filterFreq = null, filterQ = 0.7 } = {}) {
+        const osc = this.audioCtx.createOscillator();
+        osc.type = type;
+        osc.detune.value = detune;
+
+        const voiceGain = this.audioCtx.createGain();
+        voiceGain.gain.value = 0.0001;
+
+        let outputNode = voiceGain;
+        let filter = null;
+        if (filterType) {
+            filter = this.audioCtx.createBiquadFilter();
+            filter.type = filterType;
+            filter.frequency.value = filterFreq || 1000;
+            filter.Q.value = filterQ;
+            osc.connect(filter);
+            filter.connect(voiceGain);
+        } else {
+            osc.connect(voiceGain);
+        }
+        voiceGain.connect(this.masterGain);
+
+        return { osc, gain: voiceGain, filter };
+    }
+
+    /** Reproduce un golpe de ruido filtrado (para monedas, explosiones, incorrecto, etc.) */
+    _playNoiseHit({ filterType = 'bandpass', freqStart, freqEnd, q = 1, peak = 0.3, duration = 0.25, delay = 0 } = {}) {
+        const now = this.audioCtx.currentTime + delay;
+        const src = this.audioCtx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+
+        const filter = this.audioCtx.createBiquadFilter();
+        filter.type = filterType;
+        filter.Q.value = q;
+        filter.frequency.setValueAtTime(freqStart, now);
+        if (freqEnd !== undefined) {
+            filter.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 20), now + duration);
+        }
+
+        const gain = this.audioCtx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(Math.max(peak * this.masterVolume, 0.0001), now + Math.min(0.02, duration * 0.15));
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        src.start(now);
+        src.stop(now + duration + 0.05);
+    }
+
+    // ================================================================
+    //  API PÚBLICA — SONIDOS (v4.0, motor mejorado)
+    // ================================================================
+
+    /**
+     * 🔊 Reproduce sonido sintetizado con motor de capas + ADSR + filtros + ruido + reverb
      * @param {string} type - 'correct'|'incorrect'|'levelup'|'achievement'|'powerup'|'tick'|'coin'|'explosion'
      */
     playSound(type) {
@@ -514,90 +634,147 @@ class ContiEffectsManager {
 
         const now = this.audioCtx.currentTime;
         const vol = this.masterVolume;
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
+        // Pequeña variación aleatoria para que sonidos repetidos no suenen mecánicos
+        const jitter = () => (Math.random() - 0.5) * 12; // cents
 
         switch (type) {
-            case 'correct':
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523, now);
-                osc.frequency.setValueAtTime(659, now + 0.08);
-                osc.frequency.setValueAtTime(784, now + 0.16);
-                gain.gain.setValueAtTime(0.18 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
+            case 'correct': {
+                // Acorde ascendente en capas: dos voces por nota, ligeramente desafinadas
+                const notes = [523, 659, 784];
+                notes.forEach((freq, i) => {
+                    [0, 7].forEach((detuneBase) => {
+                        const v = this._createVoice({ type: 'sine', detune: detuneBase + jitter() });
+                        v.osc.frequency.value = freq;
+                        const start = now + i * 0.07;
+                        this._applyADSR(v.gain.gain, start, {
+                            peak: 0.14 * vol * (detuneBase === 0 ? 1 : 0.5),
+                            attack: 0.01, decay: 0.08, sustain: 0.3, sustainTime: 0.03, release: 0.18,
+                        });
+                        v.osc.start(start);
+                        v.osc.stop(start + 0.35);
+                    });
+                });
                 break;
+            }
 
-            case 'incorrect':
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(200, now);
-                osc.frequency.exponentialRampToValueAtTime(110, now + 0.38);
-                gain.gain.setValueAtTime(0.12 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
-                osc.start(now); osc.stop(now + 0.42);
+            case 'incorrect': {
+                const v = this._createVoice({ type: 'sawtooth', filterType: 'lowpass', filterFreq: 900 });
+                v.osc.frequency.setValueAtTime(200, now);
+                v.osc.frequency.exponentialRampToValueAtTime(95, now + 0.38);
+                v.filter.frequency.setValueAtTime(900, now);
+                v.filter.frequency.exponentialRampToValueAtTime(180, now + 0.4);
+                this._applyADSR(v.gain.gain, now, {
+                    peak: 0.16 * vol, attack: 0.005, decay: 0.1, sustain: 0.5, sustainTime: 0.05, release: 0.25,
+                });
+                v.osc.start(now);
+                v.osc.stop(now + 0.5);
+                // Un poco de ruido grave para dar "peso" al error
+                this._playNoiseHit({ filterType: 'lowpass', freqStart: 500, freqEnd: 90, q: 0.8, peak: 0.12, duration: 0.3 });
                 break;
+            }
 
-            case 'levelup':
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523, now);
-                osc.frequency.setValueAtTime(659, now + 0.12);
-                osc.frequency.setValueAtTime(784, now + 0.24);
-                osc.frequency.setValueAtTime(1047, now + 0.36);
-                gain.gain.setValueAtTime(0.22 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                osc.start(now); osc.stop(now + 0.6);
+            case 'levelup': {
+                const notes = [523, 659, 784, 1047];
+                notes.forEach((freq, i) => {
+                    [0, 5, -5].forEach((detune) => {
+                        const v = this._createVoice({ type: i < 2 ? 'sine' : 'triangle', detune: detune + jitter() });
+                        v.osc.frequency.value = freq;
+                        const start = now + i * 0.1;
+                        this._applyADSR(v.gain.gain, start, {
+                            peak: 0.13 * vol * (detune === 0 ? 1 : 0.4),
+                            attack: 0.012, decay: 0.12, sustain: 0.35, sustainTime: 0.04, release: 0.3,
+                        });
+                        v.osc.start(start);
+                        v.osc.stop(start + 0.5);
+                    });
+                });
                 break;
+            }
 
-            case 'achievement':
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(660, now);
-                osc.frequency.setValueAtTime(880, now + 0.1);
-                osc.frequency.setValueAtTime(1100, now + 0.2);
-                osc.frequency.setValueAtTime(1320, now + 0.3);
-                gain.gain.setValueAtTime(0.17 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-                osc.start(now); osc.stop(now + 0.5);
+            case 'achievement': {
+                const notes = [660, 880, 1100, 1320];
+                notes.forEach((freq, i) => {
+                    const v = this._createVoice({ type: 'triangle', detune: jitter(), filterType: 'highpass', filterFreq: 200 });
+                    v.osc.frequency.value = freq;
+                    const start = now + i * 0.09;
+                    this._applyADSR(v.gain.gain, start, {
+                        peak: 0.15 * vol, attack: 0.01, decay: 0.1, sustain: 0.4, sustainTime: 0.04, release: 0.28,
+                    });
+                    v.osc.start(start);
+                    v.osc.stop(start + 0.45);
+                });
+                // Un brillo de "campana" superpuesto
+                const bell = this._createVoice({ type: 'sine', detune: 1200 });
+                bell.osc.frequency.value = 1760;
+                this._applyADSR(bell.gain.gain, now + 0.3, { peak: 0.06 * vol, attack: 0.005, decay: 0.3, sustain: 0.1, sustainTime: 0.1, release: 0.4 });
+                bell.osc.start(now + 0.3);
+                bell.osc.stop(now + 1.0);
                 break;
+            }
 
-            case 'powerup':
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.setValueAtTime(880, now + 0.12);
-                gain.gain.setValueAtTime(0.15 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
+            case 'powerup': {
+                const v = this._createVoice({ type: 'sine', filterType: 'lowpass', filterFreq: 2500 });
+                v.osc.frequency.setValueAtTime(440, now);
+                v.osc.frequency.exponentialRampToValueAtTime(1046, now + 0.15);
+                this._applyADSR(v.gain.gain, now, {
+                    peak: 0.15 * vol, attack: 0.008, decay: 0.08, sustain: 0.4, sustainTime: 0.05, release: 0.2,
+                });
+                v.osc.start(now);
+                v.osc.stop(now + 0.35);
                 break;
+            }
 
-            case 'tick':
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1000, now);
-                gain.gain.setValueAtTime(0.06 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-                osc.start(now); osc.stop(now + 0.06);
+            case 'tick': {
+                const v = this._createVoice({ type: 'sine', detune: jitter() });
+                v.osc.frequency.value = 1000;
+                this._applyADSR(v.gain.gain, now, {
+                    peak: 0.07 * vol, attack: 0.002, decay: 0.02, sustain: 0.1, sustainTime: 0.01, release: 0.03,
+                });
+                v.osc.start(now);
+                v.osc.stop(now + 0.07);
                 break;
+            }
 
-            case 'coin':
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1400, now);
-                osc.frequency.setValueAtTime(1800, now + 0.04);
-                gain.gain.setValueAtTime(0.1 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-                osc.start(now); osc.stop(now + 0.12);
+            case 'coin': {
+                // Tono metálico + click de ruido agudo para simular impacto de metal
+                const v = this._createVoice({ type: 'sine', filterType: 'highpass', filterFreq: 600 });
+                v.osc.frequency.setValueAtTime(1400, now);
+                v.osc.frequency.setValueAtTime(1800, now + 0.04);
+                this._applyADSR(v.gain.gain, now, {
+                    peak: 0.11 * vol, attack: 0.002, decay: 0.05, sustain: 0.2, sustainTime: 0.02, release: 0.08,
+                });
+                v.osc.start(now);
+                v.osc.stop(now + 0.16);
+                this._playNoiseHit({ filterType: 'highpass', freqStart: 3500, freqEnd: 6000, q: 0.6, peak: 0.08, duration: 0.06 });
                 break;
+            }
 
-            case 'explosion':
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(160, now);
-                osc.frequency.exponentialRampToValueAtTime(28, now + 0.5);
-                gain.gain.setValueAtTime(0.25 * vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-                osc.start(now); osc.stop(now + 0.55);
+            case 'explosion': {
+                // Cuerpo grave con oscilador + ruido de impacto amplio con barrido lowpass
+                const v = this._createVoice({ type: 'sawtooth', filterType: 'lowpass', filterFreq: 800 });
+                v.osc.frequency.setValueAtTime(160, now);
+                v.osc.frequency.exponentialRampToValueAtTime(25, now + 0.5);
+                v.filter.frequency.setValueAtTime(800, now);
+                v.filter.frequency.exponentialRampToValueAtTime(60, now + 0.55);
+                this._applyADSR(v.gain.gain, now, {
+                    peak: 0.2 * vol, attack: 0.003, decay: 0.2, sustain: 0.4, sustainTime: 0.1, release: 0.3,
+                });
+                v.osc.start(now);
+                v.osc.stop(now + 0.6);
+                this._playNoiseHit({ filterType: 'lowpass', freqStart: 2500, freqEnd: 120, q: 0.9, peak: 0.3, duration: 0.5 });
                 break;
+            }
 
             default:
-                osc.start(now); osc.stop(now);
+                break;
+        }
+    }
+
+    /** Ajusta la cantidad de reverb global (0 = seco, 1 = muy húmedo) */
+    setReverbAmount(amount) {
+        this.ensureAudio();
+        if (this.reverbWetGain) {
+            this.reverbWetGain.gain.value = Math.min(1, Math.max(0, amount));
         }
     }
 
