@@ -1,12 +1,26 @@
-
-
-
 /**
  * ============================================================
- * ContiGame Engine v3.0 — Producción
+ * ContiGame Engine v3.1 — Producción
  * Lógica del juego, control de estado y flujos financieros
  * Para "Conti Conti - Desafío Financiero"
  * ============================================================
+ *
+ * Cambios v3.1 sobre v3.0:
+ *   - FIX: clonado profundo del banco de preguntas al armar cada nivel,
+ *     así los bonus (puntos x2, isBonus) ya no mutan las constantes
+ *     originales (nivel2Questions, nivel3Questions, etc.) entre partidas.
+ *   - FIX: cálculo de estrellas de fin de nivel usa un contador real de
+ *     aciertos (state.correctInLevel) en vez de inferirlo dividiendo
+ *     levelScore / basePoints, que se descuadraba con bonus de velocidad
+ *     y preguntas de puntaje doble.
+ *   - FIX: applyHint() ya no revienta si la pregunta actual no tiene
+ *     'explanation' (ej. la pregunta de tipo 'matching').
+ *   - localStorage envuelto en try/catch (falla silenciosamente en modo
+ *     privado de Safari/iOS en vez de romper el flujo).
+ *   - Reemplazo de prompt()/alert() por un modal propio en línea con el
+ *     resto de la experiencia visual (toasts, confeti, etc.).
+ *   - Soporte táctil básico para las preguntas de tipo 'drag' (además del
+ *     HTML5 drag & drop nativo, que no funciona bien en móvil/tablet).
  */
 
 // ===== ESTADO GLOBAL =====
@@ -26,6 +40,7 @@ const state = {
     isFrozen: false,
     questions: [],
     answeredCorrectly: {},
+    correctInLevel: 0,
     powerups: {
         fifty: 3,
         time: 2,
@@ -231,6 +246,44 @@ const levelColors = {
     4: '#EF4444'
 };
 
+// ===== UTILIDADES =====
+
+/** Clona profundamente el banco de preguntas para que las mutaciones de una
+ *  partida (puntos bonus, isBonus, _shuffledIndices) nunca toquen las
+ *  constantes originales (fondoEmergenciaQuestions, nivel2Questions, etc.) */
+function deepCloneQuestions(arr) {
+    if (typeof structuredClone === 'function') {
+        try {
+            return structuredClone(arr);
+        } catch (e) {
+            // sigue al fallback JSON si structuredClone falla por algún motivo
+        }
+    }
+    return JSON.parse(JSON.stringify(arr));
+}
+
+/** Wrappers seguros de localStorage: nunca rompen el flujo del juego
+ *  (por ejemplo, en modo privado de Safari/iOS donde localStorage puede lanzar). */
+function safeLocalGet(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw !== null ? raw : fallback;
+    } catch (e) {
+        console.warn('localStorage no disponible, usando valor por defecto para', key);
+        return fallback;
+    }
+}
+
+function safeLocalSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        console.warn('No se pudo guardar en localStorage:', key);
+        return false;
+    }
+}
+
 // ===== SISTEMA DE SONIDO (Delega en ContiEffectsManager) =====
 function playSound(type) {
     const alwaysPlay = ['correct', 'incorrect', 'levelup', 'achievement', 'tick', 'powerup'];
@@ -325,7 +378,7 @@ function startGame() {
 function startLevel(levelNum) {
     state.currentLevel = levelNum; state.currentQuestion = 0; state.lives = 3; state.streak = 0;
     state.levelScore = 0; state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
-    state.bonusQuestionActive = false;
+    state.bonusQuestionActive = false; state.correctInLevel = 0;
     
     document.body.className = `level-${levelNum}`;
     
@@ -336,7 +389,8 @@ function startLevel(levelNum) {
     }
     
     const rawQuestions = levelQuestionsMap[levelNum] || fondoEmergenciaQuestions;
-    state.questions = shuffleArray([...rawQuestions]).slice(0, 10);
+    // FIX: clonado profundo — nunca mutar el banco original de preguntas
+    state.questions = shuffleArray(deepCloneQuestions(rawQuestions)).slice(0, 10);
     
     if (Math.random() < 0.33 && levelNum >= 2) {
         const bonusIndex = Math.floor(Math.random() * state.questions.length);
@@ -581,10 +635,46 @@ function loadDrag(question) {
         draggable.dataset.originalIndex = question.items.indexOf(item);
         draggable.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', draggable.dataset.originalIndex); draggable.style.opacity = '0.5'; });
         draggable.addEventListener('dragend', () => { draggable.style.opacity = '1'; });
+        // Soporte táctil básico (el drag & drop HTML5 nativo no funciona bien en móvil/tablet)
+        enableTouchDragForItem(draggable, question);
         itemsContainer.appendChild(draggable);
     });
     
     dragContainer.appendChild(itemsContainer);
+}
+
+/** Soporte táctil manual para las preguntas de tipo 'drag', ya que la API
+ *  HTML5 de drag & drop nativa no dispara eventos táctiles en móvil/tablet. */
+function enableTouchDragForItem(draggable, question) {
+    draggable.addEventListener('touchstart', () => {
+        if (window.effectsManager) window.effectsManager.ensureAudio();
+    }, { passive: true });
+
+    draggable.addEventListener('touchmove', (e) => {
+        if (draggable.style.pointerEvents === 'none') return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const zone = el && el.closest ? el.closest('.drop-zone') : null;
+        if (zone && !zone.dataset.filled) zone.classList.add('drag-over');
+    }, { passive: false });
+
+    draggable.addEventListener('touchend', (e) => {
+        if (draggable.style.pointerEvents === 'none') return;
+        const touch = e.changedTouches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const zone = el && el.closest ? el.closest('.drop-zone') : null;
+        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
+        if (zone && !zone.dataset.filled) {
+            const index = parseInt(zone.dataset.index, 10);
+            zone.textContent = `${index + 1}. ${question.items[draggable.dataset.originalIndex]}`;
+            zone.dataset.filled = draggable.dataset.originalIndex;
+            draggable.style.opacity = '0.3';
+            draggable.style.pointerEvents = 'none';
+            checkDragComplete(question);
+        }
+    });
 }
 
 function checkDragComplete(question) {
@@ -654,6 +744,7 @@ function handleCorrectAnswer(points) {
     state.score += points;
     state.levelScore += points;
     state.streak++;
+    state.correctInLevel++;
     if (state.streak > state.maxStreak) state.maxStreak = state.streak;
     
     const question = state.questions[state.currentQuestion];
@@ -727,9 +818,10 @@ function endLevel() {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
     
     const totalQ = state.totalQuestions || 10;
-    const basePoints = (state.questions && state.questions[0] && state.questions[0].points) ? state.questions[0].points : 100;
-    const correctAnswers = state.levelScore / basePoints;
-    const starCount = state.levelPerfect ? 3 : (correctAnswers >= totalQ * 0.7 ? 2 : 1);
+    // FIX: usar el contador real de aciertos en vez de inferirlo dividiendo
+    // levelScore / basePoints (que se descuadraba con bonus de velocidad y
+    // preguntas de puntaje doble)
+    const starCount = state.levelPerfect ? 3 : (state.correctInLevel >= totalQ * 0.7 ? 2 : 1);
     state.levelStars[state.currentLevel] = starCount;
     
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
@@ -856,7 +948,7 @@ function showFinalResults() {
 function restartGame() {
     state.currentQuestion = 0; state.score = 0; state.levelScore = 0; state.lives = 3;
     state.streak = 0; state.currentLevel = 1; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
-    state.levelStars = {}; state.bonusQuestionActive = false;
+    state.levelStars = {}; state.bonusQuestionActive = false; state.correctInLevel = 0;
     document.body.className = 'level-1';
     document.getElementById('streak-display')?.classList.remove('on-fire');
     updateScore(); updateLives(); updateStreak(); updateProgress(); updateLevelDisplay();
@@ -922,7 +1014,12 @@ function applyHint() {
     if (!question) return;
     const fb = document.getElementById('feedback-box');
     if (!fb) return;
-    fb.textContent = `💡 Pista: ${question.explanation.split('.')[0]}.`;
+    // FIX: proteger contra preguntas sin 'explanation' (ej. tipo 'matching'),
+    // que antes rompían con un TypeError al llamar .split() sobre undefined
+    const hintText = question.explanation
+        ? question.explanation.split('.')[0] + '.'
+        : 'Analiza cada opción con calma, ¡tú puedes lograrlo!';
+    fb.textContent = `💡 Pista: ${hintText}`;
     fb.className = 'feedback-box correct';
 }
 
@@ -1043,8 +1140,14 @@ function getBadgeName(badge) {
 }
 
 function loadBadges() {
-    const saved = localStorage.getItem('conti_badges');
-    if (saved) state.badges = { ...state.badges, ...JSON.parse(saved) };
+    const saved = safeLocalGet('conti_badges', null);
+    if (saved) {
+        try {
+            state.badges = { ...state.badges, ...JSON.parse(saved) };
+        } catch (e) {
+            console.warn('No se pudo leer conti_badges guardado, se ignora.');
+        }
+    }
     const grid = document.getElementById('badges-grid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -1055,21 +1158,78 @@ function loadBadges() {
     }
 }
 
-function saveBadges() { localStorage.setItem('conti_badges', JSON.stringify(state.badges)); }
+function saveBadges() {
+    safeLocalSet('conti_badges', JSON.stringify(state.badges));
+}
 
 // ===== LEADERBOARD =====
+
+/** Modal propio para pedir el nombre del jugador (reemplaza a prompt(),
+ *  que interrumpe la experiencia visual del resto del juego). */
+function showNamePromptModal(onSubmit) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+        z-index: 3000; display: flex; align-items: center; justify-content: center;
+        font-family: 'Poppins', sans-serif; padding: 20px; box-sizing: border-box;
+    `;
+
+    const box = document.createElement('div');
+    box.style.cssText = `
+        background: white; padding: 26px 24px; border-radius: 18px;
+        max-width: 340px; width: 100%; text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.32);
+    `;
+    box.innerHTML = `
+        <div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B;">¡Buen trabajo! 🎉</div>
+        <div style="margin-bottom:16px;color:#64748B;font-size:0.9rem;">Ingresa tu nombre para el ranking</div>
+        <input id="conti-name-input" type="text" maxlength="20" placeholder="Jugador"
+            style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;
+                   margin-bottom:16px;font-family:inherit;font-size:1rem;box-sizing:border-box;outline:none;">
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button id="conti-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;
+                background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer;font-family:inherit;">Omitir</button>
+            <button id="conti-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;
+                background:linear-gradient(135deg, #2563EB, #1D4ED8);color:white;font-weight:700;
+                cursor:pointer;font-family:inherit;">Guardar</button>
+        </div>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const input = box.querySelector('#conti-name-input');
+    input.focus();
+
+    const close = (value) => {
+        overlay.remove();
+        onSubmit(value);
+    };
+
+    box.querySelector('#conti-name-ok').addEventListener('click', () => close(input.value.trim() || 'Jugador'));
+    box.querySelector('#conti-name-skip').addEventListener('click', () => close(null));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') close(input.value.trim() || 'Jugador');
+    });
+}
+
 function saveToLeaderboard() {
-    const playerName = prompt('¡Buen trabajo! Ingresa tu nombre:', 'Jugador');
-    if (!playerName) return;
-    const leaderboard = JSON.parse(localStorage.getItem('conti_leaderboard') || '[]');
-    leaderboard.push({ name: playerName, score: state.score, badges: Object.values(state.badges).filter(Boolean).length, date: new Date().toLocaleDateString() });
-    leaderboard.sort((a, b) => b.score - a.score);
-    localStorage.setItem('conti_leaderboard', JSON.stringify(leaderboard.slice(0, 20)));
-    loadLeaderboard();
+    showNamePromptModal((playerName) => {
+        if (!playerName) return;
+        const leaderboard = JSON.parse(safeLocalGet('conti_leaderboard', '[]'));
+        leaderboard.push({ name: playerName, score: state.score, badges: Object.values(state.badges).filter(Boolean).length, date: new Date().toLocaleDateString() });
+        leaderboard.sort((a, b) => b.score - a.score);
+        safeLocalSet('conti_leaderboard', JSON.stringify(leaderboard.slice(0, 20)));
+        loadLeaderboard();
+    });
 }
 
 function loadLeaderboard() {
-    const leaderboard = JSON.parse(localStorage.getItem('conti_leaderboard') || '[]');
+    let leaderboard = [];
+    try {
+        leaderboard = JSON.parse(safeLocalGet('conti_leaderboard', '[]'));
+    } catch (e) {
+        console.warn('No se pudo leer conti_leaderboard guardado, se ignora.');
+    }
     const tbody = document.getElementById('leaderboard-body');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -1083,6 +1243,17 @@ function loadLeaderboard() {
 // ===== COMPARTIR =====
 function shareResults() {
     const text = `🎉 ¡Acabo de conseguir ${state.score} puntos en Conti Conti Desafío Financiero! ¿Puedes superarme? 🏆`;
-    if (navigator.share) navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
-    else { navigator.clipboard.writeText(text).then(() => alert('📋 ¡Copiado! Compártelo.')); }
+    if (navigator.share) {
+        navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(text).then(() => {
+            if (window.effectsManager) {
+                window.effectsManager.triggerToast('¡Copiado! Compártelo donde quieras.', { icon: '📋', duration: 2500 });
+            }
+        }).catch(() => {
+            if (window.effectsManager) {
+                window.effectsManager.triggerToast('No se pudo copiar automáticamente.', { icon: '⚠️', duration: 2500 });
+            }
+        });
+    }
 }
