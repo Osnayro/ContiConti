@@ -626,7 +626,7 @@ class ContiEffectsManager {
 
     /**
      * 🔊 Reproduce sonido sintetizado con motor de capas + ADSR + filtros + ruido + reverb
-     * @param {string} type - 'correct'|'incorrect'|'levelup'|'achievement'|'powerup'|'tick'|'coin'|'explosion'
+     * @param {string} type - 'correct'|'incorrect'|'levelup'|'levelstart'|'achievement'|'powerup'|'tick'|'coin'|'explosion'
      */
     playSound(type) {
         this.ensureAudio();
@@ -762,6 +762,21 @@ class ContiEffectsManager {
                 v.osc.start(now);
                 v.osc.stop(now + 0.6);
                 this._playNoiseHit({ filterType: 'lowpass', freqStart: 2500, freqEnd: 120, q: 0.9, peak: 0.3, duration: 0.5 });
+                break;
+            }
+
+            case 'levelstart': {
+                // Swoosh ascendente (ruido con barrido highpass) + tono breve
+                // que marca el arranque de nivel, distinto del acorde de 'levelup'.
+                this._playNoiseHit({ filterType: 'highpass', freqStart: 200, freqEnd: 4000, q: 0.7, peak: 0.14, duration: 0.35 });
+                const v = this._createVoice({ type: 'triangle', filterType: 'lowpass', filterFreq: 3000 });
+                v.osc.frequency.setValueAtTime(330, now);
+                v.osc.frequency.exponentialRampToValueAtTime(660, now + 0.25);
+                this._applyADSR(v.gain.gain, now + 0.05, {
+                    peak: 0.13 * vol, attack: 0.02, decay: 0.1, sustain: 0.3, sustainTime: 0.04, release: 0.2,
+                });
+                v.osc.start(now + 0.05);
+                v.osc.stop(now + 0.45);
                 break;
             }
 
