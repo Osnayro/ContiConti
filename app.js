@@ -286,7 +286,7 @@ function safeLocalSet(key, value) {
 
 // ===== SISTEMA DE SONIDO (Delega en ContiEffectsManager) =====
 function playSound(type) {
-    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'achievement', 'tick', 'powerup'];
+    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'tick', 'powerup'];
     if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
     if (window.effectsManager) {
         window.effectsManager.playSound(type);
@@ -405,6 +405,7 @@ function startLevel(levelNum) {
     updateLevelDisplay(); updateScore(); updateLives(); updateStreak(); updateProgress();
     showScreen('screen-question');
     updateRabbitReaction('thinking');
+    playSound('levelstart');
     loadQuestion();
 }
 
@@ -426,6 +427,11 @@ function shuffleArray(array) { const arr = [...array]; for (let i = arr.length -
 // ===== REACCIONES DEL CONEJO =====
 function updateRabbitReaction(reaction) {
     document.querySelectorAll('.rabbit-svg').forEach(rabbit => {
+        // FIX: si la reacción es la misma que ya tenía, el className no cambia
+        // y el navegador no reinicia la animación (ej. dos aciertos seguidos
+        // sin racha). Forzamos un reflow entre quitar y poner la clase.
+        rabbit.className = 'rabbit-svg';
+        void rabbit.offsetWidth;
         rabbit.className = 'rabbit-svg ' + reaction;
     });
     
@@ -760,13 +766,17 @@ function handleCorrectAnswer(points) {
     playSound('correct');
     if (window.effectsManager) window.effectsManager.triggerConfetti();
     
+    // FIX: el conejo reacciona a CADA acierto individual (orejas arriba +
+    // brillo dorado), no solo cuando hay racha. Si además hay racha activa,
+    // un instante después pasa a 'impressed'.
+    updateRabbitReaction('correct');
     if (state.streak >= 5) {
-        updateRabbitReaction('impressed');
         document.getElementById('streak-display')?.classList.add('on-fire');
         if (window.effectsManager) window.effectsManager.triggerCoinRain();
+        setTimeout(() => updateRabbitReaction('impressed'), 350);
     } else if (state.streak >= 3) {
-        updateRabbitReaction('impressed');
         if (window.effectsManager) window.effectsManager.triggerCoinRain();
+        setTimeout(() => updateRabbitReaction('impressed'), 350);
     }
     
     const btnNext = document.getElementById('btn-next');
@@ -788,11 +798,14 @@ function handleIncorrectAnswer(question) {
     // === DESPACHO CENTRALIZADO DE EFECTOS DE ERROR ===
     playSound('incorrect');
     
+    // FIX: reacción inmediata 'incorrect' (orejas caídas), igual que ahora
+    // ocurre con los aciertos, antes de pasar a 'sad' o 'determined'.
+    updateRabbitReaction('incorrect');
     if (state.lives <= 0) {
-        updateRabbitReaction('sad');
+        setTimeout(() => updateRabbitReaction('sad'), 350);
         setTimeout(() => endLevel(), 1500);
     } else {
-        updateRabbitReaction('determined');
+        setTimeout(() => updateRabbitReaction('determined'), 350);
     }
     
     const btnNext = document.getElementById('btn-next');
