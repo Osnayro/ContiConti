@@ -1,13 +1,13 @@
 
 {
-    "name": "ContiChallenge - Desafío Contable y Financiero",
-    "short_name": "ContiChallenge",
-    "description": "Aplicación educativa interactiva para aprender contabilidad y finanzas de forma divertida",
-    "start_url": "/",
+    "name": "PAES Challenge",
+    "short_name": "PAES Challenge",
+    "description": "Desafío de Admisión Universitaria - Preparación PAES 2025-2026",
+    "start_url": "./index.html",
     "display": "standalone",
-    "background_color": "#A2D2FF",
-    "theme_color": "#A2D2FF",
-    "orientation": "portrait-primary",
+    "orientation": "portrait",
+    "background_color": "#1E3A63",
+    "theme_color": "#1E3A63",
     "icons": [
         {
             "src": "icono-app.PNG",
@@ -22,9 +22,92 @@
             "purpose": "any maskable"
         }
     ],
-    "categories": ["education", "finance"],
-    "lang": "es",
-    "dir": "ltr",
-    "scope": "/",
-    "prefer_related_applications": false
+    "lang": "es-CL",
+    "categories": ["education", "games"]
 }
+```
+
+---
+
+❓ ¿Es necesario el Service Worker?
+
+No es obligatorio, pero tiene ventajas:
+
+Con Service Worker Sin Service Worker
+✅ Funciona offline ❌ Solo con internet
+✅ Instalable como app (PWA) ❌ No se puede instalar
+✅ Carga más rápida (cache) ❌ Carga normal
+✅ Icono en pantalla de inicio ❌ Solo marcador del navegador
+
+---
+
+🔧 Si NO quieres usar Service Worker
+
+Elimina este bloque del index.html:
+
+```html
+<!-- ELIMINAR ESTO -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => console.log('Service Worker registrado:', reg.scope))
+                .catch(err => console.error('Error Service Worker:', err));
+        });
+    }
+</script>
+```
+
+Y también puedes eliminar el archivo service-worker.js.
+
+---
+
+📱 Si decides mantener el PWA (recomendado)
+
+Aquí tienes un service-worker.js simplificado:
+
+```javascript
+const CACHE_NAME = 'paes-challenge-v1';
+const ASSETS = [
+    './',
+    './index.html',
+    './styles.css',
+    './effects.js',
+    './banco-preguntas.js',
+    './app.js',
+    './buho-svg.js',
+    './buho.PNG',
+    './buho-uniforme.PNG',
+    './icono-app.PNG',
+    './manifest.json'
+];
+
+// Instalación
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(ASSETS);
+        })
+    );
+});
+
+// Activación
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keys) => {
+            return Promise.all(
+                keys.filter(key => key !== CACHE_NAME)
+                    .map(key => caches.delete(key))
+            );
+        })
+    );
+});
+
+// Estrategia: Cache First
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((cached) => {
+            return cached || fetch(event.request);
+        })
+    );
+});
