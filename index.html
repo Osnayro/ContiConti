@@ -1,40 +1,50 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conti Conti | Desafío Financiero Avanzado</title>
+    <title>PAES Challenge</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#A2D2FF">
+    <meta name="theme-color" content="#1E3A63">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Conti Conti">
+    <meta name="apple-mobile-web-app-title" content="PAES Challenge">
     <link rel="apple-touch-icon" href="icono-app.PNG">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Canvas para efectos visuales (Partículas de monedas, confeti, alertas) -->
+    <!-- Canvas para efectos visuales (Partículas, confeti, alertas) -->
     <canvas id="effects-canvas"></canvas>
 
-    <!-- Splash Screen -->
+    <!-- Splash Screen (Pantalla de carga que desbloquea audio en iOS) -->
     <div id="splash-screen">
-        <div class="splash-content">
-            <img src="logo.jpg" alt="Conti Conti Logo" class="splash-logo" onerror="this.style.display='none'">
-            <img src="conejo-uniforme.PNG" alt="Mascota Conti" class="conejo-uniforme-logo" onerror="this.style.display='none'">
-            <div class="splash-tag">📊 Especialidad de Contabilidad</div>
-            <h1 class="splash-title">
-                Desafío Interactivo:
-                <span class="highlight-red-title">Fondo de Emergencia</span>
-            </h1>
-            <div class="splash-credits-box">
-                <strong>🏆 Desafío de Contabilidad y Finanzas</strong><br>
-                <small>Demuestra tus conocimientos en 4 niveles progresivos</small>
+        <div class="splash-container">
+            <!-- Imagen del personaje a la izquierda -->
+            <div class="splash-image">
+                <img src="conejo-splash.PNG" alt="PAES Challenge - Preparación Universitaria" class="splash-character-img" onerror="this.style.display='none'">
             </div>
-            <div class="loader-bar">
-                <div class="loader-fill" id="loader-fill"></div>
+            
+            <!-- Tarjeta de presentación a la derecha -->
+            <div class="splash-card">
+                <h1 class="splash-app-title">PAES Challenge</h1>
+                <p class="splash-app-subtitle">Desafío de Admisión Universitaria</p>
+                
+                <!-- Barra de Progreso de Carga de Sonidos -->
+                <div class="splash-loader-container">
+                    <div class="splash-loader-bar">
+                        <div class="splash-loader-fill" id="loader-fill"></div>
+                    </div>
+                    <span class="splash-loader-label" id="loader-label">Cargando recursos...</span>
+                </div>
+                
+                <!-- Botón Iniciar Experiencia -->
+                <button class="splash-start-btn" id="skip-splash-btn" style="display: none;" disabled>
+                    <span class="splash-btn-text">¡Comenzar!</span>
+                    <span class="splash-btn-icon">🚀</span>
+                </button>
             </div>
-            <button class="skip-splash-btn" id="skip-splash-btn">Iniciar Ahora ⚡</button>
         </div>
     </div>
 
@@ -42,8 +52,7 @@
     <div class="app-card" id="app-card">
         <!-- Header -->
         <div class="app-header">
-            <img src="logo-colegio.jpg" alt="Logo Escolar" class="school-logo" onerror="this.classList.add('logo-placeholder'); this.alt='🏫 Institución Educativa';">
-            <div class="logo-placeholder" style="display:none;">🏫 Institución Educativa</div>
+            <div class="logo-placeholder">🎓 PAES Challenge 2025-2026</div>
         </div>
 
         <!-- Barra de Estado -->
@@ -51,12 +60,11 @@
             <div class="progress-container">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
-            <!-- El score-badge servirá como punto de destino para las animaciones de monedas -->
             <div class="score-badge" id="score-badge">⭐ 0 pts</div>
             <div class="lives-display" id="lives-display">❤️❤️❤️</div>
             <div class="streak-display" id="streak-display">🔥 0</div>
-            <div class="timer-display" id="timer-display">⏱️ 30s</div>
-            <div class="level-display" id="level-display" style="background: #10B981; color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">Nivel 1</div>
+            <div class="timer-display" id="timer-display">⏱️ 60s</div>
+            <div class="level-display" id="level-display" style="background: #8B5CF6; color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">Nivel 1</div>
         </div>
 
         <!-- Power-ups Bar -->
@@ -80,24 +88,25 @@
             <div class="character-box">
                 <div class="rabbit-svg-container"></div>
                 <div class="character-speech" id="character-speech">
-                    ¡Hola! Soy Conti Conti, tu guía financiero 🐰
+                    ¡Hola! Soy tu guía de preparación PAES 🎓
                 </div>
             </div>
-            <h2 class="welcome-title">¿Qué tanto sabes sobre finanzas?</h2>
-            <p class="welcome-sub">Completa los 4 niveles demostrando tus conocimientos</p>
-
-            <div class="splash-credits-box">
-                <b>🎓 Proyecto Presentado por:</b><br>
-                <b>Valeska Romero</b><br>
-                Estudiante de la especialidad de Contabilidad
-            </div>
+            <h2 class="welcome-title">¿Estás listo para la prueba de admisión universitaria?</h2>
+            <p class="welcome-sub">Demuestra tus conocimientos en los 4 niveles del desafío</p>
 
             <div class="info-card">
-                <strong>🎯 Niveles del desafío:</strong><br>
-                🟢 <b>Nivel 1:</b> Fondo de Emergencia (30s)<br>
-                🔵 <b>Nivel 2:</b> Contabilidad y Nómina (25s)<br>
-                🟣 <b>Nivel 3:</b> Estados Financieros (20s)<br>
-                🔴 <b>Nivel 4:</b> Cálculos Técnicos Avanzados (20s)
+                <strong>🎯 Niveles del desafío PAES:</strong><br>
+                🟣 <b>Nivel 1:</b> Competencia Lectora (60s) <span style="color: #10B981;">✅ Disponible</span><br>
+                🔵 <b>Nivel 2:</b> Matemática 1 - M1 (45s) <span id="status-level-2" style="color: #94A3B8;">🔒 Bloqueado</span><br>
+                🟢 <b>Nivel 3:</b> Matemática 2 - M2 (35s) <span id="status-level-3" style="color: #94A3B8;">🔒 Bloqueado</span><br>
+                🔴 <b>Nivel 4:</b> Desafío Final Mixto (40s) <span id="status-level-4" style="color: #94A3B8;">🔒 Bloqueado</span>
+            </div>
+
+            <div class="info-card" style="border-left-color: #8B5CF6; background: #F5F3FF;">
+                <strong>📚 Áreas evaluadas:</strong><br>
+                • Competencia Lectora (Localizar, Interpretar, Evaluar)<br>
+                • Matemática 1: Números, Álgebra, Geometría, Estadística<br>
+                • Matemática 2: Logaritmos, Trigonometría, Financiera, Complejos
             </div>
 
             <div class="mode-grid">
@@ -109,12 +118,12 @@
                 <div class="mode-card" id="mode-timed" onclick="selectMode('timed')">
                     <div class="mode-icon">⚡</div>
                     <div class="mode-title">Contrarreloj</div>
-                    <div class="mode-desc">20s - 30s por pregunta</div>
+                    <div class="mode-desc">35s - 60s por pregunta</div>
                 </div>
             </div>
 
             <button class="main-btn pulse-ready" id="btn-start" onclick="startGame()">
-                ¡Comenzar Desafío! 🚀
+                ¡Comenzar Desafío PAES! 🚀
             </button>
             <div class="btn-group">
                 <button class="main-btn secondary" onclick="showScreen('screen-badges')">
@@ -124,7 +133,7 @@
                     Clasificación 🏆
                 </button>
             </div>
-            <p class="credits">Desarrollado por Romeroweb | v5.0</p>
+            <p class="credits">Desarrollado por Romeroweb</p>
         </div>
 
         <!-- Pantalla de Pregunta -->
@@ -151,22 +160,16 @@
                 <div class="rabbit-svg-container"></div>
                 <div class="character-speech" id="transition-speech">¡Excelente! Has completado el nivel 🎉</div>
             </div>
-
-            <h2 class="welcome-title" id="transition-title">🟢 Nivel Completado</h2>
-            
+            <h2 class="welcome-title" id="transition-title">🟣 Nivel Completado</h2>
             <div class="share-card">
                 <div class="share-label">Puntuación del nivel</div>
                 <div class="share-score" id="level-score-display">0</div>
                 <div class="share-label">puntos</div>
                 <div id="level-stars"></div>
             </div>
-
-            <div class="teacher-tribute-card">
-                <div class="teacher-tribute-text">
-                    🌟 "La excelencia de la especialidad de Contabilidad se refleja en el compromiso, la dedicación y la calidad profesional de sus profesoras, quienes inspiran a sus estudiantes a dar siempre lo mejor de sí." ✨
-                </div>
+            <div class="info-card" style="text-align: center; border-left-color: #8B5CF6; background: #F5F3FF;">
+                📚 <b>Recuerda:</b> La práctica constante es la clave del éxito en la PAES. Cada nivel superado te acerca más a tu meta universitaria.
             </div>
-
             <button class="main-btn pulse-ready" id="btn-next-level" onclick="goToNextLevel()">
                 Siguiente Nivel ➡️
             </button>
@@ -176,9 +179,9 @@
         <div class="screen" id="screen-results">
             <div class="character-box">
                 <div class="rabbit-svg-container"></div>
-                <div class="character-speech" id="result-character-speech">¡Gran trabajo completando el desafío! 🐰🎉</div>
+                <div class="character-speech" id="result-character-speech">¡Gran trabajo completando el desafío PAES! 🎓✨</div>
             </div>
-            <h2 class="welcome-title">🎉 ¡Desafío Completado!</h2>
+            <h2 class="welcome-title">🎉 ¡Desafío PAES Completado!</h2>
             <div class="share-card" id="share-card">
                 <div class="share-label">Tu puntuación final</div>
                 <div class="share-score" id="final-score">0</div>
@@ -186,7 +189,7 @@
                 <div class="share-badges" id="share-badges"></div>
             </div>
             <div class="radar-chart-container">
-                <h3>📊 Análisis por Temas</h3>
+                <h3>📊 Análisis por Áreas</h3>
                 <div id="topic-analysis"></div>
             </div>
             <div class="btn-group">
@@ -197,45 +200,32 @@
             <button class="main-btn danger" onclick="showScreen('screen-welcome')">Volver al Inicio 🏠</button>
         </div>
 
-        <!-- Pantalla Final con Agradecimiento -->
+        <!-- Pantalla Final -->
         <div class="screen" id="screen-final">
             <div style="text-align: center; margin-bottom: 10px;">
-                <img src="conejo-uniforme.PNG" alt="Conti Conti" style="max-height: 100px;" onerror="this.style.display='none';">
+                <img src="conejo-uniforme.PNG" alt="PAES Challenge" style="max-height: 100px;" onerror="this.style.display='none';">
             </div>
-
             <div class="info-card">
-                💡 <b>La Contabilidad en tu Vida Diaria:</b><br>
-                La contabilidad no solo se utiliza en las empresas. También nos ayuda a organizar nuestros ingresos, controlar nuestros gastos, ahorrar y prepararnos para enfrentar imprevistos mediante herramientas como el fondo de emergencia.
+                💡 <b>La PAES en tu futuro:</b><br>
+                La Prueba de Acceso a la Educación Superior (PAES) es el primer paso hacia tu carrera universitaria. Una buena preparación te abrirá las puertas a la universidad que elijas.
             </div>
-
             <div class="info-card" style="border-left-color: #10B981; background: #F0FDF4;">
-                📊 <b>¡Conoce la especialidad de Contabilidad!</b><br>
-                Si te interesa aprender a administrar el dinero, comprender cómo funcionan las empresas y desarrollar habilidades útiles para tu futuro, ¡te invitamos a conocer nuestra especialidad!
+                🎓 <b>¡Cada pregunta cuenta!</b><br>
+                Este desafío está alineado con los temarios oficiales del DEMRE para la PAES 2025-2026. Practicar con constancia es la mejor estrategia para obtener un buen puntaje.
             </div>
-
-            <div class="teacher-tribute-card">
-                <div class="teacher-tribute-text">
-                    🌟 "La excelencia de la especialidad de Contabilidad se refleja en el compromiso, la dedicación y la calidad profesional de sus profesoras, quienes inspiran a sus estudiantes a dar siempre lo mejor de sí." ✨
-                </div>
+            <div class="info-card" style="border-left-color: #8B5CF6; background: #F5F3FF;">
+                📊 <b>Temario cubierto:</b><br>
+                • Competencia Matemática 1 (M1)<br>
+                • Competencia Matemática 2 (M2)<br>
+                • Competencia Lectora<br>
+                • 97 preguntas alineadas al DEMRE
             </div>
-
-            <p style="font-size: 0.82rem; font-weight: 700; color: var(--gris-texto); margin-top: 2px;">Especialidades de nuestro colegio:</p>
-            <div class="specialty-list">
-                <span class="specialty-tag">🍳 Gastronomía</span>
-                <span class="specialty-tag">👶 Atención de Párvulos</span>
-                <span class="specialty-tag" style="background: var(--verde-menta); border-color: #86EFAC;">📊 Contabilidad</span>
-                <span class="specialty-tag">🥫 Elaboración Ind. Alimentos</span>
-                <span class="specialty-tag">⚡ Electrónica</span>
-            </div>
-
-            <p style="font-size: 0.9rem; font-weight: 700; color: var(--azul-oscuro); margin: 6px 0;">
-                "¡Tu futuro comienza con una buena educación financiera!"
+            <p style="font-size: 0.9rem; font-weight: 700; color: var(--azul-oscuro); margin: 6px 0; text-align: center;">
+                "Tu futuro comienza con una buena preparación"
             </p>
-
             <button class="main-btn" onclick="restartGame()">🔄 Volver a Jugar</button>
-
             <div class="credits">
-                ✨ Desarrollado por <b>Valeska Romero</b> – Estudiante de la especialidad de Contabilidad
+                ✨ Desarrollado por <b>Romeroweb</b>
             </div>
         </div>
 
