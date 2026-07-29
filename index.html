@@ -11,35 +11,36 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="PAES Challenge">
-    <link rel="apple-touch-icon" href="icono-app.PNG">
+    <link rel="apple-touch-icon" href="buho.PNG">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Canvas para efectos visuales (Partículas, confeti, alertas) -->
+    <!-- Canvas para efectos visuales -->
     <canvas id="effects-canvas"></canvas>
 
-    <!-- Splash Screen (Pantalla de carga que desbloquea audio en iOS) -->
+    <!-- Splash Screen -->
     <div id="splash-screen">
         <div class="splash-container">
-            <!-- Imagen del personaje a la izquierda -->
+            <!-- Sabiondo el Búho -->
             <div class="splash-image">
-                <img src="conejo-splash.PNG" alt="PAES Challenge - Preparación Universitaria" class="splash-character-img" onerror="this.style.display='none'">
+                <img src="buho.PNG" alt="Sabiondo - PAES Challenge" class="splash-character-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-placeholder" style="display:none; font-size:5rem;">🦉</div>
             </div>
             
-            <!-- Tarjeta de presentación a la derecha -->
+            <!-- Tarjeta de presentación -->
             <div class="splash-card">
                 <h1 class="splash-app-title">PAES Challenge</h1>
-                <p class="splash-app-subtitle">Desafío de Admisión Universitaria</p>
+                <p class="splash-app-subtitle">Desafío de Admisión Universitaria 2025-2026</p>
                 
-                <!-- Barra de Progreso de Carga de Sonidos -->
+                <!-- Barra de Progreso -->
                 <div class="splash-loader-container">
                     <div class="splash-loader-bar">
                         <div class="splash-loader-fill" id="loader-fill"></div>
                     </div>
-                    <span class="splash-loader-label" id="loader-label">Cargando recursos...</span>
+                    <span class="splash-loader-label" id="loader-label">Preparando tu desafío...</span>
                 </div>
                 
-                <!-- Botón Iniciar Experiencia -->
+                <!-- Botón Iniciar -->
                 <button class="splash-start-btn" id="skip-splash-btn" style="display: none;" disabled>
                     <span class="splash-btn-text">¡Comenzar!</span>
                     <span class="splash-btn-icon">🚀</span>
@@ -50,9 +51,10 @@
 
     <!-- App Principal -->
     <div class="app-card" id="app-card">
-        <!-- Header -->
+        <!-- Header con Sabiondo -->
         <div class="app-header">
-            <div class="logo-placeholder">🎓 PAES Challenge 2025-2026</div>
+            <img src="buho.PNG" alt="Sabiondo" class="school-logo" onerror="this.classList.add('logo-placeholder'); this.alt='🦉 PAES Challenge';">
+            <div class="logo-placeholder" style="display:none;">🦉 PAES Challenge 2025-2026</div>
         </div>
 
         <!-- Barra de Estado -->
@@ -83,17 +85,28 @@
             </button>
         </div>
 
-        <!-- Pantalla de Bienvenida -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE BIENVENIDA -->
+        <!-- ============================================================ -->
         <div class="screen active" id="screen-welcome">
+            <!-- Sabiondo -->
             <div class="character-box">
-                <div class="rabbit-svg-container"></div>
+                <div class="buho-svg-container"></div>
                 <div class="character-speech" id="character-speech">
-                    ¡Hola! Soy tu guía de preparación PAES 🎓
+                    ¡Hola! Soy Sabiondo, tu guía PAES 🦉
                 </div>
             </div>
-            <h2 class="welcome-title">¿Estás listo para la prueba de admisión universitaria?</h2>
+            
+            <h2 class="welcome-title">¿Estás listo para la prueba de admisión?</h2>
             <p class="welcome-sub">Demuestra tus conocimientos en los 4 niveles del desafío</p>
 
+            <!-- Selector de Partidas (Lotes) -->
+            <div id="lote-selector" style="width:100%;"></div>
+            
+            <!-- Confirmación de lote -->
+            <div id="lote-confirmacion" style="display:none; width:100%; margin:8px 0; padding:10px; background:#F0FDF4; border-radius:12px; text-align:center; font-size:0.9rem; color:#166534;"></div>
+
+            <!-- Info de niveles -->
             <div class="info-card">
                 <strong>🎯 Niveles del desafío PAES:</strong><br>
                 🟣 <b>Nivel 1:</b> Competencia Lectora (60s) <span style="color: #10B981;">✅ Disponible</span><br>
@@ -109,6 +122,7 @@
                 • Matemática 2: Logaritmos, Trigonometría, Financiera, Complejos
             </div>
 
+            <!-- Modo de juego -->
             <div class="mode-grid">
                 <div class="mode-card selected" id="mode-normal" onclick="selectMode('normal')">
                     <div class="mode-icon">🐢</div>
@@ -122,9 +136,11 @@
                 </div>
             </div>
 
-            <button class="main-btn pulse-ready" id="btn-start" onclick="startGame()">
+            <!-- Botón de inicio (oculto hasta seleccionar lote) -->
+            <button class="main-btn pulse-ready" id="btn-start" style="display:none;" onclick="startGame()">
                 ¡Comenzar Desafío PAES! 🚀
             </button>
+            
             <div class="btn-group">
                 <button class="main-btn secondary" onclick="showScreen('screen-badges')">
                     Ver Insignias 🏅
@@ -136,11 +152,13 @@
             <p class="credits">Desarrollado por Romeroweb</p>
         </div>
 
-        <!-- Pantalla de Pregunta -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE PREGUNTA -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-question">
             <div class="character-box">
-                <div class="rabbit-svg-container" id="rabbit-svg"></div>
-                <div class="character-speech" id="question-speech">¡Piensa bien tu respuesta! 🤔</div>
+                <div class="buho-svg-container" id="buho-svg"></div>
+                <div class="character-speech" id="question-speech">¡Analiza con sabiduría! 🦉</div>
             </div>
             <div class="question-text" id="question-text"></div>
             <img class="question-image" id="question-image" alt="Imagen de la pregunta" style="display:none;">
@@ -154,13 +172,15 @@
             </button>
         </div>
 
-        <!-- Pantalla de Transición entre Niveles -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE TRANSICIÓN ENTRE NIVELES -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-level-transition">
             <div class="character-box">
-                <div class="rabbit-svg-container"></div>
-                <div class="character-speech" id="transition-speech">¡Excelente! Has completado el nivel 🎉</div>
+                <div class="buho-svg-container"></div>
+                <div class="character-speech" id="transition-speech">¡Sabiondo está orgulloso! 🦉</div>
             </div>
-            <h2 class="welcome-title" id="transition-title">🟣 Nivel Completado</h2>
+            <h2 class="welcome-title" id="transition-title">Nivel Completado</h2>
             <div class="share-card">
                 <div class="share-label">Puntuación del nivel</div>
                 <div class="share-score" id="level-score-display">0</div>
@@ -168,18 +188,20 @@
                 <div id="level-stars"></div>
             </div>
             <div class="info-card" style="text-align: center; border-left-color: #8B5CF6; background: #F5F3FF;">
-                📚 <b>Recuerda:</b> La práctica constante es la clave del éxito en la PAES. Cada nivel superado te acerca más a tu meta universitaria.
+                🦉 <b>Sabiondo dice:</b> La práctica constante es la clave del éxito en la PAES. ¡Cada nivel superado te acerca más a tu meta universitaria!
             </div>
             <button class="main-btn pulse-ready" id="btn-next-level" onclick="goToNextLevel()">
                 Siguiente Nivel ➡️
             </button>
         </div>
 
-        <!-- Pantalla de Resultados Final -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE RESULTADOS FINAL -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-results">
             <div class="character-box">
-                <div class="rabbit-svg-container"></div>
-                <div class="character-speech" id="result-character-speech">¡Gran trabajo completando el desafío PAES! 🎓✨</div>
+                <div class="buho-svg-container"></div>
+                <div class="character-speech" id="result-character-speech">¡Gran trabajo! 🦉🎓</div>
             </div>
             <h2 class="welcome-title">🎉 ¡Desafío PAES Completado!</h2>
             <div class="share-card" id="share-card">
@@ -197,17 +219,20 @@
                 <button class="main-btn secondary" onclick="shareResults()">Compartir 📤</button>
             </div>
             <button class="main-btn secondary" onclick="showScreen('screen-leaderboard')">Ver Clasificación 🏆</button>
-            <button class="main-btn danger" onclick="showScreen('screen-welcome')">Volver al Inicio 🏠</button>
+            <button class="main-btn danger" onclick="restartGame()">Volver al Inicio 🏠</button>
         </div>
 
-        <!-- Pantalla Final -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA FINAL -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-final">
             <div style="text-align: center; margin-bottom: 10px;">
-                <img src="conejo-uniforme.PNG" alt="PAES Challenge" style="max-height: 100px;" onerror="this.style.display='none';">
+                <img src="buho-uniforme.PNG" alt="Sabiondo Graduado" style="max-height: 120px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div style="display:none; font-size:5rem;">🦉🎓</div>
             </div>
             <div class="info-card">
                 💡 <b>La PAES en tu futuro:</b><br>
-                La Prueba de Acceso a la Educación Superior (PAES) es el primer paso hacia tu carrera universitaria. Una buena preparación te abrirá las puertas a la universidad que elijas.
+                La Prueba de Acceso a la Educación Superior es el primer paso hacia tu carrera universitaria. Una buena preparación te abrirá las puertas a la universidad que elijas.
             </div>
             <div class="info-card" style="border-left-color: #10B981; background: #F0FDF4;">
                 🎓 <b>¡Cada pregunta cuenta!</b><br>
@@ -215,13 +240,14 @@
             </div>
             <div class="info-card" style="border-left-color: #8B5CF6; background: #F5F3FF;">
                 📊 <b>Temario cubierto:</b><br>
-                • Competencia Matemática 1 (M1)<br>
-                • Competencia Matemática 2 (M2)<br>
-                • Competencia Lectora<br>
-                • 97 preguntas alineadas al DEMRE
+                • Competencia Matemática 1 (M1) — 38 preguntas<br>
+                • Competencia Matemática 2 (M2) — 35 preguntas<br>
+                • Competencia Lectora — 32 preguntas<br>
+                • Cultura General Científica — 2 preguntas<br>
+                • Total: 107 preguntas alineadas al DEMRE
             </div>
             <p style="font-size: 0.9rem; font-weight: 700; color: var(--azul-oscuro); margin: 6px 0; text-align: center;">
-                "Tu futuro comienza con una buena preparación"
+                "Tu futuro comienza con una buena preparación" 🦉
             </p>
             <button class="main-btn" onclick="restartGame()">🔄 Volver a Jugar</button>
             <div class="credits">
@@ -229,14 +255,18 @@
             </div>
         </div>
 
-        <!-- Pantalla de Insignias -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE INSIGNIAS -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-badges">
             <h2 class="welcome-title">🏅 Tus Insignias</h2>
             <div class="badges-grid" id="badges-grid"></div>
             <button class="main-btn" onclick="showScreen('screen-welcome')">Volver 🏠</button>
         </div>
 
-        <!-- Pantalla de Leaderboard -->
+        <!-- ============================================================ -->
+        <!-- PANTALLA DE CLASIFICACIÓN -->
+        <!-- ============================================================ -->
         <div class="screen" id="screen-leaderboard">
             <h2 class="welcome-title">🏆 Tabla de Clasificación</h2>
             <table class="leaderboard-table" id="leaderboard-table">
@@ -254,18 +284,21 @@
         </div>
     </div>
 
-    <!-- Scripts en orden correcto de carga -->
-    <script src="rabbit-svg.js"></script>
+    <!-- ============================================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================================ -->
+    <script src="buho-svg.js"></script>
     <script src="effects.js"></script>
+    <script src="banco-preguntas.js"></script>
     <script src="app.js"></script>
 
-    <!-- Registro del Service Worker (PWA) -->
+    <!-- Service Worker (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
-                    .catch(err => console.error('Error al registrar el Service Worker:', err));
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.error('Error Service Worker:', err));
             });
         }
     </script>
