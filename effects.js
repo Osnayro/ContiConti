@@ -1,25 +1,24 @@
 
 /**
  * ============================================================
- * ContiEffectsManager v5.3.0 — Producción
- * Efectos visuales (Canvas 2D) + Sonidos (pistas MP3 + síntesis) + Toasts
- * Para "ContiChallenge: Desafío Contable y Financiero"
+ * PAES Challenge — Sabiondo Effects Manager v1.0.0
+ * Efectos visuales académicos (Canvas 2D) + Sonidos + Toasts
+ * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
- * Novedades v5.3.0 sobre v5.2.1:
- *   - FIX iOS: AudioContext global unificado para playTick().
- *   - FIX iOS: Respaldo playIncorrectFallback() para cuando se agota
- *     el tiempo sin gesto del usuario. Estrategia de 3 capas:
- *       1. Nuevo Audio('sounds/incorrect.mp3')
- *       2. Síntesis con AudioContext global (_playIncorrectWithAudioContext)
- *       3. Silencio (el juego continúa)
- *   - NUEVO: Método initGlobalAudio() para inicializar el AudioContext.
- *   - MEJORA: _showSplashButton() ahora muestra el botón en estado "ready"
- *     (verde) con animación de titilado hasta que los recursos se cargan.
+ * Cambios sobre la versión original de Contabilidad:
+ *   - Monedas ($) → Estrellas de conocimiento (⭐)
+ *   - Colores de confeti → Paleta académica universitaria
+ *   - NUEVO: Explosión de libros (📚)
+ *   - NUEVO: Plumas voladoras (🪶)
+ *   - NUEVO: Lluvia de estrellas
+ *   - NUEVO: Fuegos artificiales académicos
+ *   - NUEVO: Toast de Sabiondo
+ *   - NUEVO: Destello con colores institucionales
  *
  * Estructura de archivos requerida:
  *   /sounds/splash.mp3, correct.mp3, incorrect.mp3, levelup.mp3,
- *   levelstart.mp3, achievement.mp3, powerup.mp3, coin.mp3, explosion.mp3
+ *   levelstart.mp3, achievement.mp3, powerup.mp3, star.mp3, explosion.mp3
  */
 
 class ContiEffectsManager {
@@ -44,6 +43,7 @@ class ContiEffectsManager {
         this.animationId = null;
         this.isRunning = false;
 
+        // Archivos de sonido
         this.soundFiles = {
             splash:      'sounds/splash.mp3',
             correct:     'sounds/correct.mp3',
@@ -52,28 +52,41 @@ class ContiEffectsManager {
             levelstart:  'sounds/levelstart.mp3',
             achievement: 'sounds/achievement.mp3',
             powerup:     'sounds/powerup.mp3',
-            coin:        'sounds/coin.mp3',
+            star:        'sounds/star.mp3',
             explosion:   'sounds/explosion.mp3',
+            pluma:       'sounds/pluma.mp3',
         };
 
         this.audioPool = [];
         this.maxAudioPool = 8;
         this.audioPoolIndex = 0;
-
         this.audioBuffers = {};
         this.audioLoaded = false;
         this.audioLoadError = false;
         this.soundsLoadedCount = 0;
         this.soundsTotalCount = Object.keys(this.soundFiles).length;
-
         this.audioCtx = null;
         this.audioCtxReady = false;
 
+        // Paleta de colores académica
         this.colors = {
-            coin:     ['#FFD700', '#FFA500', '#FFC107', '#FFB300', '#F59E0B', '#FFF8DC'],
-            confetti: ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#A8E6CF', '#FF8A5C', '#3B82F6', '#F472B6', '#84CC16', '#F97316'],
-            firework: ['#FF4500', '#FFD700', '#FF6347', '#FFA500', '#FFFFFF', '#FF1493', '#00FF88'],
-            magic:    ['#A78BFA', '#818CF8', '#C4B5FD', '#6366F1', '#DDD6FE'],
+            // Estrellas doradas
+            star:      ['#FFD700', '#FFC107', '#FFB300', '#FFA000', '#FFF8DC', '#FFE082'],
+            estrellas: ['#FFD700', '#FFC107', '#FFB300', '#FFA000', '#FFF8DC', '#FFE082'],
+            // Confeti universitario
+            confetti:  [
+                '#1E3A63', '#3B82F6', '#8B5CF6', '#FFD700', '#10B981',
+                '#F59E0B', '#EC4899', '#6366F1', '#14B8A6', '#84CC16',
+                '#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626'
+            ],
+            // Libros morados
+            libro:     ['#8B5CF6', '#6366F1', '#A78BFA', '#C4B5FD', '#DDD6FE', '#7C3AED'],
+            // Fuegos artificiales
+            fuego:     ['#FF4500', '#FFD700', '#FF6347', '#FFA500', '#FFFFFF', '#FF1493', '#00FF88', '#3B82F6'],
+            // Plumas azules
+            pluma:     ['#EFF6FF', '#DBEAFE', '#BFDBFE', '#93C5FD', '#60A5FA', '#3B82F6'],
+            // Magia
+            magic:     ['#A78BFA', '#818CF8', '#C4B5FD', '#6366F1', '#DDD6FE'],
         };
 
         window.effectsManager = this;
@@ -81,7 +94,7 @@ class ContiEffectsManager {
         this.startLoop();
         this._preloadSounds();
 
-        console.log('🎨 ContiEffectsManager v5.3.0 listo | Partículas máx:', this.maxParticles, '| Volumen:', this.masterVolume, '| Audio: MP3 + Síntesis tick + Respaldo iPhone');
+        console.log('🦉 Sabiondo Effects Manager v1.0.0 listo | Partículas:', this.maxParticles, '| Volumen:', this.masterVolume);
     }
 
     // ================================================================
@@ -169,7 +182,10 @@ class ContiEffectsManager {
             ctx.scale(p.scale, p.scale);
 
             switch (p.type) {
-                case 'coin': this._drawCoin(ctx, p); break;
+                case 'star':
+                case 'estrella':
+                    this._drawEstrella(ctx, p);
+                    break;
                 case 'confetti':
                     ctx.fillStyle = p.color;
                     ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
@@ -180,7 +196,12 @@ class ContiEffectsManager {
                     ctx.arc(0, 0, p.size, 0, Math.PI * 2);
                     ctx.fill();
                     break;
-                case 'star': this._drawStar(ctx, p); break;
+                case 'libro':
+                    this._drawLibro(ctx, p);
+                    break;
+                case 'pluma':
+                    this._drawPluma(ctx, p);
+                    break;
                 default:
                     ctx.fillStyle = p.color;
                     ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
@@ -201,41 +222,501 @@ class ContiEffectsManager {
         }
     }
 
-    _drawCoin(ctx, p) {
-        const grad = ctx.createRadialGradient(0, 0, p.size * 0.15, 0, 0, p.size);
-        grad.addColorStop(0, '#FFFDE7');
-        grad.addColorStop(0.45, '#FFD700');
-        grad.addColorStop(1, '#B8860B');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#8B6914';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        ctx.fillStyle = '#8B6914';
-        ctx.font = `bold ${p.size * 1.3}px 'Poppins', sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('$', 0, 0);
-    }
+    // ================================================================
+    //  DIBUJOS DE PARTÍCULAS
+    // ================================================================
 
-    _drawStar(ctx, p) {
+    /**
+     * Dibuja una estrella de 5 puntas con gradiente dorado
+     */
+    _drawEstrella(ctx, p) {
         const spikes = 5;
         const outerR = p.size;
         const innerR = p.size * 0.4;
-        ctx.fillStyle = p.color;
+
+        const grad = ctx.createRadialGradient(0, 0, innerR * 0.3, 0, 0, outerR);
+        grad.addColorStop(0, '#FFFDE7');
+        grad.addColorStop(0.4, '#FFD700');
+        grad.addColorStop(0.8, '#FFA000');
+        grad.addColorStop(1, '#B8860B');
+
+        ctx.fillStyle = grad;
         ctx.beginPath();
         for (let i = 0; i < spikes * 2; i++) {
             const radius = i % 2 === 0 ? outerR : innerR;
             const angle = (i * Math.PI) / spikes - Math.PI / 2;
             const sx = Math.cos(angle) * radius;
             const sy = Math.sin(angle) * radius;
-            if (i === 0) { ctx.moveTo(sx, sy); }
-            else { ctx.lineTo(sx, sy); }
+            if (i === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
         }
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = '#8B6914';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+    }
+
+    /**
+     * Dibuja un mini libro abierto
+     */
+    _drawLibro(ctx, p) {
+        // Tapa izquierda
+        ctx.fillStyle = '#8B5CF6';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-p.size / 2, -p.size * 0.15);
+        ctx.lineTo(-p.size / 2, p.size * 0.6);
+        ctx.lineTo(0, p.size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Tapa derecha
+        ctx.fillStyle = '#7C3AED';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(p.size / 2, -p.size * 0.15);
+        ctx.lineTo(p.size / 2, p.size * 0.6);
+        ctx.lineTo(0, p.size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Líneas de texto simuladas
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 3; i++) {
+            const y = -p.size * 0.05 + i * p.size * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(-p.size * 0.35, y);
+            ctx.lineTo(-p.size * 0.05, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(p.size * 0.05, y);
+            ctx.lineTo(p.size * 0.35, y);
+            ctx.stroke();
+        }
+
+        // Lomo
+        ctx.strokeStyle = '#4C1D95';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size * 0.08);
+        ctx.lineTo(0, p.size * 0.55);
+        ctx.stroke();
+    }
+
+    /**
+     * Dibuja una pluma flotante
+     */
+    _drawPluma(ctx, p) {
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = '#6B7280';
+        ctx.lineWidth = 0.6;
+
+        // Cuerpo de la pluma
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size * 0.25, p.size, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Línea central (raquis)
+        ctx.strokeStyle = '#9CA3AF';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.lineTo(0, p.size);
+        ctx.stroke();
+    }
+
+    // ================================================================
+    //  EFECTOS VISUALES ACADÉMICOS
+    // ================================================================
+
+    /**
+     * Explosión de estrellas de conocimiento ⭐
+     * Reemplaza a triggerCoinExplosion
+     */
+    triggerStarExplosion(x, y, count = 15) {
+        if (!this.canvas) return;
+        count = Math.min(count, 50);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 9;
+            this.particles.push({
+                type: 'star',
+                x: x + (Math.random() - 0.5) * 20,
+                y: y + (Math.random() - 0.5) * 20,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 5,
+                gravity: 0.18,
+                friction: 0.985,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.35,
+                scale: 0.55 + Math.random() * 0.9,
+                size: 10 + Math.random() * 10,
+                life: 1,
+                maxLife: 1,
+                decay: 0.005 + Math.random() * 0.01,
+                color: this.colors.star[Math.floor(Math.random() * this.colors.star.length)],
+                attractTo: true,
+            });
+        }
+    }
+
+    /**
+     * Explosión de libros 📚
+     */
+    triggerBookExplosion(x, y, count = 10) {
+        if (!this.canvas) return;
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 6;
+            this.particles.push({
+                type: 'libro',
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 4,
+                gravity: 0.15,
+                friction: 0.97,
+                rotation: Math.random() * Math.PI,
+                rotationSpeed: (Math.random() - 0.5) * 0.2,
+                scale: 0.5 + Math.random() * 0.8,
+                size: 8 + Math.random() * 10,
+                life: 1,
+                maxLife: 1,
+                decay: 0.008 + Math.random() * 0.012,
+                color: this.colors.libro[Math.floor(Math.random() * this.colors.libro.length)],
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * Lluvia de estrellas ⭐
+     * Reemplaza a triggerCoinRain
+     */
+    triggerStarRain(count = 30) {
+        if (!this.canvas) return;
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                this.particles.push({
+                    type: 'star',
+                    x: Math.random() * this.canvas.width,
+                    y: -40,
+                    vx: (Math.random() - 0.5) * 3.5,
+                    vy: 3 + Math.random() * 6,
+                    gravity: 0.14,
+                    friction: 0.994,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.25,
+                    scale: 0.45 + Math.random() * 0.55,
+                    size: 7 + Math.random() * 8,
+                    life: 1,
+                    maxLife: 1,
+                    decay: 0.004 + Math.random() * 0.007,
+                    color: this.colors.star[Math.floor(Math.random() * this.colors.star.length)],
+                    attractTo: false,
+                });
+            }, i * 45);
+        }
+    }
+
+    /**
+     * Confeti académico con colores universitarios
+     * Reemplaza a triggerConfetti
+     */
+    triggerConfettiAcademico(duration = 2500, density = 3) {
+        if (!this.canvas) return;
+        const startTime = performance.now();
+        const colors = this.colors.confetti;
+        const spawn = (now) => {
+            if (now - startTime > duration) return;
+            for (let i = 0; i < density; i++) {
+                this.particles.push({
+                    type: 'confetti',
+                    x: Math.random() * this.canvas.width,
+                    y: -25,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: 2 + Math.random() * 5,
+                    gravity: 0.06,
+                    friction: 0.994,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.25,
+                    scale: 0.7 + Math.random() * 1.3,
+                    size: 8 + Math.random() * 14,
+                    life: 1,
+                    maxLife: 1,
+                    decay: 0.003 + Math.random() * 0.006,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    attractTo: false,
+                });
+            }
+            requestAnimationFrame(spawn);
+        };
+        requestAnimationFrame(spawn);
+    }
+
+    /**
+     * Fuegos artificiales académicos
+     * Reemplaza a triggerFireworks
+     */
+    triggerFuegosAcademicos(count = 3) {
+        if (!this.canvas) return;
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                const x = this.canvas.width * (0.2 + Math.random() * 0.6);
+                const y = this.canvas.height * (0.12 + Math.random() * 0.28);
+                this._burstAcademicFirework(x, y);
+            }, i * 400 + Math.random() * 300);
+        }
+    }
+
+    _burstAcademicFirework(x, y) {
+        const colors = this.colors.fuego;
+        const count = 50 + Math.floor(Math.random() * 40);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 9;
+            this.particles.push({
+                type: 'star',
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                gravity: 0.09,
+                friction: 0.965,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.12,
+                scale: 0.3 + Math.random() * 0.6,
+                size: 4 + Math.random() * 8,
+                life: 1,
+                maxLife: 1,
+                decay: 0.009 + Math.random() * 0.016,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * Plumas voladoras 🪶
+     */
+    triggerPlumasVoladoras(count = 12) {
+        if (!this.canvas) return;
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                this.particles.push({
+                    type: 'pluma',
+                    x: Math.random() * this.canvas.width,
+                    y: -20,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 1 + Math.random() * 3,
+                    gravity: 0.02,
+                    friction: 0.996,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.15,
+                    scale: 0.6 + Math.random() * 0.8,
+                    size: 6 + Math.random() * 8,
+                    life: 1,
+                    maxLife: 1,
+                    decay: 0.002 + Math.random() * 0.005,
+                    color: this.colors.pluma[Math.floor(Math.random() * this.colors.pluma.length)],
+                    attractTo: false,
+                });
+            }, i * 60);
+        }
+    }
+
+    /**
+     * Destello en pantalla con color institucional
+     */
+    triggerScreenFlash(duration = 200) {
+        const flash = document.createElement('div');
+        flash.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.4), rgba(30, 58, 99, 0.2));
+            z-index: 998; pointer-events: none;
+            opacity: 0.6; transition: opacity ${duration}ms ease-out;
+        `;
+        document.body.appendChild(flash);
+        requestAnimationFrame(() => { flash.style.opacity = '0'; });
+        setTimeout(() => flash.remove(), duration + 60);
+    }
+
+    /**
+     * Destello del score badge
+     */
+    triggerScoreBadgeFlash() {
+        if (!this.scoreBadge) return;
+        this.scoreBadge.classList.add('ultra-pop');
+        setTimeout(() => this.scoreBadge.classList.remove('ultra-pop'), 600);
+        const rect = this.scoreBadge.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 10; i++) {
+            const angle = (i / 10) * Math.PI * 2;
+            this.particles.push({
+                type: 'star',
+                x: cx,
+                y: cy,
+                vx: Math.cos(angle) * 2.5,
+                vy: Math.sin(angle) * 2.5,
+                gravity: 0,
+                friction: 0.9,
+                rotation: 0,
+                rotationSpeed: 0,
+                scale: 0.5,
+                size: 3 + Math.random() * 3,
+                life: 1,
+                maxLife: 1,
+                decay: 0.035,
+                color: '#FFD700',
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * Explosión genérica (estrellas)
+     */
+    triggerExplosion(x, y, scale = 1.0, color = '#FFD700') {
+        if (!this.canvas) return;
+        const count = Math.floor(22 * scale);
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (2 + Math.random() * 7) * scale;
+            this.particles.push({
+                type: 'star',
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                gravity: 0.12,
+                friction: 0.955,
+                rotation: 0,
+                rotationSpeed: 0,
+                scale: 0.45 + Math.random() * 0.85,
+                size: 3 + Math.random() * 9 * scale,
+                life: 1,
+                maxLife: 1,
+                decay: 0.014 + Math.random() * 0.022,
+                color: color,
+                attractTo: false,
+            });
+        }
+    }
+
+    /**
+     * Texto flotante
+     */
+    triggerFloatingText(x, y, text, options = {}) {
+        if (!this.canvas) return;
+        this.floatingTexts.push({
+            x,
+            y,
+            text,
+            vy: -1.6,
+            life: 1,
+            maxLife: 1,
+            decay: 0.011,
+            alpha: 1,
+            color: options.color || '#FFD700',
+            fontSize: options.fontSize || 28,
+            fontWeight: options.fontWeight || '800',
+        });
+    }
+
+    // ================================================================
+    //  TOASTS
+    // ================================================================
+
+    /**
+     * Toast académico de Sabiondo
+     */
+    triggerToastAcademico(message, options = {}) {
+        const {
+            icon = '🦉',
+            bg = 'linear-gradient(135deg, #1E3A63, #3B82F6)',
+            duration = 3000,
+            position = 'top'
+        } = options;
+
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.style.cssText = `
+                position: fixed; left: 50%; transform: translateX(-50%);
+                z-index: 2000; display: flex; flex-direction: column;
+                gap: 12px; pointer-events: none;
+            `;
+            document.body.appendChild(container);
+        }
+        container.style.top = position === 'center' ? '40%' : '8%';
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background: ${bg}; color: white; padding: 15px 26px;
+            border-radius: 18px; font-weight: 700; font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif; text-align: center;
+            box-shadow: 0 14px 35px rgba(0,0,0,0.28);
+            pointer-events: auto;
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            display: flex; align-items: center; gap: 12px;
+            white-space: nowrap; letter-spacing: 0.3px;
+        `;
+        toast.innerHTML = '<span style="font-size:1.6rem; line-height:1">' + icon + '</span> ' + message;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideOut 0.4s ease-in forwards';
+            setTimeout(() => toast.remove(), 400);
+        }, duration);
+    }
+
+    // ================================================================
+    //  MÉTODOS DE CONVENIENCIA (mantienen compatibilidad)
+    // ================================================================
+
+    // Estrellas desde elemento HTML
+    triggerStarsFromElement(element, count = 15) {
+        if (!element || !this.canvas) return;
+        const rect = element.getBoundingClientRect();
+        this.triggerStarExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, count);
+        this.playSound('star');
+    }
+
+    // Libros desde elemento HTML
+    triggerBooksFromElement(element, count = 10) {
+        if (!element || !this.canvas) return;
+        const rect = element.getBoundingClientRect();
+        this.triggerBookExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, count);
+    }
+
+    // Alias compatibles con app.js original
+    triggerCoinExplosion(x, y, count) {
+        this.triggerStarExplosion(x, y, count);
+    }
+
+    triggerCoinExplosionFromElement(element, count) {
+        this.triggerStarsFromElement(element, count);
+    }
+
+    triggerConfetti(duration, density) {
+        this.triggerConfettiAcademico(duration, density);
+    }
+
+    triggerFireworks(count) {
+        this.triggerFuegosAcademicos(count);
+    }
+
+    triggerCoinRain() {
+        this.triggerStarRain();
+    }
+
+    triggerToast(message, options) {
+        this.triggerToastAcademico(message, options);
     }
 
     // ================================================================
@@ -248,7 +729,7 @@ class ContiEffectsManager {
             loaderFill.style.width = '0%';
             loaderFill.style.animation = 'none';
         }
-        
+
         for (let i = 0; i < this.maxAudioPool; i++) {
             const audio = new Audio();
             audio.preload = 'auto';
@@ -271,21 +752,18 @@ class ContiEffectsManager {
                 if (onProgress) onProgress(this.soundsLoadedCount, this.soundsTotalCount);
                 if (this.soundsLoadedCount === this.soundsTotalCount) {
                     this.audioLoaded = true;
-                    console.log('🔊 Todos los sonidos MP3 precargados (' + this.soundsTotalCount + ' archivos).');
                     this._showSplashButton();
                 }
             }, { once: true });
 
             audio.addEventListener('error', () => {
                 this.soundsLoadedCount++;
-                console.warn('⚠️ No se pudo cargar: ' + path);
                 if (loaderFill) {
                     loaderFill.style.width = (this.soundsLoadedCount / this.soundsTotalCount) * 100 + '%';
                 }
                 if (onProgress) onProgress(this.soundsLoadedCount, this.soundsTotalCount);
                 if (this.soundsLoadedCount === this.soundsTotalCount && !this.audioLoaded) {
                     this.audioLoadError = true;
-                    console.warn('🔇 Algunos sonidos no se cargaron.');
                     this._showSplashButton();
                 }
             });
@@ -299,27 +777,20 @@ class ContiEffectsManager {
         const loaderLabel = document.getElementById('loader-label');
         const skipBtn = document.getElementById('skip-splash-btn');
         const splashScreen = document.getElementById('splash-screen');
-        
-        if (loaderFill) {
-            loaderFill.style.width = '100%';
-        }
-        
+
+        if (loaderFill) loaderFill.style.width = '100%';
         if (loaderLabel) {
-            loaderLabel.textContent = '¡Listo! Todos los recursos cargados.';
+            loaderLabel.textContent = '¡Listo! Sabiondo te espera 🦉';
             loaderLabel.style.color = '#10B981';
         }
-        
         if (skipBtn) {
             skipBtn.style.display = 'flex';
             skipBtn.classList.add('ready');
             skipBtn.disabled = false;
-            
             skipBtn.addEventListener('click', () => {
                 this.initGlobalAudio();
                 this.playSound('splash');
-                if (splashScreen) {
-                    splashScreen.classList.add('hidden');
-                }
+                if (splashScreen) splashScreen.classList.add('hidden');
             }, { once: true });
         }
     }
@@ -337,11 +808,9 @@ class ContiEffectsManager {
             if (this.audioCtx.state === 'suspended') {
                 this.audioCtx.resume().then(() => {
                     this.audioCtxReady = true;
-                    console.log('🔊 AudioContext global inicializado.');
                 }).catch(err => console.warn('No se pudo reanudar AudioContext:', err));
             } else {
                 this.audioCtxReady = true;
-                console.log('🔊 AudioContext global inicializado.');
             }
         } catch (e) {
             console.warn('Error al crear AudioContext:', e);
@@ -354,7 +823,10 @@ class ContiEffectsManager {
 
     playSound(type) {
         if (!this.audioLoaded && !this.audioLoadError) return;
-        if (!this.soundFiles[type]) { console.warn('Sonido no reconocido:', type); return; }
+        if (!this.soundFiles[type]) {
+            console.warn('Sonido no reconocido:', type);
+            return;
+        }
         const sourceAudio = this.audioBuffers[type];
         if (!sourceAudio) return;
         const poolAudio = this.audioPool[this.audioPoolIndex];
@@ -404,99 +876,18 @@ class ContiEffectsManager {
         const ctx = this.audioCtx;
         const now = ctx.currentTime;
         const vol = this.masterVolume;
-        const masterGain = ctx.createGain();
-        masterGain.gain.value = 1.0;
 
-        const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.setValueAtTime(-24, now);
-        compressor.knee.setValueAtTime(6, now);
-        compressor.ratio.setValueAtTime(12, now);
-        compressor.attack.setValueAtTime(0.003, now);
-        compressor.release.setValueAtTime(0.080, now);
-        compressor.connect(masterGain);
-        masterGain.connect(ctx.destination);
-
-        const oscClick = ctx.createOscillator();
-        const gainClick = ctx.createGain();
-        oscClick.type = 'sine';
-        oscClick.frequency.setValueAtTime(4500, now);
-        oscClick.frequency.exponentialRampToValueAtTime(2200, now + 0.060);
-        gainClick.gain.setValueAtTime(0.00001, now);
-        gainClick.gain.exponentialRampToValueAtTime(0.45 * vol, now + 0.0005);
-        gainClick.gain.exponentialRampToValueAtTime(0.00001, now + 0.080);
-        oscClick.connect(gainClick);
-        gainClick.connect(compressor);
-
-        const oscRing = ctx.createOscillator();
-        const gainRing = ctx.createGain();
-        const ringMod = ctx.createOscillator();
-        const gainRingMod = ctx.createGain();
-        oscRing.type = 'triangle';
-        oscRing.frequency.setValueAtTime(820, now);
-        oscRing.frequency.exponentialRampToValueAtTime(650, now + 0.150);
-        ringMod.type = 'sine';
-        ringMod.frequency.setValueAtTime(45, now);
-        gainRingMod.gain.setValueAtTime(0.3, now);
-        gainRing.gain.setValueAtTime(0.00001, now);
-        gainRing.gain.exponentialRampToValueAtTime(0.18 * vol, now + 0.002);
-        gainRing.gain.exponentialRampToValueAtTime(0.00001, now + 0.200);
-        ringMod.connect(gainRingMod);
-        gainRingMod.connect(gainRing.gain);
-        oscRing.connect(gainRing);
-        gainRing.connect(compressor);
-
-        const oscBody = ctx.createOscillator();
-        const gainBody = ctx.createGain();
-        oscBody.type = 'sine';
-        oscBody.frequency.setValueAtTime(110, now);
-        oscBody.frequency.exponentialRampToValueAtTime(95, now + 0.300);
-        gainBody.gain.setValueAtTime(0.00001, now);
-        gainBody.gain.exponentialRampToValueAtTime(0.22 * vol, now + 0.005);
-        gainBody.gain.exponentialRampToValueAtTime(0.00001, now + 0.320);
-        oscBody.connect(gainBody);
-        gainBody.connect(compressor);
-
-        const bufferSize = Math.floor(ctx.sampleRate * 0.050);
-        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = ((Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * 0.25;
-        }
-        const noise = ctx.createBufferSource();
-        noise.buffer = noiseBuffer;
-        const noiseFilter = ctx.createBiquadFilter();
-        noiseFilter.type = 'bandpass';
-        noiseFilter.frequency.setValueAtTime(6200, now);
-        noiseFilter.Q.value = 2.5;
-        const gainNoise = ctx.createGain();
-        gainNoise.gain.setValueAtTime(0.00001, now);
-        gainNoise.gain.exponentialRampToValueAtTime(0.12 * vol, now + 0.0005);
-        gainNoise.gain.exponentialRampToValueAtTime(0.00001, now + 0.040);
-        noise.connect(noiseFilter);
-        noiseFilter.connect(gainNoise);
-        gainNoise.connect(compressor);
-
-        const oscHarm = ctx.createOscillator();
-        const gainHarm = ctx.createGain();
-        oscHarm.type = 'sine';
-        oscHarm.frequency.setValueAtTime(9000, now);
-        oscHarm.frequency.exponentialRampToValueAtTime(7000, now + 0.030);
-        gainHarm.gain.setValueAtTime(0.00001, now);
-        gainHarm.gain.exponentialRampToValueAtTime(0.08 * vol, now + 0.001);
-        gainHarm.gain.exponentialRampToValueAtTime(0.00001, now + 0.050);
-        oscHarm.connect(gainHarm);
-        gainHarm.connect(compressor);
-
-        oscClick.start(now); oscClick.stop(now + 0.100);
-        oscRing.start(now); oscRing.stop(now + 0.220);
-        ringMod.start(now); ringMod.stop(now + 0.220);
-        oscBody.start(now); oscBody.stop(now + 0.350);
-        noise.start(now); noise.stop(now + 0.050);
-        oscHarm.start(now); oscHarm.stop(now + 0.060);
-
-        masterGain.gain.setValueAtTime(1.0, now);
-        masterGain.gain.setValueAtTime(1.0, now + 0.350);
-        masterGain.gain.linearRampToValueAtTime(0.00001, now + 0.400);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.00001, now);
+        gain.gain.exponentialRampToValueAtTime(0.3 * vol, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
     }
 
     ensureAudio() { return; }
@@ -505,225 +896,12 @@ class ContiEffectsManager {
         if (this.soundsTotalCount === 0) return 1;
         return this.soundsLoadedCount / this.soundsTotalCount;
     }
-
-    // ================================================================
-    //  EFECTOS VISUALES
-    // ================================================================
-
-    triggerCoinExplosion(x, y, count = 12) {
-        if (!this.canvas) return;
-        count = Math.min(count, 40);
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 3 + Math.random() * 9;
-            this.particles.push({
-                type: 'coin', x: x + (Math.random() - 0.5) * 20, y: y + (Math.random() - 0.5) * 20,
-                vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 5,
-                gravity: 0.18, friction: 0.985,
-                rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.35,
-                scale: 0.55 + Math.random() * 0.9, size: 10 + Math.random() * 9,
-                life: 1, maxLife: 1, decay: 0.005 + Math.random() * 0.01,
-                color: this.colors.coin[Math.floor(Math.random() * this.colors.coin.length)],
-                attractTo: true,
-            });
-        }
-    }
-
-    triggerExplosion(x, y, scale = 1.0, color = '#FFD700') {
-        if (!this.canvas) return;
-        const count = Math.floor(22 * scale);
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = (2 + Math.random() * 7) * scale;
-            this.particles.push({
-                type: 'circle', x, y,
-                vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                gravity: 0.12, friction: 0.955,
-                rotation: 0, rotationSpeed: 0,
-                scale: 0.45 + Math.random() * 0.85, size: 3 + Math.random() * 9 * scale,
-                life: 1, maxLife: 1, decay: 0.014 + Math.random() * 0.022,
-                color: color, attractTo: false,
-            });
-        }
-    }
-
-    triggerConfetti(duration = 2500, density = 3) {
-        if (!this.canvas) return;
-        const startTime = performance.now();
-        const colors = this.colors.confetti;
-        const spawn = (now) => {
-            if (now - startTime > duration) return;
-            for (let i = 0; i < density; i++) {
-                this.particles.push({
-                    type: 'confetti',
-                    x: Math.random() * this.canvas.width, y: -25,
-                    vx: (Math.random() - 0.5) * 5, vy: 2 + Math.random() * 5,
-                    gravity: 0.06, friction: 0.994,
-                    rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.25,
-                    scale: 0.7 + Math.random() * 1.3, size: 8 + Math.random() * 14,
-                    life: 1, maxLife: 1, decay: 0.003 + Math.random() * 0.006,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    attractTo: false,
-                });
-            }
-            requestAnimationFrame(spawn);
-        };
-        requestAnimationFrame(spawn);
-    }
-
-    triggerFireworks(count = 3) {
-        if (!this.canvas) return;
-        for (let i = 0; i < count; i++) {
-            setTimeout(() => {
-                const x = this.canvas.width * (0.2 + Math.random() * 0.6);
-                const y = this.canvas.height * (0.12 + Math.random() * 0.28);
-                this._burstFirework(x, y);
-            }, i * 350 + Math.random() * 250);
-        }
-    }
-
-    _burstFirework(x, y) {
-        const colors = this.colors.firework;
-        const count = 45 + Math.floor(Math.random() * 35);
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 3 + Math.random() * 8;
-            this.particles.push({
-                type: 'star', x, y,
-                vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                gravity: 0.09, friction: 0.965,
-                rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.12,
-                scale: 0.35 + Math.random() * 0.7, size: 4 + Math.random() * 7,
-                life: 1, maxLife: 1, decay: 0.009 + Math.random() * 0.016,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                attractTo: false,
-            });
-        }
-    }
-
-    triggerFloatingText(x, y, text, options = {}) {
-        if (!this.canvas) return;
-        this.floatingTexts.push({
-            x, y, text, vy: -1.6, life: 1, maxLife: 1, decay: 0.011, alpha: 1,
-            color: options.color || '#FFD700',
-            fontSize: options.fontSize || 28,
-            fontWeight: options.fontWeight || '800',
-        });
-    }
-
-    triggerCoinRain() {
-        if (!this.canvas) return;
-        const count = 30;
-        for (let i = 0; i < count; i++) {
-            setTimeout(() => {
-                this.particles.push({
-                    type: 'coin',
-                    x: Math.random() * this.canvas.width, y: -35,
-                    vx: (Math.random() - 0.5) * 3.5, vy: 3 + Math.random() * 6,
-                    gravity: 0.14, friction: 0.994,
-                    rotation: Math.random() * Math.PI * 2, rotationSpeed: (Math.random() - 0.5) * 0.25,
-                    scale: 0.45 + Math.random() * 0.55, size: 7 + Math.random() * 7,
-                    life: 1, maxLife: 1, decay: 0.004 + Math.random() * 0.007,
-                    color: this.colors.coin[Math.floor(Math.random() * this.colors.coin.length)],
-                    attractTo: false,
-                });
-            }, i * 45);
-        }
-    }
-
-    triggerScreenFlash(duration = 200) {
-        const flash = document.createElement('div');
-        flash.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: white; z-index: 998; pointer-events: none;
-            opacity: 0.55; transition: opacity ${duration}ms ease-out;
-        `;
-        document.body.appendChild(flash);
-        requestAnimationFrame(() => { flash.style.opacity = '0'; });
-        setTimeout(() => flash.remove(), duration + 60);
-    }
-
-    triggerScoreBadgeFlash() {
-        if (!this.scoreBadge) return;
-        this.scoreBadge.classList.add('ultra-pop');
-        setTimeout(() => this.scoreBadge.classList.remove('ultra-pop'), 600);
-        const rect = this.scoreBadge.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
-            this.particles.push({
-                type: 'circle', x: cx, y: cy,
-                vx: Math.cos(angle) * 2, vy: Math.sin(angle) * 2,
-                gravity: 0, friction: 0.9,
-                rotation: 0, rotationSpeed: 0,
-                scale: 0.5, size: 3 + Math.random() * 2,
-                life: 1, maxLife: 1, decay: 0.035,
-                color: '#FFD700', attractTo: false,
-            });
-        }
-    }
-
-    // ================================================================
-    //  TOASTS
-    // ================================================================
-
-    triggerToast(message, options = {}) {
-        const { icon = '🎉', bg = 'linear-gradient(135deg, #1E3A63, #2563EB)', duration = 3000, position = 'top' } = options;
-        let container = document.getElementById('toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toast-container';
-            container.style.cssText = `
-                position: fixed; left: 50%; transform: translateX(-50%);
-                z-index: 2000; display: flex; flex-direction: column;
-                gap: 12px; pointer-events: none;
-            `;
-            document.body.appendChild(container);
-        }
-        container.style.top = position === 'center' ? '40%' : '8%';
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            background: ${bg}; color: white; padding: 15px 26px;
-            border-radius: 18px; font-weight: 700; font-size: 0.95rem;
-            font-family: 'Poppins', sans-serif; text-align: center;
-            box-shadow: 0 14px 35px rgba(0,0,0,0.28);
-            pointer-events: auto;
-            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            display: flex; align-items: center; gap: 12px;
-            white-space: nowrap; letter-spacing: 0.3px;
-        `;
-        toast.innerHTML = '<span style="font-size:1.6rem; line-height:1">' + icon + '</span> ' + message;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'toastSlideOut 0.4s ease-in forwards';
-            setTimeout(() => toast.remove(), 400);
-        }, duration);
-    }
-
-    // ================================================================
-    //  CONVENIENCIA
-    // ================================================================
-
-    triggerCoinExplosionFromElement(element, count = 12) {
-        if (!element || !this.canvas) return;
-        const rect = element.getBoundingClientRect();
-        this.triggerCoinExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, count);
-        this.playSound('coin');
-    }
-
-    setScoreBadge(elementOrId) {
-        if (typeof elementOrId === 'string') {
-            this.scoreBadge = document.getElementById(elementOrId);
-        } else {
-            this.scoreBadge = elementOrId;
-        }
-    }
 }
 
 // ================================================================
 //  INICIALIZACIÓN AUTOMÁTICA
 // ================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.effectsManager) {
         window.effectsManager = new ContiEffectsManager({
