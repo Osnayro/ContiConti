@@ -9,36 +9,32 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1E3A63">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PAES Challenge">
-    <link rel="apple-touch-icon" href="buho.PNG">
+    <link rel="apple-touch-icon" href="icono-app.PNG">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Canvas para efectos visuales -->
     <canvas id="effects-canvas"></canvas>
 
-    <!-- Splash Screen -->
-    <div id="splash-screen">
-        <div class="splash-container">
-            <!-- Sabiondo el Búho -->
-            <div class="splash-image">
-                <img src="buho.PNG" alt="Sabiondo - PAES Challenge" class="splash-character-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="logo-placeholder" style="display:none; font-size:5rem;">🦉</div>
+    <!-- ============================================================ -->
+    <!-- SPLASH SCREEN OPTIMIZADO — SABIONDO 3D -->
+    <!-- ============================================================ -->
+    <div id="splash-screen" style="background-image: url('buho.PNG');">
+        <div class="splash-overlay">
+            <!-- Logo en el tercio superior -->
+            <div class="splash-logo-container">
+                <h1 class="splash-logo-text">PAES Challenge</h1>
+                <p class="splash-logo-subtitle">Desafío de Admisión Universitaria 2025-2026</p>
             </div>
             
-            <!-- Tarjeta de presentación -->
-            <div class="splash-card">
-                <h1 class="splash-app-title">PAES Challenge</h1>
-                <p class="splash-app-subtitle">Desafío de Admisión Universitaria 2025-2026</p>
-                
-                <!-- Barra de Progreso -->
-                <div class="splash-loader-container">
-                    <div class="splash-loader-bar">
-                        <div class="splash-loader-fill" id="loader-fill"></div>
-                    </div>
-                    <span class="splash-loader-label" id="loader-label">Preparando tu desafío...</span>
+            <!-- Barra de carga en la zona inferior -->
+            <div class="splash-loader-bottom">
+                <div class="splash-loader-bar">
+                    <div class="splash-loader-fill" id="loader-fill"></div>
                 </div>
+                <span class="splash-loader-label" id="loader-label">Preparando tu desafío...</span>
                 
                 <!-- Botón Iniciar -->
                 <button class="splash-start-btn" id="skip-splash-btn" style="display: none;" disabled>
@@ -49,7 +45,9 @@
         </div>
     </div>
 
-    <!-- App Principal -->
+    <!-- ============================================================ -->
+    <!-- APP PRINCIPAL -->
+    <!-- ============================================================ -->
     <div class="app-card" id="app-card">
         <!-- Header con Sabiondo -->
         <div class="app-header">
@@ -89,7 +87,6 @@
         <!-- PANTALLA DE BIENVENIDA -->
         <!-- ============================================================ -->
         <div class="screen active" id="screen-welcome">
-            <!-- Sabiondo -->
             <div class="character-box">
                 <div class="buho-svg-container"></div>
                 <div class="character-speech" id="character-speech">
@@ -100,13 +97,10 @@
             <h2 class="welcome-title">¿Estás listo para la prueba de admisión?</h2>
             <p class="welcome-sub">Demuestra tus conocimientos en los 4 niveles del desafío</p>
 
-            <!-- Selector de Partidas (Lotes) -->
             <div id="lote-selector" style="width:100%;"></div>
             
-            <!-- Confirmación de lote -->
             <div id="lote-confirmacion" style="display:none; width:100%; margin:8px 0; padding:10px; background:#F0FDF4; border-radius:12px; text-align:center; font-size:0.9rem; color:#166534;"></div>
 
-            <!-- Info de niveles -->
             <div class="info-card">
                 <strong>🎯 Niveles del desafío PAES:</strong><br>
                 🟣 <b>Nivel 1:</b> Competencia Lectora (60s) <span style="color: #10B981;">✅ Disponible</span><br>
@@ -122,7 +116,6 @@
                 • Matemática 2: Logaritmos, Trigonometría, Financiera, Complejos
             </div>
 
-            <!-- Modo de juego -->
             <div class="mode-grid">
                 <div class="mode-card selected" id="mode-normal" onclick="selectMode('normal')">
                     <div class="mode-icon">🐢</div>
@@ -136,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- Botón de inicio (oculto hasta seleccionar lote) -->
             <button class="main-btn pulse-ready" id="btn-start" style="display:none;" onclick="startGame()">
                 ¡Comenzar Desafío PAES! 🚀
             </button>
@@ -297,7 +289,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .then(reg => console.log('🦉 Service Worker registrado:', reg.scope))
                     .catch(err => console.error('Error Service Worker:', err));
             });
         }
