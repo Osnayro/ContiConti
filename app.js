@@ -2,7 +2,7 @@
 /**
  * ============================================================
  * PAES Challenge Engine v2.0.0 — Producción
- * Lógica del juego + Sistema de Lotes Aleatorios
+ * Lógica del juego + Sistema de Lotes Aleatorios + Sabiondo 🦉
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
@@ -11,7 +11,12 @@
  *   - NUEVO: Selector de lote en pantalla de bienvenida
  *   - NUEVO: Persistencia de lotes en localStorage
  *   - NUEVO: Regeneración automática al agotar lotes
+ *   - NUEVO: Personaje Sabiondo el Búho 🦉
+ *   - NUEVO: Estados emocionales: preocupación y alivio
  *   - MEJORA: Separación banco de preguntas / lógica
+ *   - FIX: Ítem 2014 con fracción 5/12
+ *   - FIX: Función checkDragComplete corregida
+ *   - FIX: Accesibilidad aria-label en botones
  */
 
 // ===== ESTADO GLOBAL =====
@@ -59,27 +64,44 @@ const state = {
         3: false,
         4: false
     },
-    currentLote: null,      // Lote activo (1, 2 o 3)
-    loteData: null          // Datos del lote actual
+    currentLote: null,
+    loteData: null,
+    lotesDisponibles: [],
+    ultimoEstadoBocadillo: null
+};
+
+// ===== MAPA DE NIVELES =====
+const levelNames = {
+    1: '📖 Competencia Lectora',
+    2: '📐 Matemática 1 (M1)',
+    3: '📊 Matemática 2 (M2)',
+    4: '🏆 Desafío Final Mixto'
+};
+
+const levelColors = {
+    1: '#8B5CF6',
+    2: '#3B82F6',
+    3: '#10B981',
+    4: '#EF4444'
+};
+
+const levelTimerDefaults = {
+    1: 60,
+    2: 45,
+    3: 35,
+    4: 40
 };
 
 // ===== SISTEMA DE LOTES ALEATORIOS =====
-
 const LOTES_STORAGE_KEY = 'paes_lotes_data';
 const LOTES_VERSION = '2.0.0';
 
-/**
- * Genera 3 lotes balanceados desde el banco completo.
- * Cada lote contiene preguntas de todas las áreas.
- */
 function generarLotes() {
-    // Obtener todas las preguntas del banco global
     const todasLenguaje = [...paesBancoCompleto.lenguaje];
     const todasM1 = [...paesBancoCompleto.matematica1];
     const todasM2 = [...paesBancoCompleto.matematica2];
     const todasCiencia = [...paesBancoCompleto.culturaGeneral];
 
-    // Barajar cada área
     const shuffleArr = (arr) => {
         const a = [...arr];
         for (let i = a.length - 1; i > 0; i--) {
@@ -94,7 +116,6 @@ function generarLotes() {
     const m2Shuffle = shuffleArr(todasM2);
     const cienciaShuffle = shuffleArr(todasCiencia);
 
-    // Dividir cada área en 3 partes aproximadamente iguales
     const dividirEn3 = (arr) => {
         const len = arr.length;
         const parteSize = Math.ceil(len / 3);
@@ -110,7 +131,6 @@ function generarLotes() {
     const m2Parts = dividirEn3(m2Shuffle);
     const cienciaParts = dividirEn3(cienciaShuffle);
 
-    // Construir 3 lotes balanceados
     const lotes = [];
     for (let i = 0; i < 3; i++) {
         lotes.push({
@@ -130,9 +150,6 @@ function generarLotes() {
     return lotes;
 }
 
-/**
- * Guarda los lotes en localStorage
- */
 function guardarLotes(lotes) {
     const data = {
         version: LOTES_VERSION,
@@ -140,16 +157,8 @@ function guardarLotes(lotes) {
         timestamp: Date.now()
     };
     safeLocalSet(LOTES_STORAGE_KEY, JSON.stringify(data));
-    console.log('📦 Lotes generados y guardados:', {
-        lote1: lotes[0].totalPreguntas + ' preguntas',
-        lote2: lotes[1].totalPreguntas + ' preguntas',
-        lote3: lotes[2].totalPreguntas + ' preguntas'
-    });
 }
 
-/**
- * Carga los lotes desde localStorage. Si no existen o expiraron, los regenera.
- */
 function cargarLotes() {
     const saved = safeLocalGet(LOTES_STORAGE_KEY, null);
     
@@ -157,24 +166,19 @@ function cargarLotes() {
         try {
             const data = JSON.parse(saved);
             
-            // Verificar versión y que los lotes estén completos
             if (data.version === LOTES_VERSION && 
                 data.lotes && 
                 data.lotes.length === 3 &&
                 data.lotes.every(l => l.preguntas && l.totalPreguntas > 0)) {
                 
-                // Verificar si algún lote ya fue jugado (marcado como usado)
                 const lotesConEstado = data.lotes.map(l => ({
                     ...l,
                     usado: safeLocalGet(`paes_lote_${l.id}_usado`, 'false') === 'true'
                 }));
                 
-                // Si todos los lotes están usados, regenerar
                 if (lotesConEstado.every(l => l.usado)) {
-                    console.log('🔄 Todos los lotes fueron usados. Regenerando...');
                     const nuevosLotes = generarLotes();
                     guardarLotes(nuevosLotes);
-                    // Limpiar marcas de uso
                     for (let i = 1; i <= 3; i++) {
                         safeLocalSet(`paes_lote_${i}_usado`, 'false');
                     }
@@ -188,26 +192,18 @@ function cargarLotes() {
         }
     }
     
-    // Si no hay lotes guardados, generar nuevos
     const nuevosLotes = generarLotes();
     guardarLotes(nuevosLotes);
-    // Inicializar marcas de uso
     for (let i = 1; i <= 3; i++) {
         safeLocalSet(`paes_lote_${i}_usado`, 'false');
     }
     return nuevosLotes.map(l => ({ ...l, usado: false }));
 }
 
-/**
- * Marca un lote como usado
- */
 function marcarLoteComoUsado(loteId) {
     safeLocalSet(`paes_lote_${loteId}_usado`, 'true');
 }
 
-/**
- * Obtiene las preguntas para un nivel específico desde el lote activo
- */
 function getPreguntasNivel(nivel) {
     if (!state.loteData || !state.loteData.preguntas) {
         console.error('No hay lote cargado');
@@ -217,13 +213,13 @@ function getPreguntasNivel(nivel) {
     const preguntas = state.loteData.preguntas;
 
     switch (nivel) {
-        case 1: // Competencia Lectora
+        case 1:
             return [...preguntas.lenguaje];
-        case 2: // Matemática 1
+        case 2:
             return [...preguntas.matematica1];
-        case 3: // Matemática 2
+        case 3:
             return [...preguntas.matematica2];
-        case 4: // Mixto (todas las áreas + cultura general)
+        case 4:
             return [
                 ...preguntas.lenguaje.slice(0, 4),
                 ...preguntas.matematica1.slice(0, 3),
@@ -235,31 +231,7 @@ function getPreguntasNivel(nivel) {
     }
 }
 
-// ===== MAPA DE NIVELES =====
-
-const levelNames = {
-    1: '📖 Competencia Lectora',
-    2: '📐 Matemática 1 (M1)',
-    3: '📊 Matemática 2 (M2)',
-    4: '🏆 Desafío Final Mixto'
-};
-
-const levelColors = {
-    1: '#8B5CF6',
-    2: '#3B82F6',
-    3: '#10B981',
-    4: '#EF4444'
-};
-
-const levelTimerDefaults = {
-    1: 60,  // Lenguaje: más tiempo para textos
-    2: 45,  // M1
-    3: 35,  // M2
-    4: 40   // Mixto
-};
-
 // ===== UTILIDADES =====
-
 function deepCloneQuestions(arr) {
     try {
         return JSON.parse(JSON.stringify(arr));
@@ -317,21 +289,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPowerups();
     createSpeedBonusToast();
     updateLevelStatusDisplay();
-    if (typeof injectRabbitSVGs === 'function') injectRabbitSVGs();
+    if (typeof injectBuhoSVGs === 'function') injectBuhoSVGs();
 });
 
-/**
- * Carga los lotes y actualiza la UI de selección
- */
 function cargarYMostrarLotes() {
     const lotes = cargarLotes();
     state.lotesDisponibles = lotes;
     actualizarSelectorLotes(lotes);
 }
 
-/**
- * Actualiza la UI del selector de lotes
- */
 function actualizarSelectorLotes(lotes) {
     const container = document.getElementById('lote-selector');
     if (!container) return;
@@ -358,21 +324,21 @@ function actualizarSelectorLotes(lotes) {
     loteInfo.className = 'info-card';
     loteInfo.style.borderLeftColor = '#8B5CF6';
     loteInfo.innerHTML = `
-        <strong>🎯 Selecciona tu partida:</strong><br>
-        <small>Cada partida contiene preguntas diferentes. Tienes ${lotesDisponibles.length} partida(s) disponible(s).</small>
+        <strong>🦉 Sabiondo dice:</strong> Elige una partida para comenzar<br>
+        <small>Cada partida tiene preguntas diferentes. Tienes ${lotesDisponibles.length} partida(s) disponible(s).</small>
     `;
     container.appendChild(loteInfo);
 
     const loteGrid = document.createElement('div');
     loteGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; width:100%;';
 
+    const iconos = ['🎲', '🎯', '📚'];
     lotes.forEach(lote => {
         const card = document.createElement('div');
-        card.className = `mode-card ${lote.usado ? '' : ''}`;
+        card.className = 'mode-card';
         card.style.cursor = lote.usado ? 'not-allowed' : 'pointer';
         card.style.opacity = lote.usado ? '0.5' : '1';
         
-        const iconos = ['🎲', '🎯', '📚'];
         card.innerHTML = `
             <div class="mode-icon">${iconos[lote.id - 1]}</div>
             <div class="mode-title">Partida ${lote.id}</div>
@@ -382,10 +348,6 @@ function actualizarSelectorLotes(lotes) {
 
         if (!lote.usado) {
             card.addEventListener('click', () => seleccionarLote(lote));
-            card.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                seleccionarLote(lote);
-            });
         }
 
         loteGrid.appendChild(card);
@@ -393,7 +355,6 @@ function actualizarSelectorLotes(lotes) {
 
     container.appendChild(loteGrid);
 
-    // Si solo queda 1 partida, marcarla visualmente
     if (lotesDisponibles.length === 1) {
         const loteUnico = lotesDisponibles[0];
         const cards = loteGrid.querySelectorAll('.mode-card');
@@ -405,9 +366,6 @@ function actualizarSelectorLotes(lotes) {
     }
 }
 
-/**
- * Selecciona un lote para jugar
- */
 function seleccionarLote(lote) {
     if (lote.usado) {
         console.warn('Este lote ya fue usado.');
@@ -417,9 +375,6 @@ function seleccionarLote(lote) {
     state.currentLote = lote.id;
     state.loteData = lote;
     
-    console.log(`🎯 Lote ${lote.id} seleccionado: ${lote.totalPreguntas} preguntas disponibles`);
-    
-    // Ocultar selector y mostrar botón de inicio
     const selectorContainer = document.getElementById('lote-selector');
     if (selectorContainer) {
         selectorContainer.style.display = 'none';
@@ -432,7 +387,6 @@ function seleccionarLote(lote) {
         btnStart.classList.add('pulse-ready');
     }
 
-    // Mostrar confirmación
     const confirmacion = document.getElementById('lote-confirmacion');
     if (confirmacion) {
         confirmacion.style.display = 'block';
@@ -442,9 +396,6 @@ function seleccionarLote(lote) {
     }
 }
 
-/**
- * Reinicia todos los lotes (genera nuevos)
- */
 function reiniciarLotes() {
     for (let i = 1; i <= 3; i++) {
         safeLocalSet(`paes_lote_${i}_usado`, 'false');
@@ -459,16 +410,12 @@ function reiniciarLotes() {
     actualizarSelectorLotes(nuevosLotes);
     
     const btnStart = document.getElementById('btn-start');
-    if (btnStart) {
-        btnStart.style.display = 'none';
-    }
+    if (btnStart) btnStart.style.display = 'none';
     const confirmacion = document.getElementById('lote-confirmacion');
-    if (confirmacion) {
-        confirmacion.style.display = 'none';
-    }
+    if (confirmacion) confirmacion.style.display = 'none';
     
     if (window.effectsManager) {
-        window.effectsManager.triggerToast('¡Nuevas partidas generadas! 🎉', {
+        window.effectsManager.triggerToastAcademico('¡Nuevas partidas generadas! 🦉', {
             icon: '🔄',
             bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
             duration: 2500
@@ -477,7 +424,6 @@ function reiniciarLotes() {
 }
 
 // ===== SISTEMA DE NIVELES BLOQUEADOS =====
-
 function loadUnlockedLevels() {
     const saved = safeLocalGet('paes_unlocked_levels', null);
     if (saved) {
@@ -500,7 +446,6 @@ function unlockNextLevel(currentLevel) {
         state.unlockedLevels[nextLevel] = true;
         saveUnlockedLevels();
         updateLevelStatusDisplay();
-        console.log('🔓 Nivel ' + nextLevel + ' desbloqueado.');
     }
 }
 
@@ -536,9 +481,9 @@ function showSpeedBonus(points) {
     setTimeout(() => { toast.classList.remove('show', 'hide'); }, 2000);
 }
 
-function triggerVisualCoinsFromElement(element, count = 12) {
+function triggerVisualStarsFromElement(element, count = 15) {
     if (window.effectsManager) {
-        window.effectsManager.triggerCoinExplosionFromElement(element, count);
+        window.effectsManager.triggerStarsFromElement(element, count);
     }
 }
 
@@ -546,7 +491,6 @@ function setupSplashScreen() {
     const splashScreen = document.getElementById('splash-screen');
     setTimeout(() => {
         if (splashScreen && !splashScreen.classList.contains('hidden')) {
-            console.warn('⏰ Fallback: Splash screen ocultado por timeout.');
             splashScreen.classList.add('hidden');
         }
     }, 60000);
@@ -573,8 +517,14 @@ function showScreen(screenId) {
     if (screenId === 'screen-welcome') {
         updateLevelStatusDisplay();
         cargarYMostrarLotes();
+        const btnStart = document.getElementById('btn-start');
+        if (btnStart) btnStart.style.display = 'none';
+        const confirmacion = document.getElementById('lote-confirmacion');
+        if (confirmacion) confirmacion.style.display = 'none';
+        const loteSelector = document.getElementById('lote-selector');
+        if (loteSelector) loteSelector.style.display = 'block';
     }
-    if (typeof injectRabbitSVGs === 'function') setTimeout(injectRabbitSVGs, 50);
+    if (typeof injectBuhoSVGs === 'function') setTimeout(injectBuhoSVGs, 100);
 }
 
 function selectMode(mode) {
@@ -590,7 +540,7 @@ function selectMode(mode) {
 function startGame() {
     if (!state.currentLote || !state.loteData) {
         if (window.effectsManager) {
-            window.effectsManager.triggerToast('¡Selecciona una partida primero! 🎯', {
+            window.effectsManager.triggerToastAcademico('¡Selecciona una partida primero! 🦉', {
                 icon: '⚠️',
                 bg: 'linear-gradient(135deg, #F59E0B, #D97706)',
                 duration: 2500
@@ -614,6 +564,7 @@ function startGame() {
     state.powerupsUsedThisLevel = false; 
     state.levelPerfect = true;
     state.levelStars = {};
+    state.ultimoEstadoBocadillo = null;
     
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
@@ -649,11 +600,9 @@ function startLevel(levelNum) {
 
     document.body.className = `level-${levelNum}`;
 
-    // Obtener preguntas del lote para este nivel
     const rawQuestions = getPreguntasNivel(levelNum);
     state.questions = shuffleArray(deepCloneQuestions(rawQuestions)).slice(0, 10);
     
-    // Bonus aleatorio en niveles 2+
     if (Math.random() < 0.33 && levelNum >= 2 && state.questions.length > 0) {
         const bonusIndex = Math.floor(Math.random() * state.questions.length);
         state.questions[bonusIndex].isBonus = true;
@@ -672,7 +621,7 @@ function startLevel(levelNum) {
     updateStreak();
     updateProgress();
     showScreen('screen-question');
-    updateRabbitReaction('thinking');
+    updateBuhoReaction('thinking');
     playSound('levelstart');
     loadQuestion();
 }
@@ -695,66 +644,83 @@ function updateLevelDisplay() {
     ld.style.background = levelColors[state.currentLevel] || '#8B5CF6';
 }
 
-// ===== REACCIONES DEL CONEJO =====
-function updateRabbitReaction(reaction) {
-    document.querySelectorAll('.rabbit-svg').forEach(rabbit => {
-        rabbit.className = 'rabbit-svg';
-        void rabbit.offsetWidth;
-        rabbit.className = 'rabbit-svg ' + reaction;
+// ===== REACCIONES DE SABIONDO EL BÚHO 🦉 =====
+function updateBuhoReaction(reaction) {
+    state.ultimoEstadoBocadillo = reaction;
+    
+    document.querySelectorAll('.buho-svg').forEach(buho => {
+        buho.className = 'buho-svg';
+        void buho.offsetWidth;
+        buho.className = 'buho-svg ' + reaction;
     });
-
+    
     const speech = document.getElementById('question-speech');
     const messages = {
         'thinking': [
-            '¡Piensa bien tu respuesta! 🤔', 'Tú puedes lograrlo 💪', 'Analiza con cuidado 📖',
-            'Confío en tu razonamiento 🧠', 'Lee cada opción con atención 👀',
-            '¿Cuál será la correcta? 🤓', 'Tómate tu tiempo ⏳', 'Confía en lo que sabes 📚'
+            '¡Analiza con sabiduría! 🦉', 'Tú puedes lograrlo 💪', 'Lee con atención 📖',
+            'Confío en tu razonamiento 🧠', 'Cada opción es una pista 👀',
+            '¿Cuál será la correcta? 🤓', 'Sin prisa, pero sin pausa ⏳', 'El conocimiento está en ti 📚'
         ],
         'nervous': [
-            '¡El tiempo se acaba! ⏰', '¡Rápido, confía en ti! 😰', '¡No te congeles! ❄️',
-            '¡Elige ya, tú sabes! ⚡', '¡Últimos segundos! 🚨', '¡Vamos, no te detengas! 🏃'
+            '¡El tiempo vuela! ⏰', '¡Confía en tu instinto! 😰', '¡No te paralices! ❄️',
+            '¡Elige con convicción! ⚡', '¡Últimos segundos! 🚨', '¡Tú sabes la respuesta! 🏃'
         ],
         'bored': [
-            '¡Despierta, futuro universitario! ☕', '¡Vamos, tú puedes! 😴',
-            '¡Espabila esa mente! 🧃', '¿Necesitas un café virtual? ☕✨'
+            '¡Despierta esa mente! ☕', '¡Vamos, futuro universitario! 🎓', '¡No te duermas en clases! 💤',
+            '¡Activa tus neuronas! 🧃', '¿Necesitas un café? ☕✨'
+        ],
+        'preocupacion': [
+            '¡Uy, cuidado! Revisa bien 🤔', '¡No te precipites! 🦉',
+            '¡Analiza antes de responder! 📖', '¿Estás seguro de esa respuesta? 💭',
+            '¡Tómate un momento para pensar! ⏳', '¡La paciencia es sabiduría! 🧠'
+        ],
+        'alivio': [
+            '¡Uf, menos mal! 😮‍💨', '¡Qué alivio! Respira hondo 🌿',
+            '¡Buen trabajo recuperándote! 💚', '¡Así se superan los obstáculos! 🦉',
+            '¡La calma trae claridad! ✨', '¡Sigue con confianza! 🌟'
         ],
         'impressed': [
-            '¡Impresionante racha! 🤩', '¡Eres increíble! 🌟', '¡Qué genio! 🧠',
-            '¡Nadie te para hoy! 🔥', '¡Vas directo a la universidad! 🎓✨'
+            '¡Impresionante! 🤩', '¡Eres un genio! 🌟', '¡Qué mente brillante! 🧠',
+            '¡Nadie te detiene! 🔥', '¡Vas directo a la universidad! 🎓✨',
+            '¡La PAES tiembla contigo! ⚡'
         ],
         'celebrating': [
-            '¡Perfecto, nivel impecable! 🥳', '¡Orgullo PAES! 🎉',
-            '¡Nivel superado con honores! 🏆', '¡Así se hace, crack! 🌟'
+            '¡Nivel superado con honores! 🥳', '¡Sabiondo está orgulloso! 🦉🎉',
+            '¡Cada vez más cerca! 🏆', '¡Así se hace! 🌟',
+            '¡La práctica hace al maestro! 🎓✨'
         ],
         'deep-think': [
-            '¡Nivel experto activado! 🔬', '¡Piensa profundamente! 🧐',
-            'Esto es para mentes brillantes 💡', '¡Activa tu modo calculadora! 🧮'
+            '¡Activa tu modo genio! 🔬', '¡Piensa profundamente! 🧐',
+            '¡Confía en tus cálculos! 📐', 'Esto es para mentes brillantes 💡',
+            '¡Activa tu súper cerebro! 🧮', 'Los números no mienten 🔢'
         ],
         'confident': [
             '¡Eliminamos dos, ahora es fácil! 😎', '¡El 50/50 te respalda! ✨',
-            '¡Tú tienes el control! 🕶️'
+            '¡Tú tienes el control! 🕶️', '¡Camino despejado! 🛤️'
         ],
         'frozen': [
-            '¡Tiempo congelado! 🥶', '¡Relájate y piensa tranquilo! ❄️',
-            '¡Aprovecha estos segundos extra! ⏸️'
+            '¡Tiempo congelado! 🥶', '¡Respira y piensa! ❄️',
+            '¡Sin prisa, analiza bien! ⛄', '¡Aprovecha estos segundos! ⏸️'
         ],
         'determined': [
             '¡Ahora sí, con todo! 😤', '¡Esta no la fallo! 💪🔥',
-            'Cada error es una lección aprendida 📚'
+            'Cada error es una lección 📚', '¡Los genios también se equivocan! 🧠💡'
         ],
         'graduate': [
-            '¡Lo lograste, futuro universitario! 🎓', '¡La universidad te espera! 🎓🌟',
-            '¡De estudiante a UNIVERSITARIO! 🧠👑'
+            '¡Lo lograste! 🎓', '¡La universidad te espera! 🦉✨',
+            '¡De estudiante a PROFESIONAL! 🧠👑', '¡Hoy celebras tu conocimiento! 🎉📚'
         ],
         'correct': [
-            '¡Respuesta correcta! ✨', '¡Bien hecho! 🌟', '¡Así se hace! 💪'
+            '¡Respuesta correcta! ✨', '¡Bien hecho! 🌟', '¡Así se hace! 💪',
+            '¡Esa es la actitud! 🎯', '¡Vas por buen camino! 🛤️'
         ],
         'incorrect': [
-            '¡No era esa, pero no pasa nada! 💪', '¡Aprender es equivocarse! 📚',
-            '¡Revisa la explicación! 👀'
+            '¡No era esa, pero aprendemos! 💪', '¡Cada error nos hace más fuertes! 📚',
+            '¡Revisa la explicación! 👀', '¡La próxima la tienes! 🎯',
+            '¡Error detectado, conocimiento ganado! 🧠'
         ]
     };
-
+    
     const list = messages[reaction] || messages['thinking'];
     if (speech) {
         speech.textContent = list[Math.floor(Math.random() * list.length)];
@@ -799,8 +765,8 @@ function loadQuestion() {
     const qText = document.getElementById('question-text');
     if (qText) qText.textContent = question.question;
 
-    if (state.currentLevel >= 3) updateRabbitReaction('deep-think');
-    else updateRabbitReaction('thinking');
+    if (state.currentLevel >= 3) updateBuhoReaction('deep-think');
+    else updateBuhoReaction('thinking');
 
     switch (question.type) {
         case 'multiple': loadMultipleChoice(question); break;
@@ -887,7 +853,7 @@ function loadMatching(question) {
                         clearInterval(state.timerInterval);
                         state.timerInterval = null;
                         showFeedback(`¡Perfecto! ${question.explanation || ''}`, 'correct');
-                        triggerVisualCoinsFromElement(matchingContainer, 16);
+                        triggerVisualStarsFromElement(matchingContainer, 16);
                         handleCorrectAnswer(question.points);
                     }
                 } else {
@@ -949,7 +915,7 @@ function loadSlider(question) {
         const userAnswer = parseFloat(input.value);
         if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
             showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
-            triggerVisualCoinsFromElement(submitBtn, 14);
+            triggerVisualStarsFromElement(submitBtn, 14);
             handleCorrectAnswer(question.points);
         } else {
             showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
@@ -1035,7 +1001,7 @@ function enableTouchDragForItem(draggable, question) {
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
 
         if (window.effectsManager) {
-            window.effectsManager.playSound('coin');
+            window.effectsManager.playSound('star');
         }
 
         if (zone && !zone.dataset.filled) {
@@ -1077,7 +1043,7 @@ function checkDragComplete(question) {
         state.timerInterval = null;
         if (allCorrect) {
             showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
-            triggerVisualCoinsFromElement(dragContainer, 16);
+            triggerVisualStarsFromElement(dragContainer, 16);
             handleCorrectAnswer(question.points);
         } else {
             showFeedback(`El orden no es correcto. ${question.explanation || 'Revisa la secuencia lógica.'}`, 'incorrect');
@@ -1106,17 +1072,17 @@ function checkMultipleAnswer(originalIndex, question) {
     if (originalIndex === question.correct) {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
-        let coinCount = 12;
+        let starCount = 15;
 
         if (responseTime < 3) {
             const speedBonus = Math.round(question.points * 0.5);
             totalPoints += speedBonus;
-            coinCount += 8;
+            starCount += 10;
             showSpeedBonus(speedBonus);
         }
 
         if (options[clickedDisplayIndex]) {
-            triggerVisualCoinsFromElement(options[clickedDisplayIndex], coinCount);
+            triggerVisualStarsFromElement(options[clickedDisplayIndex], starCount);
         }
 
         const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
@@ -1149,21 +1115,26 @@ function handleCorrectAnswer(points) {
     updateScore();
     updateStreak();
     playSound('correct');
-    if (window.effectsManager) window.effectsManager.triggerConfetti();
+    if (window.effectsManager) window.effectsManager.triggerConfettiAcademico();
 
     const responseTime = (Date.now() - state.questionStartTime) / 1000;
     if (responseTime < 3 && window.effectsManager) {
         window.effectsManager.triggerScreenFlash(180);
     }
 
-    updateRabbitReaction('correct');
+    updateBuhoReaction('correct');
+    
+    if (state.streak === 1 && state.lives < 3) {
+        setTimeout(() => updateBuhoReaction('alivio'), 400);
+    }
+    
     if (state.streak >= 5) {
         document.getElementById('streak-display')?.classList.add('on-fire');
-        if (window.effectsManager) window.effectsManager.triggerCoinRain();
-        setTimeout(() => updateRabbitReaction('impressed'), 350);
+        if (window.effectsManager) window.effectsManager.triggerStarRain();
+        setTimeout(() => updateBuhoReaction('impressed'), 400);
     } else if (state.streak >= 3) {
-        if (window.effectsManager) window.effectsManager.triggerCoinRain();
-        setTimeout(() => updateRabbitReaction('impressed'), 350);
+        if (window.effectsManager) window.effectsManager.triggerStarRain();
+        setTimeout(() => updateBuhoReaction('impressed'), 400);
     }
 
     const btnNext = document.getElementById('btn-next');
@@ -1187,13 +1158,18 @@ function handleIncorrectAnswer(question) {
     updateLives();
     updateStreak();
     playSound('incorrect');
-    updateRabbitReaction('incorrect');
+    
+    if (state.lives === 1) {
+        updateBuhoReaction('preocupacion');
+    } else {
+        updateBuhoReaction('incorrect');
+    }
 
     if (state.lives <= 0) {
-        setTimeout(() => updateRabbitReaction('determined'), 350);
+        setTimeout(() => updateBuhoReaction('determined'), 400);
         setTimeout(() => endLevel(), 1500);
     } else {
-        setTimeout(() => updateRabbitReaction('determined'), 350);
+        setTimeout(() => updateBuhoReaction('determined'), 400);
     }
 
     const btnNext = document.getElementById('btn-next');
@@ -1234,13 +1210,12 @@ function endLevel() {
 
     unlockNextLevel(state.currentLevel);
 
-    // Verificar insignias
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Puntaje Perfecto!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Puntaje Perfecto!', {
                 icon: '💯', bg: 'linear-gradient(135deg, #FFD700, #FFA500)', duration: 3500
             });
         }, 300);
@@ -1249,9 +1224,9 @@ function endLevel() {
     if (state.lives === 3 && !state.badges.survivor) {
         state.badges.survivor = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Sobreviviente!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Sobreviviente!', {
                 icon: '🛡️', bg: 'linear-gradient(135deg, #10B981, #059669)', duration: 3500
             });
         }, 300);
@@ -1260,9 +1235,9 @@ function endLevel() {
     if (!state.powerupsUsedThisLevel && !state.badges.noPowerups) {
         state.badges.noPowerups = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Poder Natural!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Poder Natural!', {
                 icon: '💪', bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', duration: 3500
             });
         }, 300);
@@ -1275,7 +1250,7 @@ function endLevel() {
         const lvlScoreDisp = document.getElementById('level-score-display');
 
         if (transTitle) transTitle.textContent = `${levelNames[state.currentLevel]} Completado`;
-        if (transSpeech) transSpeech.textContent = `¡Excelente! ${levelNames[state.currentLevel]} superado 🎉`;
+        if (transSpeech) transSpeech.textContent = `¡Sabiondo está orgulloso! 🦉 Nivel ${state.currentLevel} superado 🎉`;
         if (lvlScoreDisp) lvlScoreDisp.textContent = state.levelScore;
 
         let starsHTML = '<div class="star-rating">';
@@ -1296,19 +1271,19 @@ function endLevel() {
         const btnNextLevel = document.getElementById('btn-next-level');
         if (btnNextLevel) btnNextLevel.textContent = `Siguiente: ${levelNames[state.currentLevel + 1]} ➡️`;
 
-        updateRabbitReaction(state.levelPerfect ? 'celebrating' : 'thinking');
+        updateBuhoReaction(state.levelPerfect ? 'celebrating' : 'thinking');
         showScreen('screen-level-transition');
         playSound('levelup');
         if (window.effectsManager) {
-            window.effectsManager.triggerFireworks();
-            window.effectsManager.triggerConfetti(2000, 2);
-            setTimeout(() => window.effectsManager.triggerConfetti(1500, 1.5), 800);
+            window.effectsManager.triggerFuegosAcademicos();
+            window.effectsManager.triggerConfettiAcademico(2000, 2);
+            setTimeout(() => window.effectsManager.triggerConfettiAcademico(1500, 1.5), 800);
         }
     } else {
-        updateRabbitReaction('graduate');
+        updateBuhoReaction('graduate');
         showFinalResults();
         playSound('levelup');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
     }
 }
 
@@ -1321,8 +1296,8 @@ function showFinalResults() {
         topicAnalysis.innerHTML = '';
 
         const topicNames = {
-            'numeros': 'Números y Operaciones',
-            'algebra': 'Álgebra y Funciones',
+            'numeros': 'Números',
+            'algebra': 'Álgebra',
             'geometria': 'Geometría',
             'probabilidad': 'Probabilidad',
             'estadistica': 'Estadística',
@@ -1370,13 +1345,12 @@ function showFinalResults() {
         else speech.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
 
-    // Marcar lote como usado al completar los 4 niveles
     if (state.currentLote) {
         marcarLoteComoUsado(state.currentLote);
     }
 
     showScreen('screen-results');
-    if (window.effectsManager) window.effectsManager.triggerFireworks();
+    if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
     saveToLeaderboard();
 }
 
@@ -1399,6 +1373,7 @@ function restartGame() {
     state.correctInLevel = 0;
     state.currentLote = null;
     state.loteData = null;
+    state.ultimoEstadoBocadillo = null;
     
     document.body.className = 'level-1';
     document.getElementById('streak-display')?.classList.remove('on-fire');
@@ -1408,20 +1383,21 @@ function restartGame() {
     updateProgress();
     updateLevelDisplay();
     
-    // Volver a mostrar selector de lotes
     cargarYMostrarLotes();
     const btnStart = document.getElementById('btn-start');
     if (btnStart) btnStart.style.display = 'none';
     const confirmacion = document.getElementById('lote-confirmacion');
     if (confirmacion) confirmacion.style.display = 'none';
+    const loteSelector = document.getElementById('lote-selector');
+    if (loteSelector) loteSelector.style.display = 'block';
     
     showScreen('screen-welcome');
 }
 
 function goToFinalScreen() {
-    updateRabbitReaction('graduate');
+    updateBuhoReaction('graduate');
     showScreen('screen-final');
-    if (window.effectsManager) window.effectsManager.triggerFireworks();
+    if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
 }
 
 // ===== POWER-UPS =====
@@ -1439,20 +1415,20 @@ function usePowerup(type) {
     if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 300); }
 
     switch (type) {
-        case 'fifty': applyFiftyFifty(); updateRabbitReaction('confident'); break;
+        case 'fifty': applyFiftyFifty(); updateBuhoReaction('confident'); break;
         case 'time':
             if (state.mode === 'timed') { state.timer += 15; updateTimerDisplay(); }
             break;
         case 'freeze':
             if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
             state.isFrozen = true;
-            updateRabbitReaction('frozen');
+            updateBuhoReaction('frozen');
             const td = document.getElementById('timer-display');
             if (td) td.style.backgroundColor = '#10B981';
             state._freezeTimeout = setTimeout(() => {
                 state.isFrozen = false;
                 state._freezeTimeout = null;
-                updateRabbitReaction('thinking');
+                updateBuhoReaction('thinking');
                 if (td) td.style.backgroundColor = 'var(--azul-oscuro)';
             }, 10000);
             break;
@@ -1501,7 +1477,7 @@ function startTimer() {
         updateTimerDisplay();
         if (state.timer <= 10 && state.timer > 0) {
             if (timerDisplay) timerDisplay.classList.add('warning');
-            updateRabbitReaction('nervous');
+            updateBuhoReaction('nervous');
             if (window.effectsManager) window.effectsManager.playTick();
         }
         if (state.timer <= 0) {
@@ -1517,7 +1493,7 @@ function startTimer() {
     state._boredTimeout = setTimeout(() => {
         const nextBtn = document.getElementById('btn-next');
         if (state.currentQuestion < state.totalQuestions && (!nextBtn || nextBtn.style.display === 'none')) {
-            updateRabbitReaction('bored');
+            updateBuhoReaction('bored');
         }
     }, 20000);
 }
@@ -1573,9 +1549,9 @@ function checkBadges() {
     if (state.score >= 2000 && !state.badges.paesPro) {
         state.badges.paesPro = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: PAES Pro!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: PAES Pro!', {
                 icon: '🏆', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', duration: 3500
             });
         }, 300);
@@ -1584,9 +1560,9 @@ function checkBadges() {
     if (state.streak >= 5 && !state.badges.streaker) {
         state.badges.streaker = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Rachador!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Rachador!', {
                 icon: '🔥', bg: 'linear-gradient(135deg, #EF4444, #DC2626)', duration: 3500
             });
         }, 300);
@@ -1595,9 +1571,9 @@ function checkBadges() {
     if (state.mode === 'timed' && (Date.now() - state.questionStartTime) < 3000 && !state.badges.speedDemon) {
         state.badges.speedDemon = true;
         playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFireworks();
+        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Velocista!', {
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Velocista!', {
                 icon: '⚡', bg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', duration: 3500
             });
         }, 300);
@@ -1642,7 +1618,7 @@ function showNamePromptModal(onSubmit) {
     const box = document.createElement('div');
     box.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32);';
     box.innerHTML = `
-        <div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B;">¡Buen trabajo! 🎉</div>
+        <div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B;">¡Buen trabajo! 🦉</div>
         <div style="margin-bottom:16px;color:#64748B;font-size:0.9rem;">Ingresa tu nombre para el ranking</div>
         <input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;margin-bottom:16px;font-family:inherit;font-size:1rem;">
         <div style="display:flex;gap:10px;justify-content:center;">
@@ -1691,14 +1667,14 @@ function loadLeaderboard() {
 
 // ===== COMPARTIR =====
 function shareResults() {
-    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ¿Puedes superarme? 🏆`;
+    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ¿Puedes superarme? 🦉`;
     if (navigator.share) {
         navigator.share({ title: 'PAES Challenge', text, url: window.location.href }).catch(() => {});
     } else {
         navigator.clipboard.writeText(text).then(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Copiado! Compártelo donde quieras.', { icon: '📋', duration: 2500 });
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Copiado! Compártelo donde quieras.', { icon: '📋', duration: 2500 });
         }).catch(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('No se pudo copiar automáticamente.', { icon: '⚠️', duration: 2500 });
+            if (window.effectsManager) window.effectsManager.triggerToastAcademico('No se pudo copiar automáticamente.', { icon: '⚠️', duration: 2500 });
         });
     }
 }
