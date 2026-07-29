@@ -1,26 +1,18 @@
+
 /**
  * ============================================================
- * ContiGame Engine v3.1 — Producción
- * Lógica del juego, control de estado y flujos financieros
- * Para "Conti Conti - Desafío Financiero"
+ * PAES Challenge Engine v1.0.0 — Producción
+ * Lógica del juego, control de estado y flujos de preguntas
+ * Para "PAES Challenge: Desafío de Admisión Universitaria"
+ * Basado en ContiGame Engine v3.5.0
  * ============================================================
  *
- * Cambios v3.1 sobre v3.0:
- *   - FIX: clonado profundo del banco de preguntas al armar cada nivel,
- *     así los bonus (puntos x2, isBonus) ya no mutan las constantes
- *     originales (nivel2Questions, nivel3Questions, etc.) entre partidas.
- *   - FIX: cálculo de estrellas de fin de nivel usa un contador real de
- *     aciertos (state.correctInLevel) en vez de inferirlo dividiendo
- *     levelScore / basePoints, que se descuadraba con bonus de velocidad
- *     y preguntas de puntaje doble.
- *   - FIX: applyHint() ya no revienta si la pregunta actual no tiene
- *     'explanation' (ej. la pregunta de tipo 'matching').
- *   - localStorage envuelto en try/catch (falla silenciosamente en modo
- *     privado de Safari/iOS en vez de romper el flujo).
- *   - Reemplazo de prompt()/alert() por un modal propio en línea con el
- *     resto de la experiencia visual (toasts, confeti, etc.).
- *   - Soporte táctil básico para las preguntas de tipo 'drag' (además del
- *     HTML5 drag & drop nativo, que no funciona bien en móvil/tablet).
+ * Cambios v1.0.0 sobre ContiGame v3.5.0:
+ *   - NUEVO: Banco de preguntas PAES (M1, M2, Competencia Lectora)
+ *   - NUEVO: 97 preguntas alineadas a temarios DEMRE 2025-2026
+ *   - CAMBIO: Niveles renombrados a áreas PAES
+ *   - CAMBIO: Textos del personaje adaptados a contexto universitario
+ *   - CAMBIO: Pantalla final reenfocada a admisión universitaria
  */
 
 // ===== ESTADO GLOBAL =====
@@ -37,6 +29,7 @@ const state = {
     timer: 30,
     timerInterval: null,
     _boredTimeout: null,
+    _freezeTimeout: null,
     isFrozen: false,
     questions: [],
     answeredCorrectly: {},
@@ -57,213 +50,950 @@ const state = {
         speedDemon: false,
         survivor: false,
         streaker: false,
-        financierPro: false,
+        paesPro: false,
         noPowerups: false
     },
-    topicScores: {}
+    topicScores: {},
+    unlockedLevels: {
+        1: true,
+        2: false,
+        3: false,
+        4: false
+    }
 };
 
-// ===== BANCO DE PREGUNTAS =====
-const generalQuestions = [
+// ===== BANCO DE PREGUNTAS PAES =====
+
+// ============================================================
+// PAES COMPETENCIA MATEMÁTICA 1 (M1)
+// Ejes: Números / Álgebra y Funciones / Geometría / Probabilidad y Estadística
+// ============================================================
+
+const paesM1Questions = [
     {
-        id: 1, topic: 'presupuesto', type: 'multiple',
-        question: '¿Qué es un presupuesto?',
-        options: ['Un plan de gastos e ingresos', 'Un tipo de impuesto', 'Una cuenta bancaria', 'Un préstamo'],
-        correct: 0,
-        explanation: 'Un presupuesto es un plan financiero que estima ingresos y gastos en un período determinado.',
+        id: 1001, topic: 'numeros', type: 'multiple',
+        question: 'Si el 40% de un número es igual a 120, ¿cuál es el 75% de ese mismo número?',
+        options: ['180', '200', '225', '250'],
+        correct: 2,
+        explanation: 'Si 40% = 120, entonces el número total es 120 / 0,40 = 300. El 75% de 300 es 300 × 0,75 = 225.',
+        hint: 'Primero encuentra el valor total a partir del porcentaje parcial dado.',
         points: 100
     },
     {
-        id: 2, topic: 'ahorro', type: 'multiple',
-        question: '¿Cuál es la regla 50/30/20 para ahorrar?',
-        options: ['50% necesidades, 30% deseos, 20% ahorro', '50% ahorro, 30% inversión, 20% gastos', '50% gastos, 30% ahorro, 20% inversión', '50% deseos, 30% necesidades, 20% deudas'],
-        correct: 0,
-        explanation: 'La regla 50/30/20 sugiere destinar 50% a necesidades básicas, 30% a gastos personales y 20% al ahorro.',
+        id: 1002, topic: 'numeros', type: 'multiple',
+        question: 'Un comerciante aumenta el precio de un producto en un 25% y luego, durante una liquidación, aplica un descuento del 20% sobre el precio aumentado. ¿Qué ocurre con el precio final respecto al original?',
+        options: ['Aumenta un 5%', 'Disminuye un 5%', 'Permanece igual', 'Disminuye un 2,5%'],
+        correct: 2,
+        explanation: 'Si el precio original es P, después del aumento: 1,25P. Con el 20% de descuento: 1,25P × 0,80 = P. El precio vuelve al valor original.',
+        hint: 'Usa una variable para el precio original y aplica los porcentajes sucesivamente.',
         points: 100
     },
     {
-        id: 3, topic: 'inversion', type: 'multiple',
-        question: '¿Qué significa "diversificar" en inversiones?',
-        options: ['Invertir en diferentes activos para reducir riesgo', 'Poner todo el dinero en una sola acción', 'Retirar todo el dinero del banco', 'Solo invertir en bienes raíces'],
+        id: 1003, topic: 'numeros', type: 'multiple',
+        question: '¿Cuál es el resultado de (√27 × √3) / √81?',
+        options: ['1', '√3', '3', '9'],
         correct: 0,
-        explanation: 'Diversificar es distribuir las inversiones en distintos activos para minimizar el riesgo de pérdida.',
+        explanation: '√27 × √3 = √81 = 9. Luego 9 / √81 = 9 / 9 = 1.',
+        hint: 'Recuerda que √a × √b = √(a×b) y simplifica paso a paso.',
         points: 100
     },
     {
-        id: 4, topic: 'credito', type: 'multiple',
-        question: '¿Qué es el historial crediticio?',
-        options: ['Un registro de cómo has manejado tus deudas', 'El saldo de tu cuenta bancaria', 'Una lista de tus inversiones', 'Tu declaración de impuestos'],
-        correct: 0,
-        explanation: 'El historial crediticio muestra tu comportamiento de pago de deudas y determina tu puntaje crediticio.',
+        id: 1004, topic: 'numeros', type: 'multiple',
+        question: 'En una encuesta, 3/8 de los estudiantes prefiere matemáticas, 1/4 prefiere lenguaje y el resto prefiere ciencias. Si hay 240 estudiantes encuestados, ¿cuántos prefieren ciencias?',
+        options: ['60', '75', '90', '105'],
+        correct: 2,
+        explanation: '3/8 + 1/4 = 3/8 + 2/8 = 5/8 prefieren matemáticas o lenguaje. El resto es 3/8. 3/8 de 240 = (240 ÷ 8) × 3 = 90.',
+        hint: 'Suma las fracciones conocidas y resta del total para encontrar la fracción restante.',
         points: 100
     },
     {
-        id: 5, topic: 'contabilidad', type: 'multiple',
-        question: 'En contabilidad, ¿qué representa el "activo"?',
-        options: ['Bienes y derechos de una empresa', 'Las deudas de la empresa', 'Las ganancias del año', 'Los gastos mensuales'],
-        correct: 0,
-        explanation: 'El activo son todos los bienes y derechos que posee una empresa o persona.',
+        id: 1005, topic: 'algebra', type: 'multiple',
+        question: 'Si f(x) = 2x + 3 y g(x) = x² - 1, ¿cuál es el valor de f(g(2))?',
+        options: ['7', '9', '11', '13'],
+        correct: 1,
+        explanation: 'Primero g(2) = 2² - 1 = 3. Luego f(3) = 2(3) + 3 = 9.',
+        hint: 'Evalúa primero la función interna y usa ese resultado en la función externa.',
         points: 100
     },
     {
-        id: 6, topic: 'presupuesto', type: 'matching',
-        question: 'Empareja los conceptos con sus definiciones:',
-        pairs: [
-            { left: 'Ingreso', right: 'Dinero recibido', id: 1 },
-            { left: 'Gasto', right: 'Dinero desembolsado', id: 2 },
-            { left: 'Ahorro', right: 'Dinero reservado', id: 3 },
-            { left: 'Inversión', right: 'Dinero que genera más dinero', id: 4 }
-        ],
-        points: 200
+        id: 1006, topic: 'algebra', type: 'multiple',
+        question: 'Un rectángulo tiene un perímetro de 36 cm. Si el largo es el doble del ancho, ¿cuál es el valor del ancho?',
+        options: ['6 cm', '9 cm', '12 cm', '18 cm'],
+        correct: 0,
+        explanation: 'Sea a el ancho. El largo es 2a. Perímetro = 2(a + 2a) = 6a = 36. Por tanto, a = 6 cm.',
+        hint: 'Plantea una ecuación usando la fórmula del perímetro del rectángulo.',
+        points: 100
     },
     {
-        id: 7, topic: 'inversion', type: 'slider',
-        question: '¿Qué porcentaje de tus ingresos recomiendan los expertos ahorrar mensualmente?',
-        min: 0, max: 50, correctAnswer: 20, tolerance: 5,
-        explanation: 'Los expertos recomiendan ahorrar al menos el 20% de los ingresos mensuales.',
+        id: 1007, topic: 'algebra', type: 'multiple',
+        question: 'La suma de dos números es 45 y su diferencia es 15. ¿Cuál es el producto de ambos números?',
+        options: ['400', '450', '500', '550'],
+        correct: 1,
+        explanation: 'Sistema: x + y = 45; x - y = 15. Sumando: 2x = 60 → x = 30. Reemplazando: y = 15. Producto: 30 × 15 = 450.',
+        hint: 'Plantea un sistema de ecuaciones 2×2 y resuélvelo por reducción o sustitución.',
+        points: 100
+    },
+    {
+        id: 1008, topic: 'algebra', type: 'multiple',
+        question: '¿Cuál de las siguientes funciones representa una proporcionalidad inversa?',
+        options: ['f(x) = 3x', 'f(x) = 3/x', 'f(x) = x + 3', 'f(x) = x²/3'],
+        correct: 1,
+        explanation: 'La proporcionalidad inversa tiene la forma f(x) = k/x, donde k es constante.',
+        hint: 'Recuerda que en proporcionalidad inversa, al aumentar una variable la otra disminuye de forma proporcional.',
+        points: 100
+    },
+    {
+        id: 1009, topic: 'algebra', type: 'multiple',
+        question: 'Una empresa de taxis cobra una tarifa fija de $500 más $200 por cada kilómetro recorrido. ¿Qué función representa el costo total C en función de los kilómetros x?',
+        options: ['C(x) = 200x', 'C(x) = 500x + 200', 'C(x) = 200x + 500', 'C(x) = 700x'],
+        correct: 2,
+        explanation: 'La función afín tiene forma C(x) = mx + b, donde m = 200 (variable) y b = 500 (fijo).',
+        hint: 'Identifica la parte fija (ordenada al origen) y la parte variable (pendiente).',
+        points: 100
+    },
+    {
+        id: 1010, topic: 'algebra', type: 'multiple',
+        question: 'La función cuadrática f(x) = x² - 6x + 8 tiene ceros en x = 2 y x = 4. ¿Cuál es la coordenada x del vértice de su parábola?',
+        options: ['1', '2', '3', '6'],
+        correct: 2,
+        explanation: 'En una parábola, el vértice está en el punto medio de los ceros: (2 + 4) / 2 = 3. También x_v = -b/(2a) = 6/2 = 3.',
+        hint: 'El vértice de una parábola se encuentra en el eje de simetría, que es el promedio de las raíces.',
+        points: 100
+    },
+    {
+        id: 1011, topic: 'geometria', type: 'multiple',
+        question: 'Un triángulo rectángulo tiene catetos de 6 cm y 8 cm. ¿Cuál es la longitud de su hipotenusa?',
+        options: ['10 cm', '12 cm', '14 cm', '100 cm'],
+        correct: 0,
+        explanation: 'Por Teorema de Pitágoras: h² = 6² + 8² = 36 + 64 = 100. h = √100 = 10 cm.',
+        hint: 'Aplica el Teorema de Pitágoras: hipotenusa² = cateto₁² + cateto₂².',
+        points: 100
+    },
+    {
+        id: 1012, topic: 'geometria', type: 'multiple',
+        question: 'Un cilindro tiene radio de la base 3 cm y altura 10 cm. ¿Cuál es su volumen? (Usa π = 3)',
+        options: ['90 cm³', '180 cm³', '270 cm³', '300 cm³'],
+        correct: 2,
+        explanation: 'Volumen cilindro = π × r² × h = 3 × 9 × 10 = 270 cm³.',
+        hint: 'Recuerda la fórmula del volumen de un cilindro: área de la base × altura.',
+        points: 100
+    },
+    {
+        id: 1013, topic: 'geometria', type: 'multiple',
+        question: 'Un trapecio tiene bases de 8 cm y 14 cm, y una altura de 5 cm. ¿Cuál es su área?',
+        options: ['55 cm²', '110 cm²', '22 cm²', '44 cm²'],
+        correct: 0,
+        explanation: 'Área trapecio = (base mayor + base menor) × altura / 2 = (14 + 8) × 5 / 2 = 22 × 5 / 2 = 55 cm².',
+        hint: 'Usa la fórmula del área del trapecio: promedio de las bases multiplicado por la altura.',
+        points: 100
+    },
+    {
+        id: 1014, topic: 'geometria', type: 'multiple',
+        question: 'Al aplicar una traslación de vector (3, -2) al punto A(1, 4), ¿cuáles son las coordenadas del punto imagen A\'?',
+        options: ['(4, 2)', '(4, 6)', '(-2, 6)', '(2, 4)'],
+        correct: 0,
+        explanation: 'Traslación: (x, y) → (x+3, y-2). A\' = (1+3, 4-2) = (4, 2).',
+        hint: 'Suma las componentes del vector a las coordenadas originales del punto.',
+        points: 100
+    },
+    {
+        id: 1015, topic: 'probabilidad', type: 'multiple',
+        question: 'En una clase de 30 estudiantes, 18 son mujeres. Si se elige un estudiante al azar, ¿cuál es la probabilidad de que sea hombre?',
+        options: ['0,3', '0,4', '0,5', '0,6'],
+        correct: 1,
+        explanation: 'Hombres = 30 - 18 = 12. Probabilidad = 12/30 = 0,4.',
+        hint: 'Calcula la cantidad de hombres y divídela por el total de estudiantes.',
+        points: 100
+    },
+    {
+        id: 1016, topic: 'estadistica', type: 'multiple',
+        question: 'Los siguientes datos representan edades: 18, 20, 22, 24, 26. ¿Cuál es el promedio?',
+        options: ['20', '21', '22', '23'],
+        correct: 2,
+        explanation: 'Promedio = (18 + 20 + 22 + 24 + 26) ÷ 5 = 110 ÷ 5 = 22.',
+        hint: 'Suma todos los valores y divide por la cantidad de datos.',
+        points: 100
+    },
+    {
+        id: 1017, topic: 'estadistica', type: 'multiple',
+        question: 'En un diagrama de cajón, Q1 = 12, Q2 = 18 y Q3 = 28. ¿Cuál es el rango intercuartílico (RIC)?',
+        options: ['6', '10', '16', '46'],
+        correct: 2,
+        explanation: 'RIC = Q3 - Q1 = 28 - 12 = 16.',
+        hint: 'Resta el primer cuartil del tercer cuartil.',
+        points: 100
+    },
+    {
+        id: 1018, topic: 'probabilidad', type: 'multiple',
+        question: 'Se lanza un dado justo de seis caras. ¿Cuál es la probabilidad de obtener un número mayor que 4?',
+        options: ['1/6', '1/3', '1/2', '2/3'],
+        correct: 1,
+        explanation: 'Números mayores que 4: 5 y 6. Probabilidad = 2/6 = 1/3.',
+        hint: 'Identifica los casos favorables y divídelos por el total de casos posibles.',
+        points: 100
+    },
+    {
+        id: 1019, topic: 'probabilidad', type: 'multiple',
+        question: 'En una urna hay 5 bolas rojas y 3 bolas azules. Si se extraen dos bolas consecutivamente sin reemplazo, ¿cuál es la probabilidad de que ambas sean rojas?',
+        options: ['5/14', '25/64', '5/8', '2/5'],
+        correct: 0,
+        explanation: 'Primera roja: 5/8. Segunda roja (sin reemplazo): 4/7. Probabilidad conjunta = (5/8) × (4/7) = 20/56 = 5/14.',
+        hint: 'Aplica la regla multiplicativa de probabilidades, considerando que la segunda extracción es sin reemplazo.',
         points: 150
     },
     {
-        id: 8, topic: 'credito', type: 'multiple',
-        question: '¿Qué es mejor para tu salud financiera?',
-        options: ['Pagar el total de la tarjeta de crédito cada mes', 'Pagar solo el mínimo requerido', 'Tener muchas tarjetas de crédito', 'Usar el crédito para gastos diarios'],
-        correct: 0,
-        explanation: 'Pagar el total cada mes evita intereses y mantiene un buen historial crediticio.',
+        id: 1020, topic: 'estadistica', type: 'multiple',
+        question: 'La siguiente tabla muestra la frecuencia de notas obtenidas por 40 estudiantes:\nNota | 3 | 4 | 5 | 6 | 7\nFrecuencia | 6 | 14 | 10 | 8 | 2\n\n¿Qué porcentaje obtuvo nota 5 o 6?',
+        options: ['20%', '30%', '45%', '50%'],
+        correct: 2,
+        explanation: 'Estudiantes con nota 5 o 6: 10 + 8 = 18. Porcentaje = (18/40) × 100 = 45%.',
+        hint: 'Suma las frecuencias de las notas 5 y 6, divide por el total y multiplica por 100.',
         points: 100
     },
     {
-        id: 9, topic: 'contabilidad', type: 'multiple',
-        question: 'La ecuación contable fundamental es:',
-        options: ['Activo = Pasivo + Patrimonio', 'Activo = Ingresos - Gastos', 'Pasivo = Activo + Patrimonio', 'Patrimonio = Activo - Ingresos'],
-        correct: 0,
-        explanation: 'Activo = Pasivo + Patrimonio es la base de la contabilidad por partida doble.',
+        id: 1021, topic: 'numeros', type: 'multiple',
+        question: 'En una receta de cocina, la razón entre tazas de harina y tazas de azúcar es 3:2. Si se usan 9 tazas de harina, ¿cuántas tazas de azúcar se necesitan?',
+        options: ['4', '5', '6', '7'],
+        correct: 2,
+        explanation: 'Razón harina:azúcar = 3:2. Si harina = 9 (3×3), entonces azúcar = 2×3 = 6 tazas.',
+        hint: 'Plantea una proporción: 3/2 = 9/x.',
         points: 100
     },
     {
-        id: 10, topic: 'finanzas', type: 'drag',
-        question: 'Ordena los pasos para crear un plan financiero saludable:',
-        items: ['Analizar ingresos y gastos', 'Establecer metas financieras', 'Crear un presupuesto', 'Ahorrar e invertir regularmente', 'Revisar y ajustar periódicamente'],
-        points: 200
-    },
-    {
-        id: 11, topic: 'presupuesto', type: 'multiple',
-        question: '¿Qué es un gasto hormiga?',
-        options: ['Pequeños gastos diarios que suman grandes cantidades', 'Gastos en insecticidas', 'Grandes compras planificadas', 'Inversiones pequeñas'],
-        correct: 0,
-        explanation: 'Los gastos hormiga son pequeñas compras frecuentes que parecen insignificantes pero suman mucho al mes.',
+        id: 1022, topic: 'numeros', type: 'multiple',
+        question: 'Un mapa tiene una escala de 1:50.000. Si la distancia entre dos ciudades en el mapa es de 8 cm, ¿cuál es la distancia real en kilómetros?',
+        options: ['2 km', '3 km', '4 km', '5 km'],
+        correct: 2,
+        explanation: 'Distancia real = 8 cm × 50.000 = 400.000 cm = 4.000 m = 4 km.',
+        hint: 'Convierte de centímetros a kilómetros: divide por 100.000.',
         points: 100
     },
     {
-        id: 12, topic: 'inversion', type: 'multiple',
-        question: '¿Qué es el interés compuesto?',
-        options: ['Intereses que generan más intereses con el tiempo', 'Un tipo de impuesto financiero', 'El interés que cobra el banco', 'Una comisión por inversión'],
-        correct: 0,
-        explanation: 'El interés compuesto hace que tu dinero crezca exponencialmente al reinvertir las ganancias.',
+        id: 1023, topic: 'numeros', type: 'multiple',
+        question: 'Tres números son directamente proporcionales a 2, 3 y 5. Si el menor de ellos es 14, ¿cuál es el mayor?',
+        options: ['21', '28', '35', '42'],
+        correct: 2,
+        explanation: 'Si k es la constante: 2k = 14 → k = 7. El mayor es 5k = 35.',
+        hint: 'Encuentra la constante de proporcionalidad usando el valor del número menor.',
+        points: 150
+    },
+    {
+        id: 1024, topic: 'algebra', type: 'multiple',
+        question: 'La trayectoria de un proyectil está modelada por f(x) = -x² + 6x + 16, donde x es el tiempo en segundos. ¿Cuál es la altura máxima alcanzada?',
+        options: ['20', '25', '28', '30'],
+        correct: 1,
+        explanation: 'Vértice en x = -b/(2a) = -6/(2×(-1)) = 3. Altura máxima: f(3) = -(3)² + 6(3) + 16 = -9 + 18 + 16 = 25.',
+        hint: 'Encuentra la coordenada x del vértice y evalúa la función en ese punto.',
+        points: 150
+    },
+    {
+        id: 1025, topic: 'algebra', type: 'multiple',
+        question: 'Si 3(x - 2) + 5 = 2(x + 1) - 4, ¿cuál es el valor de x?',
+        options: ['-3', '-1', '1', '3'],
+        correct: 1,
+        explanation: '3x - 6 + 5 = 2x + 2 - 4 → 3x - 1 = 2x - 2 → x = -1.',
+        hint: 'Desarrolla los paréntesis, agrupa términos semejantes y despeja la incógnita.',
         points: 100
+    },
+    {
+        id: 1026, topic: 'geometria', type: 'multiple',
+        question: 'El punto P(3, -2) se refleja respecto al eje Y. ¿Cuáles son las coordenadas del punto imagen?',
+        options: ['(-3, -2)', '(3, 2)', '(-3, 2)', '(-2, 3)'],
+        correct: 0,
+        explanation: 'Al reflejar respecto al eje Y, la coordenada x cambia de signo: (x, y) → (-x, y). P\' = (-3, -2).',
+        hint: 'Una reflexión respecto al eje Y invierte el signo de la coordenada x.',
+        points: 100
+    },
+    {
+        id: 1027, topic: 'geometria', type: 'multiple',
+        question: 'Un triángulo ABC tiene vértices A(1, 2), B(3, 2) y C(2, 5). Si se le aplica una rotación de 90° antihorario respecto al origen, ¿cuál es la nueva coordenada del vértice A?',
+        options: ['(2, -1)', '(-2, 1)', '(2, 1)', '(-1, 2)'],
+        correct: 1,
+        explanation: 'Rotación de 90° antihorario: (x, y) → (-y, x). A\' = (-2, 1).',
+        hint: 'Aplica la regla de rotación: intercambia coordenadas y cambia el signo de la primera.',
+        points: 150
+    },
+    {
+        id: 1028, topic: 'geometria', type: 'multiple',
+        question: 'Una figura se amplía mediante una homotecia de centro en el origen y razón k = 3. Si un punto original P(2, -1) pertenece a la figura, ¿cuáles son sus coordenadas en la figura ampliada?',
+        options: ['(6, -3)', '(3, -1)', '(5, -2)', '(6, -1)'],
+        correct: 0,
+        explanation: 'Homotecia con centro (0,0) y razón k: (x, y) → (kx, ky). P\' = (3×2, 3×(-1)) = (6, -3).',
+        hint: 'Multiplica ambas coordenadas por la razón de homotecia.',
+        points: 100
+    },
+    {
+        id: 1029, topic: 'estadistica', type: 'multiple',
+        question: 'Las notas de un estudiante son: 4,5 - 5,0 - 5,5 - 6,0 - 6,5 - 7,0. ¿Cuál es la mediana?',
+        options: ['5,25', '5,5', '5,75', '6,0'],
+        correct: 2,
+        explanation: 'Con 6 datos (par), la mediana es el promedio de los valores centrales: (5,5 + 6,0) / 2 = 5,75.',
+        hint: 'Con cantidad par de datos, la mediana es el promedio de los dos valores centrales.',
+        points: 100
+    },
+    {
+        id: 1030, topic: 'estadistica', type: 'multiple',
+        question: 'En una encuesta sobre edades se obtuvo: 14, 15, 14, 15, 16, 14, 16, 17, 15. ¿Cuál es la moda?',
+        options: ['14', '15', '16', 'No hay moda'],
+        correct: 0,
+        explanation: 'El valor 14 aparece 3 veces, más que cualquier otro. Por tanto, la moda es 14.',
+        hint: 'La moda es el valor que aparece con mayor frecuencia en el conjunto de datos.',
+        points: 100
+    },
+    {
+        id: 1031, topic: 'estadistica', type: 'multiple',
+        question: 'La tabla muestra las edades de un grupo:\nEdad | 15 | 16 | 17 | 18\nFrec. | 4 | 8 | 5 | 3\n\n¿Cuál es el promedio ponderado de las edades?',
+        options: ['16,15', '16,35', '16,55', '16,75'],
+        correct: 1,
+        explanation: 'Suma: 15×4 + 16×8 + 17×5 + 18×3 = 60+128+85+54 = 327. Total personas = 20. Promedio = 327/20 = 16,35.',
+        hint: 'Multiplica cada valor por su frecuencia, suma y divide por el total de datos.',
+        points: 100
+    },
+    {
+        id: 1032, topic: 'estadistica', type: 'multiple',
+        question: 'En un diagrama de cajón, ¿qué representa la línea central dentro de la caja?',
+        options: ['El promedio', 'La moda', 'La mediana', 'El rango'],
+        correct: 2,
+        explanation: 'En un diagrama de cajón (boxplot), la línea central de la caja representa la mediana (Q2).',
+        hint: 'Recuerda la estructura del diagrama de cajón: bigotes, caja (Q1-Q3) y línea central.',
+        points: 100
+    },
+    {
+        id: 1033, topic: 'probabilidad', type: 'multiple',
+        question: 'Se lanzan dos dados justos de 6 caras. ¿Cuál es la probabilidad de que la suma de ambos sea 7?',
+        options: ['1/6', '5/36', '7/36', '1/2'],
+        correct: 0,
+        explanation: 'Casos favorables (suman 7): (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) = 6 casos. Total casos: 36. Probabilidad = 6/36 = 1/6.',
+        hint: 'Enumera sistemáticamente todos los pares de dados que suman 7.',
+        points: 100
+    },
+    {
+        id: 1034, topic: 'probabilidad', type: 'multiple',
+        question: 'En una bolsa hay 4 fichas rojas, 3 azules y 2 verdes. Se extrae una ficha al azar. ¿Cuál es la probabilidad de que NO sea azul?',
+        options: ['1/3', '2/3', '4/9', '5/9'],
+        correct: 1,
+        explanation: 'Total fichas: 9. Fichas no azules: 4+2 = 6. Probabilidad = 6/9 = 2/3.',
+        hint: 'Calcula el complemento: 1 - P(azul) o directamente los casos favorables.',
+        points: 100
+    },
+    {
+        id: 1035, topic: 'probabilidad', type: 'multiple',
+        question: 'En un grupo de 50 personas, 30 practican fútbol, 20 practican básquetbol y 10 practican ambos. ¿Cuál es la probabilidad de que una persona elegida al azar practique solo fútbol?',
+        options: ['0,4', '0,5', '0,6', '0,8'],
+        correct: 0,
+        explanation: 'Solo fútbol = 30 - 10 = 20. Probabilidad = 20/50 = 0,4.',
+        hint: 'Usa el diagrama de Venn: resta la intersección al total de cada deporte.',
+        points: 150
     }
 ];
 
-// Nivel 1: Fondo de Emergencia
-const fondoEmergenciaQuestions = [
-    { id: 101, topic: 'fondo-emergencia', type: 'multiple', question: '¿Qué es un fondo de emergencia?', options: ['Dinero para comprar regalos', 'Un ahorro destinado a cubrir gastos inesperados', 'Un préstamo bancario', 'Dinero para vacaciones'], correct: 1, explanation: '¡Exacto! Es un ahorro para imprevistos como urgencias médicas o reparaciones.', points: 100 },
-    { id: 102, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuál de estas situaciones corresponde a una emergencia?', options: ['Hospitalización inesperada', 'Comprar ropa', 'Ir al cine', 'Comprar un celular nuevo'], correct: 0, explanation: '¡Muy bien! Una emergencia de salud no se planifica y requiere fondos inmediatos.', points: 100 },
-    { id: 103, topic: 'fondo-emergencia', type: 'multiple', question: '¿Para qué sirve un fondo de emergencia?', options: ['Comprar cosas por impulso', 'Ahorrar para vacaciones', 'Cubrir gastos inesperados sin endeudarse', 'Comprar tecnología'], correct: 2, explanation: '¡Excelente! Te protege de pedir préstamos con intereses altos.', points: 100 },
-    { id: 104, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuándo es recomendable ahorrar?', options: ['Solo cuando sobra dinero', 'Todos los meses', 'Una vez al año', 'Nunca'], correct: 1, explanation: '¡Así se hace! El ahorro es un hábito constante que se planifica cada mes.', points: 100 },
-    { id: 105, topic: 'fondo-emergencia', type: 'multiple', question: 'Si se rompe el refrigerador de tu casa, ¿qué sería lo más recomendable?', options: ['Pedir un préstamo', 'Esperar varios meses', 'Utilizar el fondo de emergencia', 'No hacer nada'], correct: 2, explanation: '¡Correcto! Es una urgencia doméstica para la cual está diseñado este fondo.', points: 100 },
-    { id: 106, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuál de estas opciones NO corresponde a una emergencia?', options: ['Una operación médica', 'Una reparación urgente', 'Comprar el último modelo de celular', 'Reparar una fuga de agua'], correct: 2, explanation: '¡Exacto! Cambiar de teléfono por gusto es un deseo, no una emergencia.', points: 100 },
-    { id: 107, topic: 'fondo-emergencia', type: 'multiple', question: '¿Qué documento permite conocer cómo se distribuye el sueldo de un trabajador?', options: ['Factura', 'Boleta', 'Planilla de remuneraciones', 'Balance general'], correct: 2, explanation: '¡Muy bien! Ahí se detallan los haberes, descuentos y líquido a pagar.', points: 100 },
-    { id: 108, topic: 'fondo-emergencia', type: 'multiple', question: '¿Qué representa el sueldo líquido?', options: ['El sueldo antes de descuentos', 'El dinero destinado a la AFP', 'El dinero que finalmente recibe el trabajador', 'Los impuestos'], correct: 2, explanation: '¡Excelente! Es el monto real entregado al trabajador después de los descuentos.', points: 100 },
-    { id: 109, topic: 'fondo-emergencia', type: 'multiple', question: '¿Por qué la planilla de remuneraciones puede ayudar a crear un fondo de emergencia?', options: ['Porque aumenta el sueldo', 'Porque elimina gastos', 'Porque permite saber cuánto dinero recibe una persona y cuánto puede ahorrar', 'Porque evita pagar impuestos'], correct: 2, explanation: '¡Bien pensado! Saber tus ingresos exactos permite calcular tu capacidad de ahorro.', points: 100 },
-    { id: 110, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuál de las siguientes especialidades enseña sobre remuneraciones, educación financiera, administración y contabilidad?', options: ['🍳 Gastronomía', '👶 Atención de Párvulos', '📊 Contabilidad', '🥫 Elaboración Industrial de Alimentos', '⚡ Electrónica'], correct: 2, explanation: '¡Correcto! Contabilidad entrega las herramientas para administrar el dinero y las organizaciones.', points: 100 },
-    { id: 111, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuántos meses de gastos debe cubrir idealmente un fondo de emergencia?', options: ['1 mes', '2 meses', 'De 3 a 6 meses', '12 meses o más'], correct: 2, explanation: 'Los expertos recomiendan cubrir entre 3 y 6 meses de gastos básicos.', points: 100 },
-    { id: 112, topic: 'fondo-emergencia', type: 'multiple', question: '¿Dónde es mejor guardar el dinero del fondo de emergencia?', options: ['En una alcancía en casa', 'Invertido en acciones', 'En una cuenta de ahorro de fácil acceso', 'Prestado a un familiar'], correct: 2, explanation: 'Debe estar disponible rápidamente y sin riesgo de pérdida.', points: 100 },
-    { id: 113, topic: 'fondo-emergencia', type: 'multiple', question: '¿Qué característica debe tener un fondo de emergencia?', options: ['Alta rentabilidad', 'Liquidez inmediata', 'Plazo fijo a 5 años', 'Inversión en criptomonedas'], correct: 1, explanation: 'La liquidez permite disponer del dinero en el momento exacto de la emergencia.', points: 100 },
-    { id: 114, topic: 'fondo-emergencia', type: 'multiple', question: 'Si ganas $500.000 mensuales, ¿cuánto deberías tener idealmente en tu fondo de emergencia?', options: ['$100.000', '$500.000', 'Entre $1.500.000 y $3.000.000', '$10.000.000'], correct: 2, explanation: 'Equivale a 3-6 meses de gastos. Si tus gastos son $500.000, necesitas entre $1.5 y $3 millones.', points: 100 },
-    { id: 115, topic: 'fondo-emergencia', type: 'multiple', question: '¿Cuál es el primer paso para crear un fondo de emergencia?', options: ['Calcular los gastos mensuales básicos', 'Pedir un préstamo', 'Invertir en la bolsa', 'Gastar menos en entretención'], correct: 0, explanation: 'Primero debes saber cuánto necesitas para cubrir tus gastos esenciales.', points: 100 }
+// ============================================================
+// PAES COMPETENCIA MATEMÁTICA 2 (M2)
+// Ejes: Números / Álgebra y Funciones / Geometría / Probabilidad y Estadística
+// Incluye contenidos avanzados de 3° y 4° medio
+// ============================================================
+
+const paesM2Questions = [
+    {
+        id: 2001, topic: 'numeros', type: 'multiple',
+        question: 'Si log₂(x) = 5, ¿cuál es el valor de x?',
+        options: ['10', '16', '25', '32'],
+        correct: 3,
+        explanation: 'Por definición de logaritmo: x = 2⁵ = 32.',
+        hint: 'Recuerda que log_b(a) = c equivale a b^c = a.',
+        points: 150
+    },
+    {
+        id: 2002, topic: 'numeros', type: 'multiple',
+        question: '¿Cuál es el valor de log₅(125) + log₅(1/25)?',
+        options: ['-1', '0', '1', '3'],
+        correct: 2,
+        explanation: 'log₅(125) = 3 (pues 5³ = 125). log₅(1/25) = -2 (pues 5⁻² = 1/25). Suma: 3 + (-2) = 1.',
+        hint: 'Aplica las propiedades de los logaritmos y evalúa cada término por separado.',
+        points: 150
+    },
+    {
+        id: 2003, topic: 'matematica-financiera', type: 'multiple',
+        question: 'Se depositan $500.000 en una cuenta que paga un interés simple anual del 8%. ¿Cuál será el monto total después de 3 años?',
+        options: ['$620.000', '$630.000', '$640.000', '$650.000'],
+        correct: 0,
+        explanation: 'Interés simple = Capital × tasa × tiempo = $500.000 × 0,08 × 3 = $120.000. Monto total = $500.000 + $120.000 = $620.000.',
+        hint: 'En interés simple, el capital permanece constante y los intereses se calculan siempre sobre el monto original.',
+        points: 150
+    },
+    {
+        id: 2004, topic: 'numeros', type: 'multiple',
+        question: 'Si 2^(x+1) = 16, ¿cuál es el valor de 3^x?',
+        options: ['9', '27', '81', '243'],
+        correct: 1,
+        explanation: '2^(x+1) = 16 = 2⁴. Entonces x + 1 = 4, por lo que x = 3. Luego 3^x = 3³ = 27.',
+        hint: 'Iguala las bases para resolver el exponente y luego evalúa la expresión pedida.',
+        points: 150
+    },
+    {
+        id: 2005, topic: 'algebra', type: 'multiple',
+        question: 'La función f(x) = 3 · 2^x modela el crecimiento de una colonia de bacterias, donde x es el tiempo en horas. ¿Cuántas bacterias habrá después de 4 horas?',
+        options: ['24', '32', '48', '96'],
+        correct: 2,
+        explanation: 'f(4) = 3 · 2⁴ = 3 × 16 = 48.',
+        hint: 'Evalúa la función exponencial sustituyendo x = 4.',
+        points: 150
+    },
+    {
+        id: 2006, topic: 'algebra', type: 'multiple',
+        question: 'Si sen(θ) = 3/5 y θ es un ángulo agudo, ¿cuál es el valor de cos(θ)?',
+        options: ['2/5', '3/4', '4/5', '5/4'],
+        correct: 2,
+        explanation: 'Por identidad pitagórica: sen²(θ) + cos²(θ) = 1. cos²(θ) = 1 - (3/5)² = 1 - 9/25 = 16/25. cos(θ) = 4/5 (positivo al ser agudo).',
+        hint: 'Usa la identidad fundamental sen²(θ) + cos²(θ) = 1.',
+        points: 150
+    },
+    {
+        id: 2007, topic: 'algebra', type: 'multiple',
+        question: '¿Cuál es el período de la función f(x) = cos(2x)?',
+        options: ['π', '2π', 'π/2', '4π'],
+        correct: 0,
+        explanation: 'El período de cos(kx) es 2π/k. Aquí k = 2, por tanto período = 2π/2 = π.',
+        hint: 'El período de la función coseno se comprime cuando el coeficiente de x aumenta.',
+        points: 150
+    },
+    {
+        id: 2008, topic: 'algebra', type: 'multiple',
+        question: 'Resuelve el sistema de ecuaciones: 2x + y = 7 ; x - y = -1. ¿Cuál es el valor de x + y?',
+        options: ['3', '4', '5', '6'],
+        correct: 2,
+        explanation: 'Sumando ambas ecuaciones: 3x = 6 → x = 2. Reemplazando en la segunda: 2 - y = -1 → y = 3. Entonces x + y = 5.',
+        hint: 'Usa el método de reducción sumando ambas ecuaciones para eliminar y.',
+        points: 150
+    },
+    {
+        id: 2009, topic: 'geometria', type: 'multiple',
+        question: 'En un triángulo rectángulo, un ángulo agudo mide 30° y el cateto opuesto a este ángulo mide 5 cm. ¿Cuál es la longitud de la hipotenusa?',
+        options: ['5 cm', '10 cm', '5√3 cm', '10√3 cm'],
+        correct: 1,
+        explanation: 'sen(30°) = cateto opuesto / hipotenusa = 1/2. Entonces 5 / h = 1/2 → h = 10 cm.',
+        hint: 'Usa la razón trigonométrica seno para relacionar el ángulo, el cateto opuesto y la hipotenusa.',
+        points: 150
+    },
+    {
+        id: 2010, topic: 'geometria', type: 'multiple',
+        question: 'La ecuación de una circunferencia con centro en (2, -3) y radio 4 es:',
+        options: ['(x-2)² + (y+3)² = 4', '(x+2)² + (y-3)² = 16', '(x-2)² + (y+3)² = 16', '(x-2)² - (y+3)² = 16'],
+        correct: 2,
+        explanation: 'Ecuación circunferencia: (x-h)² + (y-k)² = r². Sustituyendo: (x-2)² + (y-(-3))² = 4² → (x-2)² + (y+3)² = 16.',
+        hint: 'Recuerda la forma canónica de la circunferencia y verifica el signo de las coordenadas del centro.',
+        points: 150    },
+    {
+        id: 2011, topic: 'geometria', type: 'multiple',
+        question: 'Una esfera tiene radio 3 cm. ¿Cuál es su volumen? (Usa V = (4/3)πr³ y π = 3)',
+        options: ['36 cm³', '72 cm³', '108 cm³', '144 cm³'],
+        correct: 2,
+        explanation: 'V = (4/3) × 3 × 3³ = (4/3) × 3 × 27 = 4 × 27 = 108 cm³.',
+        hint: 'Sustituye directamente en la fórmula del volumen de la esfera.',
+        points: 150
+    },
+    {
+        id: 2012, topic: 'geometria', type: 'multiple',
+        question: 'Dos rectas en el plano tienen pendientes m₁ = 2 y m₂ = -1/2. ¿Qué relación existe entre ellas?',
+        options: ['Son paralelas', 'Son perpendiculares', 'Son coincidentes', 'Se intersectan formando 30°'],
+        correct: 1,
+        explanation: 'Dos rectas son perpendiculares si el producto de sus pendientes es -1. Aquí 2 × (-1/2) = -1.',
+        hint: 'Recuerda la condición de perpendicularidad: m₁ × m₂ = -1.',
+        points: 150
+    },
+    {
+        id: 2013, topic: 'probabilidad', type: 'multiple',
+        question: '¿De cuántas formas distintas se pueden ordenar 4 libros en un estante?',
+        options: ['16', '24', '64', '120'],
+        correct: 1,
+        explanation: 'Se trata de 4! = 4 × 3 × 2 × 1 = 24 permutaciones.',
+        hint: 'Usa el concepto de permutación de n elementos distintos.',
+        points: 150
+    },
+    {
+        id: 2014, topic: 'probabilidad', type: 'multiple',
+        question: 'En una clase, el 60% de los estudiantes practica deporte y el 40% practica música. El 25% practica ambas actividades. Si se elige un estudiante al azar que practica deporte, ¿cuál es la probabilidad de que también practique música?',
+        options: ['0,15', '0,25', '0,40', '0,42'],
+        correct: 3,
+        explanation: 'Probabilidad condicional: P(Música|Deporte) = P(Ambas) / P(Deporte) = 0,25 / 0,60 ≈ 0,4167 ≈ 0,42.',
+        hint: 'Aplica la fórmula de probabilidad condicional: P(A|B) = P(A∩B) / P(B).',
+        points: 200
+    },
+    {
+        id: 2015, topic: 'estadistica', type: 'multiple',
+        question: 'Los datos 10, 12, 14, 16, 18 tienen una desviación estándar aproximada de 2,83. Si a cada dato se le suma 5, ¿qué ocurre con la desviación estándar?',
+        options: ['Aumenta en 5', 'Disminuye en 5', 'Permanece igual', 'Se duplica'],
+        correct: 2,
+        explanation: 'La desviación estándar es una medida de dispersión que no se ve afectada por traslaciones (sumar o restar una constante a todos los datos).',
+        hint: 'Recuerda que al sumar una constante a todos los datos, la media se traslada pero la dispersión relativa no cambia.',
+        points: 150
+    },
+    {
+        id: 2016, topic: 'probabilidad', type: 'multiple',
+        question: 'Se lanza una moneda justa 4 veces. ¿Cuál es la probabilidad de obtener exactamente 2 caras?',
+        options: ['1/16', '3/8', '1/2', '5/8'],
+        correct: 1,
+        explanation: 'Usando distribución binomial: C(4,2) × (1/2)² × (1/2)² = 6 × 1/16 = 6/16 = 3/8.',
+        hint: 'Usa la fórmula binomial o enumera los casos favorables sobre el total de combinaciones.',
+        points: 200
+    },
+    {
+        id: 2017, topic: 'estadistica', type: 'multiple',
+        question: 'En una distribución normal, aproximadamente el 95% de los datos se encuentran dentro de:',
+        options: ['Una desviación estándar de la media', 'Dos desviaciones estándar de la media', 'Tres desviaciones estándar de la media', 'Cuatro desviaciones estándar de la media'],
+        correct: 1,
+        explanation: 'Según la regla empírica (o de la campana de Gauss), aproximadamente el 95% de los datos están a ±2 desviaciones estándar de la media.',
+        hint: 'Recuerda la regla 68-95-99,7 de la distribución normal.',
+        points: 150
+    },
+    {
+        id: 2018, topic: 'probabilidad', type: 'multiple',
+        question: '¿Cuántos subconjuntos de 3 elementos se pueden formar a partir de un conjunto de 6 elementos?',
+        options: ['18', '20', '120', '216'],
+        correct: 1,
+        explanation: 'Combinaciones de 6 en 3: C(6,3) = 6! / (3! × 3!) = (6×5×4) / (3×2×1) = 20.',
+        hint: 'Usa combinaciones porque el orden de los elementos no importa.',
+        points: 150
+    },
+    {
+        id: 2019, topic: 'matematica-financiera', type: 'multiple',
+        question: 'Se depositan $1.000.000 al 10% anual de interés compuesto, capitalizable anualmente. ¿Cuál será el monto después de 2 años?',
+        options: ['$1.200.000', '$1.210.000', '$1.220.000', '$1.240.000'],
+        correct: 1,
+        explanation: 'Interés compuesto: M = C(1 + i)^n = 1.000.000 × (1,10)² = 1.000.000 × 1,21 = $1.210.000.',
+        hint: 'En interés compuesto, los intereses ganados se suman al capital y generan nuevos intereses.',
+        points: 150
+    },
+    {
+        id: 2020, topic: 'matematica-financiera', type: 'multiple',
+        question: '¿Cuál es la diferencia entre interés simple e interés compuesto a largo plazo, con la misma tasa y capital inicial?',
+        options: ['El interés simple siempre es mayor', 'El interés compuesto genera un crecimiento exponencial', 'Ambos generan exactamente el mismo monto', 'El interés compuesto solo se aplica en inversiones'],
+        correct: 1,
+        explanation: 'El interés compuesto reinvierte los intereses generando un efecto "bola de nieve" o crecimiento exponencial, mientras que el simple es lineal.',
+        hint: 'Piensa en qué sucede con los intereses ganados en cada período según cada tipo de interés.',
+        points: 100
+    },
+    {
+        id: 2021, topic: 'numeros', type: 'multiple',
+        question: 'Si z₁ = 3 + 2i y z₂ = 1 - 4i, ¿cuál es el valor de z₁ + z₂?',
+        options: ['4 - 2i', '4 + 6i', '2 - 2i', '4 + 2i'],
+        correct: 0,
+        explanation: 'Suma de complejos: (3+2i) + (1-4i) = (3+1) + (2-4)i = 4 - 2i.',
+        hint: 'Suma por separado las partes reales y las partes imaginarias.',
+        points: 150
+    },
+    {
+        id: 2022, topic: 'numeros', type: 'multiple',
+        question: '¿Cuál es el producto de (2 + i) y (2 - i)?',
+        options: ['3', '4', '5', '6'],
+        correct: 2,
+        explanation: '(2+i)(2-i) = 4 - i² = 4 - (-1) = 5. Es el producto de un complejo por su conjugado.',
+        hint: 'Recuerda que i² = -1 y aplica el producto notable suma por diferencia.',
+        points: 150
+    },
+    {
+        id: 2023, topic: 'algebra', type: 'multiple',
+        question: '¿Cuál es el dominio de la función f(x) = √(x - 4)?',
+        options: ['Todos los números reales', 'x ≥ 0', 'x ≥ 4', 'x > 4'],
+        correct: 2,
+        explanation: 'Para que la raíz cuadrada esté definida en ℝ, el radicando debe ser ≥ 0: x - 4 ≥ 0 → x ≥ 4.',
+        hint: 'El radicando (lo que está dentro de la raíz) debe ser mayor o igual a cero.',
+        points: 150
+    },
+    {
+        id: 2024, topic: 'algebra', type: 'multiple',
+        question: 'Resuelve la inecuación: 3x - 7 > 2x + 5',
+        options: ['x > 12', 'x > 2', 'x < 12', 'x > -12'],
+        correct: 0,
+        explanation: '3x - 7 > 2x + 5 → x - 7 > 5 → x > 12.',
+        hint: 'Agrupa los términos con x en un lado y los números en el otro, manteniendo la desigualdad.',
+        points: 150
+    },
+    {
+        id: 2025, topic: 'algebra', type: 'multiple',
+        question: '¿Cuál es la solución de la inecuación x² - 4x - 5 ≤ 0?',
+        options: ['x ≤ -1 o x ≥ 5', '-1 ≤ x ≤ 5', 'x ≤ -5 o x ≥ 1', 'Todo número real'],
+        correct: 1,
+        explanation: 'Factorizando: (x-5)(x+1) ≤ 0. La parábola abre hacia arriba. Solución: -1 ≤ x ≤ 5.',
+        hint: 'Factoriza el trinomio, encuentra las raíces y analiza el signo de la parábola.',
+        points: 150
+    },
+    {
+        id: 2026, topic: 'algebra', type: 'multiple',
+        question: 'Si cos(θ) = 5/13 y θ es un ángulo agudo, ¿cuál es el valor de tan(θ)?',
+        options: ['5/12', '12/5', '12/13', '5/13'],
+        correct: 1,
+        explanation: 'Por Pitágoras: sen²(θ) = 1 - (5/13)² = 1 - 25/169 = 144/169 → sen(θ) = 12/13. tan(θ) = sen/cos = (12/13)/(5/13) = 12/5.',
+        hint: 'Encuentra primero sen(θ) usando la identidad pitagórica y luego calcula la tangente.',
+        points: 150
+    },
+    {
+        id: 2027, topic: 'algebra', type: 'multiple',
+        question: 'Resuelve para x en [0, 2π): 2sen(x) - 1 = 0',
+        options: ['{π/6}', '{π/6, 5π/6}', '{π/3, 2π/3}', '{π/6, 11π/6}'],
+        correct: 1,
+        explanation: 'sen(x) = 1/2. En [0, 2π): x = π/6 y x = 5π/6.',
+        hint: 'Despeja sen(x) y recuerda que el seno es positivo en el primer y segundo cuadrante.',
+        points: 200
+    },
+    {
+        id: 2028, topic: 'geometria', type: 'multiple',
+        question: '¿Cuál es la distancia entre los puntos A(1, 3) y B(5, 6)?',
+        options: ['3', '4', '5', '6'],
+        correct: 2,
+        explanation: 'd = √[(5-1)² + (6-3)²] = √[16 + 9] = √25 = 5.',
+        hint: 'Aplica la fórmula de distancia entre dos puntos: √[(x₂-x₁)² + (y₂-y₁)²].',
+        points: 150
+    },
+    {
+        id: 2029, topic: 'geometria', type: 'multiple',
+        question: 'La recta que pasa por los puntos (0, 4) y (2, 0) tiene por ecuación:',
+        options: ['y = -2x + 4', 'y = 2x + 4', 'y = -x + 2', 'y = x + 4'],
+        correct: 0,
+        explanation: 'Pendiente m = (0-4)/(2-0) = -4/2 = -2. Con punto (0,4): y = -2x + 4.',
+        hint: 'Calcula la pendiente y usa el intercepto con el eje Y (punto donde x=0).',
+        points: 150
+    },
+    {
+        id: 2030, topic: 'estadistica', type: 'multiple',
+        question: 'Los datos {2, 4, 6, 8} tienen media 5. ¿Cuál es la varianza poblacional?',
+        options: ['3', '4', '5', '6'],
+        correct: 2,
+        explanation: 'Varianza = [(2-5)²+(4-5)²+(6-5)²+(8-5)²] / 4 = (9+1+1+9)/4 = 20/4 = 5.',
+        hint: 'Calcula las diferencias al cuadrado respecto a la media, súmalas y divide por n.',
+        points: 200
+    },
+    {
+        id: 2031, topic: 'estadistica', type: 'multiple',
+        question: 'Si la varianza de un conjunto de datos es 16, ¿cuál es la desviación estándar?',
+        options: ['2', '4', '8', '16'],
+        correct: 1,
+        explanation: 'La desviación estándar es la raíz cuadrada de la varianza: √16 = 4.',
+        hint: 'La desviación estándar es la raíz cuadrada de la varianza.',
+        points: 100
+    },
+    {
+        id: 2032, topic: 'estadistica', type: 'multiple',
+        question: 'En una distribución normal con media 100 y desviación estándar 15, ¿qué porcentaje aproximado de datos se encuentra entre 70 y 130?',
+        options: ['68%', '95%', '99,7%', '50%'],
+        correct: 1,
+        explanation: '70 = 100 - 2(15) y 130 = 100 + 2(15). Según la regla 68-95-99,7, el 95% está a ±2 desviaciones.',
+        hint: 'Calcula cuántas desviaciones estándar hay entre los valores dados y la media.',
+        points: 150
+    }
 ];
 
-// Nivel 2: Contabilidad y Nómina
-const nivel2Questions = [
-    { id: 201, topic: 'contabilidad', type: 'multiple', question: 'Si una empresa cobra $500 en efectivo por un servicio realizado, ¿cuál es el registro contable correcto?', options: ['Cargar (Débito) a Caja y Abonar (Crédito) a Ingresos por Servicios', 'Cargar a Ingresos por Servicios y Abonar a Caja', 'Cargar a Banco y Abonar a Cuentas por Cobrar', 'Cargar a Gastos Generales y Abonar a Caja'], correct: 0, explanation: 'El dinero entra a la empresa (Activo aumenta por el Debe en Caja) y se reconoce la venta (Ingreso aumenta por el Haber).', points: 150 },
-    { id: 202, topic: 'contabilidad', type: 'multiple', question: '¿Qué ocurre en la ecuación contable cuando una empresa compra mercancía al contado?', options: ['Aumenta un Activo (Inventario) y disminuye otro Activo (Caja)', 'Aumenta un Activo y aumenta un Pasivo', 'Disminuye el Patrimonio y aumenta el Pasivo', 'Aumenta el Pasivo y disminuye el Activo'], correct: 0, explanation: 'Es un intercambio de activos: ingresa Inventario y sale Efectivo/Caja por el mismo valor.', points: 150 },
-    { id: 203, topic: 'tributacion', type: 'multiple', question: 'En el cálculo del IVA, ¿qué representa el Débito Fiscal?', options: ['El IVA cobrado a los clientes en las ventas de la empresa', 'El IVA pagado a los proveedores al comprar insumos', 'El impuesto sobre la renta que se paga a fin de año', 'Un dinero que la administración tributaria le debe a la empresa'], correct: 0, explanation: 'El Débito Fiscal es el IVA recaudado de las ventas. Representa un pasivo con el fisco.', points: 150 },
-    { id: 204, topic: 'tributacion', type: 'multiple', question: 'Si en un mes generas $200 de Débito Fiscal y pagaste $120 de Crédito Fiscal, ¿cuánto debes pagar al fisco?', options: ['$80', '$320', '$120', '$0 (Queda saldo a favor)'], correct: 0, explanation: 'Impuesto a pagar = Débito Fiscal ($200) menos Crédito Fiscal ($120) = $80.', points: 150 },
-    { id: 205, topic: 'nomina', type: 'multiple', question: '¿Cuál es la diferencia entre el Sueldo Bruto y el Sueldo Líquido?', options: ['El Sueldo Bruto es el total pactado; el Líquido es lo que recibe el trabajador tras descuentos de ley', 'El Sueldo Líquido es antes de impuestos y el Bruto es después', 'El Sueldo Bruto se paga en efectivo y el Líquido mediante cheque', 'Son exactamente el mismo monto'], correct: 0, explanation: 'El Sueldo Bruto incluye todos los haberes. Al restarle las retenciones legales se obtiene el Sueldo Líquido.', points: 150 },
-    { id: 206, topic: 'contabilidad', type: 'multiple', question: '¿Cuál de las siguientes cuentas es de naturaleza ACREEDORA (aumenta por el Haber)?', options: ['Cuentas por Pagar (Pasivo)', 'Caja Chica (Activo)', 'Gastos de Arriendo (Gasto)', 'Banco (Activo)'], correct: 0, explanation: 'Las cuentas de Pasivo, Patrimonio e Ingresos nacen y aumentan por el Haber.', points: 150 },
-    { id: 207, topic: 'contabilidad', type: 'multiple', question: '¿Para qué sirve el Libro Mayor en la contabilidad diaria?', options: ['Para agrupar los saldos individuales y movimientos de cada cuenta contable', 'Para anotar las facturas del día en orden cronológico', 'Para calcular el sueldo de los trabajadores', 'Para pagar los impuestos directamente'], correct: 0, explanation: 'El Libro Mayor classifies las operaciones por cada cuenta específica para conocer su saldo.', points: 150 },
-    { id: 208, topic: 'contabilidad', type: 'multiple', question: 'Se compra un equipo de oficina por $1.000 a crédito firmando una letra. ¿Qué cuenta de pasivo aumenta?', options: ['Documentos por Pagar', 'Cuentas por Cobrar', 'Capital Social', 'Gastos Operativos'], correct: 0, explanation: 'Al existir un compromiso formal respaldado por un documento, la deuda se registra en Documentos por Pagar.', points: 150 },
-    { id: 209, topic: 'nomina', type: 'multiple', question: '¿Qué representan los "Haberes No Imponibles" en una planilla de remuneraciones?', options: ['Asignaciones que no sufren descuentos legales, como la movilización o colación', 'El sueldo base antes de calcular las horas extras', 'Los préstamos que la empresa le otorga al trabajador', 'Los impuestos cobrados directamente por el gobierno'], correct: 0, explanation: 'Son compensaciones por gastos de trabajo sobre los cuales no se aplican retenciones.', points: 150 },
-    { id: 210, topic: 'contabilidad', type: 'multiple', question: '¿Cuál es el principio contable de la "Partida Doble"?', options: ['No hay deudor sin acreedor: la suma del Debe debe ser igual a la suma del Haber', 'Todas las compras se deben hacer por duplicado', 'Los impuestos se pagan dos veces al año', 'Las ganancias siempre deben duplicar a las pérdidas'], correct: 0, explanation: 'La partida doble garantiza el equilibrio patrimonial en todo asiento contable.', points: 150 }
+// ============================================================
+// PAES COMPETENCIA LECTORA
+// Ejes: Localizar / Interpretar / Evaluar
+// ============================================================
+
+const paesLenguajeQuestions = [
+    {
+        id: 3001, topic: 'localizar', type: 'multiple',
+        question: 'Lea el siguiente fragmento:\n\n"La migración de las aves monarca es uno de los fenómenos más asombrosos de la naturaleza. Cada año, millones de ejemplares recorren más de cuatro mil kilómetros desde Canadá hasta los bosques de México."\n\n¿Desde dónde parten las aves monarca en su migración?',
+        options: ['Desde México hacia Canadá', 'Desde Canadá hacia México', 'Desde Estados Unidos hacia Chile', 'Desde Brasil hacia Argentina'],
+        correct: 1,
+        explanation: 'El texto indica explícitamente que recorren "más de cuatro mil kilómetros desde Canadá hasta los bosques de México".',
+        hint: 'Busca en el texto la información literal sobre el punto de partida de la migración.',
+        points: 100
+    },
+    {
+        id: 3002, topic: 'localizar', type: 'multiple',
+        question: 'Texto:\n\n"El Programa de Alimentación Escolar fue creado en 1968 con el objetivo de garantizar una alimentación balanceada a estudiantes de escasos recursos. En la actualidad, beneficia a más de 1,5 millones de niños y niñas a lo largo del país."\n\n¿En qué año se creó el Programa de Alimentación Escolar?',
+        options: ['1958', '1968', '1978', '1988'],
+        correct: 1,
+        explanation: 'El texto señala explícitamente que el programa "fue creado en 1968".',
+        hint: 'Localiza la fecha exacta mencionada en el enunciado del texto.',
+        points: 100
+    },
+    {
+        id: 3003, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"Aunque muchos celebraron la inauguración del nuevo centro comercial como un signo de progreso, otros residentes del barrio miraron con preocupación cómo las antiguas casas de adobe cedían su lugar a estructuras de vidrio y acero."\n\n¿Qué actitud predomina entre "otros residentes" frente al nuevo centro comercial?',
+        options: ['Entusiasmo y celebración', 'Indiferencia total', 'Preocupación por la pérdida patrimonial', 'Alegría por el progreso económico'],
+        correct: 2,
+        explanation: 'El texto indica que "otros residentes del barrio miraron con preocupación" al ver desaparecer las "antiguas casas de adobe", lo que evidencia una actitud de preocupación por la pérdida del patrimonio arquitectónico tradicional.',
+        hint: 'Presta atención a los conectores contrastivos ("aunque... otros") y a las emociones asociadas a cada grupo.',
+        points: 100
+    },
+    {
+        id: 3004, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"María no dijo una palabra durante toda la reunión. Sus manos, apretadas con fuerza sobre la carpeta, y su mirada fija en el piso, hablaban por ella."\n\n¿Qué se puede inferir sobre el estado emocional de María?',
+        options: ['Está aburrida', 'Está nerviosa o incómoda', 'Está emocionada de felicidad', 'Está profundamente dormida'],
+        correct: 1,
+        explanation: 'Las descripciones de sus manos "apretadas con fuerza" y su "mirada fija en el piso" son indicios no verbales que sugieren nerviosismo o incomodidad en el contexto social.',
+        hint: 'Analiza los detalles no verbales descritos como indicios del estado interno del personaje.',
+        points: 100
+    },
+    {
+        id: 3005, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"La literatura no es solo un espejo que refleja la realidad, sino un martillo con el que forjarla."\n\n¿Cuál es la idea principal que el autor quiere transmitir con esta metáfora?',
+        options: ['Que la literatura refleja fielmente la realidad social', 'Que la literatura tiene el poder de transformar la realidad', 'Que los escritores deben usar herramientas de construcción', 'Que la literatura es frágil como el vidrio'],
+        correct: 1,
+        explanation: 'La metáfora del "martillo" sugiere que la literatura no solo refleja (espejo), sino que también actúa y transforma (martillo) la realidad social.',
+        hint: 'Analiza el contraste entre "espejo" (reflejo pasivo) y "martillo" (acción/transformación).',
+        points: 100
+    },
+    {
+        id: 3006, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"El aumento del uso de redes sociales ha coincidido con una disminución en las interacciones cara a cara entre jóvenes. Sin embargo, estudios recientes sugieren que esta correlación no implica necesariamente causalidad."\n\n¿Qué relación establece el autor entre redes sociales e interacciones presenciales?',
+        options: ['Que las redes sociales causan directamente el aislamiento social', 'Que existe una coincidencia temporal pero no una relación de causa-efecto demostrada', 'Que las interacciones presenciales han aumentado gracias a las redes sociales', 'Que no existe ninguna relación entre ambos fenómenos'],
+        correct: 1,
+        explanation: 'El autor señala que hay correlación (coincidencia) pero advierte que "no implica necesariamente causalidad", es decir, no se ha demostrado una relación directa de causa-efecto.',
+        hint: 'Presta atención a la distinción entre correlación (coincidencia) y causalidad (causa-efecto).',
+        points: 100
+    },
+    {
+        id: 3007, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"¿Acaso no es evidente que cualquier persona que se oponga a esta reforma está simplemente defendiendo sus privilegios?"\n\n¿Qué falacia argumentativa presenta este enunciado?',
+        options: ['Falacia de autoridad', 'Falacia ad hominem (ataque a la persona)', 'Falacia de falsa causa', 'Falacia de apelación a la autoridad'],
+        correct: 1,
+        explanation: 'El enunciado ataca a quienes se oponen a la reforma cuestionando sus motivos personales ("defendiendo sus privilegios") en lugar de refutar sus argumentos.',
+        hint: 'Identifica si el argumento ataca a la persona o sus motivos en lugar de sus razones.',
+        points: 150
+    },
+    {
+        id: 3008, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"El científico, con su bata blanca impecable y sus años de investigación en prestigiosas universidades, afirmó que el nuevo medicamento era completamente seguro."\n\n¿Qué recurso argumentativo utiliza el autor para dar peso a la afirmación?',
+        options: ['Presentación de datos estadísticos', 'Apelación a la autoridad y credibilidad del emisor', 'Uso de analogías comparativas', 'Demostración matemática formal'],
+        correct: 1,
+        explanation: 'El autor destaca la apariencia profesional ("bata blanca impecable") y la trayectoria académica para reforzar la credibilidad del científico.',
+        hint: 'Identifica si el argumento se basa en la credibilidad del que habla más que en evidencia directa.',
+        points: 150
+    },
+    {
+        id: 3009, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"La ciudad dormía bajo un manto de silencio. Solo el viento, como un ladrón invisible, se colaba por las rendijas de las ventanas cerradas."\n\n¿Qué recurso literario predomina en este fragmento?',
+        options: ['Hipérbaton', 'Metáfora y personificación', 'Anáfora', 'Paradoja'],
+        correct: 1,
+        explanation: '"Manto de silencio" es una metáfora, y describir al viento "como un ladrón invisible" que "se colaba" le atribuye características humanas (personificación).',
+        hint: 'Analiza las comparaciones implícitas y las atribuciones de cualidades humanas a elementos no humanos.',
+        points: 150
+    },
+    {
+        id: 3010, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"Según un estudio reciente, el 85% de los encuestados prefiere el producto A sobre el producto B. Por lo tanto, el producto A es objetivamente superior."\n\n¿Cuál es el principal problema de este argumento?',
+        options: ['La muestra encuestada no es necesariamente representativa de toda la población', 'Los porcentajes no pueden usarse en argumentos comerciales', 'El producto B no fue descrito adecuadamente', 'La encuesta es anónima'],
+        correct: 0,
+        explanation: 'El argumento generaliza desde una encuesta (cuya muestra puede estar sesgada o no ser representativa) hacia una conclusión absoluta ("objetivamente superior").',
+        hint: 'Evalúa si la evidencia presentada justifica la conclusión general que se extrae de ella.',
+        points: 150
+    },
+    {
+        id: 3011, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"La noticia fue presentada con letras mayúsculas y rojas en el titular, acompañada de una imagen en blanco y negro que mostraba una escena de caos."\n\n¿Qué función cumplen los recursos no lingüísticos en este texto?',
+        options: ['Solo decorar la página', 'Potenciar el impacto emocional y la urgencia del mensaje', 'Reducir la credibilidad de la información', 'Indicar que la noticia es antigua'],
+        correct: 1,
+        explanation: 'El uso de mayúsculas, color rojo (asociado a alerta) e imagen de caos son recursos visuales que intensifican la carga emocional y la percepción de urgencia del contenido.',
+        hint: 'Analiza cómo los elementos visuales (tipografía, color, imagen) interactúan con el significado del texto.',
+        points: 150
+    },
+    {
+        id: 3012, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"El río seguía su curso indiferente, ajeno a las discusiones de los humanos que habitaban sus orillas. Llevaba siglos haciéndolo, y seguiría otros siglos más después de que todos ellos se hubieran ido."\n\n¿Qué contraste establece el texto entre el río y los humanos?',
+        options: ['Que el río es más inteligente que los humanos', 'Que el río representa la permanencia frente a la temporalidad humana', 'Que los humanos dependen completamente del río para vivir', 'Que el río y los humanos tienen la misma duración en el tiempo'],
+        correct: 1,
+        explanation: 'El texto contrapone la continuidad eterna del río ("siglos haciéndolo", "seguiría otros siglos más") con la existencia finita de los humanos ("después de que todos ellos se hubieran ido").',
+        hint: 'Compara las referencias temporales asociadas al río y a los humanos.',
+        points: 100
+    },
+    {
+        id: 3013, topic: 'localizar', type: 'multiple',
+        question: 'Texto:\n\n"La fotosíntesis es un proceso bioquímico mediante el cual las plantas, algas y algunas bacterias convierten la energía lumínica en energía química. Este proceso ocurre principalmente en los cloroplastos, orgánulos presentes en las células vegetales."\n\n¿Dónde ocurre principalmente la fotosíntesis?',
+        options: ['En las mitocondrias', 'En los cloroplastos', 'En el núcleo celular', 'En la membrana celular'],
+        correct: 1,
+        explanation: 'El texto indica explícitamente que el proceso "ocurre principalmente en los cloroplastos".',
+        hint: 'Localiza en el texto el orgánulo específico donde se realiza la fotosíntesis.',
+        points: 100
+    },
+    {
+        id: 3014, topic: 'evaluar', type: 'multiple',
+        question: 'Texto:\n\n"Nunca en la historia de nuestra nación se había visto una crisis tan devastadora. Todos los indicadores económicos se desploman y nadie puede negar que estamos ante el peor momento de nuestra historia."\n\n¿Qué tono predomina en este fragmento?',
+        options: ['Objetivo y neutral', 'Alarmista y catastrofista', 'Optimista y esperanzador', 'Irónico y burlón'],
+        correct: 1,
+        explanation: 'Las expresiones "nunca... tan devastadora", "todos los indicadores se desploman" y "peor momento de nuestra historia" construyen un tono alarmista y catastrofista.',
+        hint: 'Analiza el tipo de vocabulario y las expresiones extremas utilizadas por el emisor.',
+        points: 150
+    },
+    {
+        id: 3015, topic: 'interpretar', type: 'multiple',
+        question: 'Texto:\n\n"Pedro llegó tarde a la entrevista. Su corbata estaba torcida, tenía una mancha de café en la camisa y olvidó el portafolio en el taxi. A pesar de todo, cuando le preguntaron por sus fortalezas, respondió con una seguridad que nadie esperaba."\n\n¿Qué contraste presenta el texto?',
+        options: ['Entre la preparación deficiente y la confianza mostrada', 'Entre la puntualidad y la impuntualidad', 'Entre el café y la camisa', 'Entre el taxi y la entrevista'],
+        correct: 0,
+        explanation: 'El texto describe una serie de errores y desprolijidades que contrastan con la "seguridad" inesperada que Pedro demuestra al responder.',
+        hint: 'Identifica los elementos negativos previos y el elemento positivo sorpresivo que los contradice.',
+        points: 100
+    },
+    {
+        id: 3016, topic: 'interpretar', type: 'multiple',
+        question: '"Es tan corto el amor, y es tan largo el olvido."\n— Pablo Neruda, "Veinte poemas de amor..."\n\n¿Qué recurso literario se utiliza en este verso?',
+        options: ['Metáfora', 'Antítesis (contraste)', 'Hipérbaton', 'Anáfora'],
+        correct: 1,
+        explanation: 'La antítesis contrapone dos ideas opuestas: la brevedad del amor ("tan corto") frente a la prolongación del olvido ("tan largo").',
+        hint: 'Identifica la oposición de ideas como recurso central del verso.',
+        points: 100
+    },
+    {
+        id: 3017, topic: 'interpretar', type: 'multiple',
+        question: '"Tu risa me hace libre, me pone alas. Soledades me quita, cárcel me arranca."\n— Miguel Hernández\n\n¿Qué sentimiento expresa el hablante lírico respecto a la risa de la persona amada?',
+        options: ['Indiferencia', 'Liberación y transformación positiva', 'Tristeza y melancolía', 'Confusión y duda'],
+        correct: 1,
+        explanation: 'Las metáforas "me hace libre", "me pone alas", "quita soledades" y "arranca cárcel" asocian la risa con la liberación de ataduras emocionales.',
+        hint: 'Analiza las connotaciones positivas de las metáforas relacionadas con libertad y vuelo.',
+        points: 100
+    },
+    {
+        id: 3018, topic: 'evaluar', type: 'multiple',
+        question: '"Llegó el vecino puntual: solo tres horas tarde."\n\n¿Qué recurso retórico se emplea en esta expresión?',
+        options: ['Hipérbole', 'Ironía', 'Metáfora', 'Personificación'],
+        correct: 1,
+        explanation: 'La ironía consiste en afirmar lo contrario de lo que realmente se quiere decir. Al calificar de "puntual" a alguien que llega "tres horas tarde", se está utilizando este recurso con intención humorística o crítica.',
+        hint: 'Identifica si lo que se dice literalmente contradice la situación real descrita.',
+        points: 100
+    },
+    {
+        id: 3019, topic: 'evaluar', type: 'multiple',
+        question: '"Te he llamado un millón de veces y nunca respondes."\n\n¿Qué figura literaria está presente en esta oración?',
+        options: ['Metáfora', 'Hipérbole', 'Comparación', 'Personificación'],
+        correct: 1,
+        explanation: 'La hipérbole es una exageración retórica. "Un millón de veces" no debe interpretarse literalmente, sino como una forma enfática de expresar muchas llamadas.',
+        hint: 'Reconoce la exageración evidente como recurso expresivo.',
+        points: 100
+    },
+    {
+        id: 3020, topic: 'evaluar', type: 'multiple',
+        question: '"Las redes sociales han transformado profundamente las relaciones interpersonales en el siglo XXI. Por un lado, permiten conectar instantáneamente a personas separadas por miles de kilómetros, facilitando la comunicación familiar y las relaciones de larga distancia. Sin embargo, diversos estudios psicológicos han evidenciado que el uso excesivo de estas plataformas se correlaciona con mayores índices de ansiedad, depresión y sentimientos de soledad entre los jóvenes, particularmente aquellos que pasan más de tres horas diarias frente a las pantallas."\n\n¿Cuál es el propósito comunicativo principal del texto?',
+        options: ['Convencer al lector de eliminar sus redes sociales', 'Presentar una visión matizada con beneficios y riesgos del uso de redes sociales', 'Demostrar que las redes sociales son perjudiciales para todos', 'Narrar una experiencia personal con las redes sociales'],
+        correct: 1,
+        explanation: 'El texto presenta argumentos a favor y en contra, ofreciendo una perspectiva equilibrada sin tomar una postura radical.',
+        hint: 'Identifica si el texto presenta solo un lado del tema o aborda múltiples perspectivas.',
+        points: 150
+    },
+    {
+        id: 3021, topic: 'evaluar', type: 'multiple',
+        question: '"¡Inscríbete hoy mismo! Plazas limitadas. No dejes pasar esta oportunidad única."\n\n¿Cuál es el propósito comunicativo predominante en este enunciado?',
+        options: ['Informar', 'Persuadir o convencer', 'Entretener', 'Describir'],
+        correct: 1,
+        explanation: 'El uso de imperativos ("inscríbete"), signos de exclamación y frases como "oportunidad única" indican una intención persuasiva, típica de la publicidad.',
+        hint: 'Analiza el modo verbal (imperativo) y el tipo de léxico empleado (urgencia, exclusividad).',
+        points: 100
+    },
+    {
+        id: 3022, topic: 'localizar', type: 'multiple',
+        question: '"El efecto invernadero es un fenómeno natural que permite la vida en la Tierra. Sin embargo, la actividad humana ha intensificado este efecto mediante la emisión de gases como el dióxido de carbono (CO₂) y el metano (CH₄), provocando un calentamiento global acelerado desde la Revolución Industrial."\n\nSegún el texto, ¿qué ha intensificado el ser humano?',
+        options: ['La Revolución Industrial', 'La vida en la Tierra', 'El efecto invernadero', 'La emisión de oxígeno'],
+        correct: 2,
+        explanation: 'El texto afirma explícitamente que "la actividad humana ha intensificado este efecto" (refiriéndose al efecto invernadero mencionado antes).',
+        hint: 'Busca en el texto qué fenómeno se menciona como intensificado por la actividad humana.',
+        points: 100
+    },
+    {
+        id: 3023, topic: 'interpretar', type: 'multiple',
+        question: '"El viejo reloj de la estación marcaba las once de la noche cuando el último tren partió. En el andén vacío, una mujer permanecía sentada, con un abrigo raído y una maleta cerrada a sus pies. Miraba fijamente el túnel oscuro por donde había desaparecido el tren, como si aún esperara verlo regresar."\n\n¿Qué sentimiento transmite la mujer en el andén?',
+        options: ['Alegría', 'Espera o abandono', 'Entusiasmo', 'Indiferencia'],
+        correct: 1,
+        explanation: 'Los elementos contextuales ("último tren", "andén vacío", "abrigo raído", "como si aún esperara") construyen una atmósfera de soledad, abandono y espera inútil.',
+        hint: 'Analiza las connotaciones de las palabras que describen el entorno y la actitud del personaje.',
+        points: 100
+    },
+    {
+        id: 3024, topic: 'evaluar', type: 'multiple',
+        question: '"Todos mis amigos tienen este celular, por lo tanto debe ser el mejor del mercado."\n\n¿Qué falacia lógica presenta este razonamiento?',
+        options: ['Falacia ad hominem', 'Falacia ad populum (apelación a la mayoría)', 'Falacia de falsa autoridad', 'Falacia de causa falsa'],
+        correct: 1,
+        explanation: 'La falacia ad populum consiste en argumentar que algo es verdadero o bueno simplemente porque mucha gente lo cree o lo hace, sin aportar evidencia objetiva.',
+        hint: 'Identifica si el argumento apela a la popularidad en lugar de a razones objetivas.',
+        points: 150
+    },
+    {
+        id: 3025, topic: 'interpretar', type: 'multiple',
+        question: '"Al abrir la puerta de su casa, notó que el florero del recibidor estaba en el suelo, hecho añicos, y el cajón de la cómoda abierto de par en par."\n\n¿Qué se puede inferir de esta situación?',
+        options: ['Que hubo una celebración en la casa', 'Que probablemente ocurrió un robo', 'Que la persona olvidó hacer el aseo', 'Que entró un animal doméstico jugando'],
+        correct: 1,
+        explanation: 'Los indicios descritos (objeto roto, cajón abierto) son típicos de una escena de robo, lo que constituye una inferencia razonable basada en el contexto.',
+        hint: 'Analiza los indicios como pistas que apuntan a una situación probable.',
+        points: 100
+    },
+    {
+        id: 3026, topic: 'evaluar', type: 'multiple',
+        question: 'Un afiche publicitario muestra una playa paradisíaca con el texto "Escápate del estrés" en letras blancas sobre el mar. La imagen ocupa el 90% del afiche y el texto es mínimo.\n\n¿Qué función cumple la imagen en esta publicidad?',
+        options: ['Solo decorar el fondo', 'Reforzar visualmente la promesa emocional del mensaje', 'Informar sobre precios y fechas', 'Contradecir el mensaje escrito'],
+        correct: 1,
+        explanation: 'La imagen de la playa paradisíaca complementa y refuerza el mensaje "Escápate del estrés", apelando a las emociones del receptor mediante el deseo de tranquilidad.',
+        hint: 'Analiza la relación entre la imagen y el texto: ¿se complementan, se contradicen o uno domina?',
+        points: 100
+    },
+    {
+        id: 3027, topic: 'evaluar', type: 'multiple',
+        question: '"La película dura 142 minutos" y "La película es aburrida".\n\n¿Qué diferencia existe entre ambos enunciados?',
+        options: ['Ambos son hechos objetivos', 'El primero es un hecho verificable y el segundo es una opinión subjetiva', 'El primero es una opinión y el segundo es un hecho', 'Ambos son opiniones subjetivas'],
+        correct: 1,
+        explanation: 'La duración es un dato objetivo y verificable, mientras que "aburrida" es un juicio de valor personal, no comprobable universalmente.',
+        hint: 'Distingue entre información que se puede comprobar y juicios que dependen del gusto personal.',
+        points: 100
+    },
+    {
+        id: 3028, topic: 'interpretar', type: 'multiple',
+        question: '"El profesor explicó la materia de forma LÚCIDA."\n\nEn el contexto, ¿qué significa "lúcida"?',
+        options: ['Confusa', 'Clara y comprensible', 'Rápida', 'Aburrida'],
+        correct: 1,
+        explanation: '"Lúcido" significa claro en el razonamiento o en la expresión. En este contexto, implica que la explicación fue fácil de comprender.',
+        hint: 'Infiere el significado a partir del contexto positivo de la oración.',
+        points: 100
+    },
+    {
+        id: 3029, topic: 'evaluar', type: 'multiple',
+        question: '"Excelente servicio. Hace tres días que espero una respuesta a mi reclamo. Felicitaciones por la eficiencia."\n\n¿Qué tono utiliza realmente el emisor?',
+        options: ['Alegre y satisfecho', 'Sarcástico', 'Neutral e informativo', 'Triste'],
+        correct: 1,
+        explanation: 'El contraste entre las palabras positivas ("excelente", "felicitaciones") y la situación descrita (tres días de espera) revela un tono sarcástico.',
+        hint: 'Compara lo que se dice literalmente con la situación real para identificar un posible sarcasmo.',
+        points: 150
+    },
+    {
+        id: 3030, topic: 'interpretar', type: 'multiple',
+        question: '"La inteligencia artificial (IA) está revolucionando diversos campos. En medicina, permite diagnósticos más rápidos y precisos. En educación, facilita la personalización del aprendizaje. En transporte, impulsa el desarrollo de vehículos autónomos. Sin embargo, expertos advierten sobre los riesgos éticos de delegar decisiones críticas en algoritmos."\n\n¿Cuál es la idea principal del texto?',
+        options: ['La IA solo tiene aplicaciones en medicina', 'La IA ofrece beneficios en múltiples áreas pero también plantea desafíos éticos', 'Los vehículos autónomos son el mayor logro de la IA', 'La IA debe ser prohibida por sus riesgos'],
+        correct: 1,
+        explanation: 'El texto presenta aplicaciones positivas de la IA en diversas áreas para luego, mediante el conector "sin embargo", introducir una advertencia sobre sus riesgos éticos.',
+        hint: 'Identifica la estructura del texto: presenta beneficios y luego introduce una objeción o limitación.',
+        points: 150
+    }
 ];
 
-// Nivel 3: Estados Financieros
-const nivel3Questions = [
-    { id: 301, topic: 'estados-financieros', type: 'multiple', question: '¿Qué fórmula se utiliza para determinar la Utilidad Bruta en el Estado de Resultados?', options: ['Ventas Netas - Costo de Ventas', 'Ingresos Totales - Gastos Administrativos', 'Activo Total - Pasivo Total', 'Utilidad Neta + Impuestos'], correct: 0, explanation: 'La Utilidad Bruta mide la ganancia directa generada por la venta de productos antes de restar los gastos operativos.', points: 200 },
-    { id: 302, topic: 'analisis-financiero', type: 'slider', question: 'Si una empresa tiene $15.000 de Activo Corriente y $5.000 de Pasivo Corriente, ¿cuál es su Razón de Liquidez Corriente?', min: 0, max: 5, correctAnswer: 3, tolerance: 0, explanation: 'Razón Corriente = $15.000 / $5.000 = 3. La empresa posee $3 en activos líquidos por cada $1 de deuda.', points: 200 },
-    { id: 303, topic: 'inventario', type: 'multiple', question: 'En un período con precios al alza, ¿qué ocurre al aplicar el método PEPS (FIFO)?', options: ['El Costo de Ventas es menor y la Utilidad Bruta se presenta más alta', 'El Costo de Ventas es mayor y la Utilidad Bruta disminuye', 'No hay ningún impacto en los estados financieros', 'El valor del inventario final resulta infravalorado'], correct: 0, explanation: 'Al vender primero los artículos antiguos (más baratos), el Costo de Ventas baja y la Utilidad sube.', points: 200 },
-    { id: 304, topic: 'estados-financieros', type: 'multiple', question: '¿Cómo se clasifican las deudas que la empresa debe pagar en un plazo menor a 12 meses?', options: ['Pasivo Corriente (o a Corto Plazo)', 'Pasivo No Corriente (o a Largo Plazo)', 'Patrimonio Neto', 'Activo Intangible'], correct: 0, explanation: 'Todas las obligaciones exigibles en un plazo máximo de un año forman parte del Pasivo Corriente.', points: 200 },
-    { id: 305, topic: 'analisis-financiero', type: 'multiple', question: '¿Qué representa el Capital de Trabajo de una organización?', options: ['Los recursos disponibles para operar (Activo Corriente - Pasivo Corriente)', 'El total de las aportaciones de los socios', 'El valor de los edificios y maquinaria', 'El total de créditos solicitados a los bancos'], correct: 0, explanation: 'El Capital de Trabajo Neto indica la liquidez excedente para continuar operando.', points: 200 },
-    { id: 306, topic: 'estados-financieros', type: 'multiple', question: '¿Qué es la Depreciación Acumulada dentro del Balance General?', options: ['Una cuenta reguladora del activo que refleja la pérdida de valor de los bienes de uso', 'Un gasto que requiere salida directa de dinero', 'Una deuda a largo plazo con proveedores', 'Una reserva de dinero en efectivo'], correct: 0, explanation: 'Reduce el valor en libros de los activos fijos debido al desgaste, uso o tiempo.', points: 200 },
-    { id: 307, topic: 'inventario', type: 'multiple', question: '¿En qué consiste el método del Promedio Ponderado para el control de inventarios?', options: ['Calcula un costo unitario medio dividiendo el costo total entre las unidades en existencia', 'Asigna el costo de las últimas unidades compradas a las primeras salidas', 'Aplica un valor estimado al azar', 'Utiliza únicamente el precio de venta al público'], correct: 0, explanation: 'El promedio ponderado suaviza las variaciones de precios recalculando el costo medio tras cada compra.', points: 200 },
-    { id: 308, topic: 'estados-financieros', type: 'multiple', question: 'Si una empresa reporta Ventas de $50.000 y Utilidad Neta de $10.000, ¿cuál es su Margen Neto?', options: ['20%', '50%', '5%', '10%'], correct: 0, explanation: 'Margen Neto = ($10.000 / $50.000) × 100 = 20%.', points: 200 },
-    { id: 309, topic: 'analisis-financiero', type: 'multiple', question: '¿Cuál es la diferencia entre el Estado de Resultados y el Balance General?', options: ['El Estado de Resultados mide el desempeño durante un período; el Balance muestra la situación a una fecha', 'El Balance mide el rendimiento anual y el Estado de Resultados solo la liquidez', 'Ambos reportes muestran exactamente la misma información', 'El Estado de Resultados es interno y el Balance solo para entidades tributarias'], correct: 0, explanation: 'El Estado de Resultados es dinámico (flujos) y el Balance General es estático (foto a una fecha).', points: 200 },
-    { id: 310, topic: 'estados-financieros', type: 'multiple', question: '¿A qué grupo pertenecen el arriendo del local y los sueldos administrativos en el Estado de Resultados?', options: ['Gastos Operativos (Administración y Ventas)', 'Costo Directo de Ventas', 'Ingresos Extraordinarios', 'Pasivos a Largo Plazo'], correct: 0, explanation: 'Son desembolsos necesarios para la gestión operativa, clasificados como Gastos Operativos.', points: 200 }
-];
-
-// Nivel 4: Cálculos Avanzados
-const nivelAvanzadoQuestions = [
-    { id: 401, topic: 'contabilidad', type: 'multiple', question: 'Activo Total = $45.000, Pasivo Total = $18.000. Si los socios aportan $5.000 más, ¿nuevo Patrimonio?', options: ['$32.000', '$27.000', '$22.000', '$50.000'], correct: 0, explanation: 'Patrimonio Inicial = $45.000 - $18.000 = $27.000. Con aporte: $27.000 + $5.000 = $32.000.', points: 250 },
-    { id: 402, topic: 'tributacion', type: 'multiple', question: 'Ventas por $1.000 neto (más 16% IVA) y compras por $600 neto (más 16% IVA). ¿IVA a pagar?', options: ['$64', '$160', '$96', '$256'], correct: 0, explanation: 'Débito Fiscal = $1.000 × 0,16 = $160. Crédito Fiscal = $600 × 0,16 = $96. IVA = $160 - $96 = $64.', points: 250 },
-    { id: 403, topic: 'estados-financieros', type: 'multiple', question: 'Maquinaria de $12.000, vida útil 5 años, valor residual $2.000. ¿Valor en libros al año 2?', options: ['$8.000', '$10.000', '$4.000', '$6.000'], correct: 0, explanation: 'Depreciación anual = ($12.000 - $2.000) / 5 = $2.000. Año 2: $12.000 - $4.000 = $8.000.', points: 250 },
-    { id: 404, topic: 'analisis-financiero', type: 'slider', question: 'Activo Corriente = $18.000, Inventario = $6.000, Pasivo Corriente = $8.000. ¿Prueba Ácida?', min: 0, max: 5, correctAnswer: 1.5, tolerance: 0.1, explanation: 'Prueba Ácida = ($18.000 - $6.000) / $8.000 = $12.000 / $8.000 = 1,5.', points: 250 },
-    { id: 405, topic: 'estados-financieros', type: 'multiple', question: 'Ventas $80.000, Costo $50.000, Gastos Operativos $18.000. ¿Margen Operativo?', options: ['15%', '37,5%', '22,5%', '62,5%'], correct: 0, explanation: 'Utilidad Operativa = $80.000 - $50.000 - $18.000 = $12.000. Margen = ($12.000 / $80.000) × 100 = 15%.', points: 250 },
-    { id: 406, topic: 'nomina', type: 'multiple', question: 'Sueldo Base $800, horas extras $150, retenciones 10% del total imponible. ¿Sueldo Líquido?', options: ['$855', '$720', '$800', '$950'], correct: 0, explanation: 'Total Imponible = $800 + $150 = $950. Retenciones = $95. Líquido = $950 - $95 = $855.', points: 250 },
-    { id: 407, topic: 'inventarios', type: 'multiple', question: 'Inventario inicial: 10u a $10. Compra: 20u a $13. Venta: 15u. ¿Costo PEPS?', options: ['$165', '$195', '$150', '$180'], correct: 0, explanation: 'PEPS: 10u × $10 = $100 + 5u × $13 = $65. Total = $165.', points: 250 },
-    { id: 408, topic: 'inventarios', type: 'multiple', question: 'Mismos datos (10u a $10, 20u a $13). ¿Costo Promedio Ponderado unitario?', options: ['$12,00', '$11,50', '$13,00', '$10,00'], correct: 0, explanation: 'Costo Total = $360. Unidades = 30. Promedio = $360 / 30 = $12,00.', points: 250 },
-    { id: 409, topic: 'matematica-financiera', type: 'multiple', question: 'Préstamo de $5.000 al 12% anual simple, a 6 meses. ¿Total a pagar?', options: ['$5.300', '$5.600', '$5.120', '$6.000'], correct: 0, explanation: 'Interés = $5.000 × 0,12 × (6/12) = $300. Total = $5.300.', points: 250 },
-    { id: 410, topic: 'analisis-financiero', type: 'multiple', question: 'Activos Corrientes $25.000, Pasivos Corrientes $15.000. ¿Capital de Trabajo Neto?', options: ['$10.000', '$40.000', '1,66', '$15.000'], correct: 0, explanation: 'Capital de Trabajo = $25.000 - $15.000 = $10.000.', points: 250 }
-];
-
-// Mapa de niveles
+// Mapa de niveles PAES
 const levelQuestionsMap = {
-    1: fondoEmergenciaQuestions,
-    2: nivel2Questions,
-    3: nivel3Questions,
-    4: nivelAvanzadoQuestions
+    1: paesLenguajeQuestions,
+    2: paesM1Questions,
+    3: paesM2Questions,
+    4: [...paesM1Questions, ...paesM2Questions, ...paesLenguajeQuestions] // Nivel mixto
 };
 
 const levelNames = {
-    1: '🟢 Fondo de Emergencia',
-    2: '🔵 Contabilidad y Nómina',
-    3: '🟣 Estados Financieros',
-    4: '🔴 Cálculos Avanzados'
+    1: '📖 Competencia Lectora',
+    2: '📐 Matemática 1 (M1)',
+    3: '📊 Matemática 2 (M2)',
+    4: '🏆 Desafío Final Mixto'
 };
 
 const levelColors = {
-    1: '#10B981',
+    1: '#8B5CF6',
     2: '#3B82F6',
-    3: '#8B5CF6',
+    3: '#10B981',
     4: '#EF4444'
 };
 
 // ===== UTILIDADES =====
 
-/** Clona profundamente el banco de preguntas para que las mutaciones de una
- *  partida (puntos bonus, isBonus, _shuffledIndices) nunca toquen las
- *  constantes originales (fondoEmergenciaQuestions, nivel2Questions, etc.) */
 function deepCloneQuestions(arr) {
-    if (typeof structuredClone === 'function') {
-        try {
-            return structuredClone(arr);
-        } catch (e) {
-            // sigue al fallback JSON si structuredClone falla por algún motivo
-        }
+    try {
+        return JSON.parse(JSON.stringify(arr));
+    } catch (e) {
+        console.warn('Error al clonar preguntas, usando array original.');
+        return arr;
     }
-    return JSON.parse(JSON.stringify(arr));
 }
 
-/** Wrappers seguros de localStorage: nunca rompen el flujo del juego
- *  (por ejemplo, en modo privado de Safari/iOS donde localStorage puede lanzar). */
 function safeLocalGet(key, fallback) {
     try {
         const raw = localStorage.getItem(key);
@@ -284,9 +1014,9 @@ function safeLocalSet(key, value) {
     }
 }
 
-// ===== SISTEMA DE SONIDO (Delega en ContiEffectsManager) =====
+// ===== SISTEMA DE SONIDO =====
 function playSound(type) {
-    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'tick', 'powerup'];
+    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'powerup'];
     if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
     if (window.effectsManager) {
         window.effectsManager.playSound(type);
@@ -295,13 +1025,58 @@ function playSound(type) {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
+    loadUnlockedLevels();
     setupSplashScreen();
     loadBadges();
     loadLeaderboard();
     setupPowerups();
     createSpeedBonusToast();
+    updateLevelStatusDisplay();
     if (typeof injectRabbitSVGs === 'function') injectRabbitSVGs();
 });
+
+// ===== SISTEMA DE NIVELES BLOQUEADOS =====
+
+function loadUnlockedLevels() {
+    const saved = safeLocalGet('paes_unlocked_levels', null);
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            state.unlockedLevels = { ...state.unlockedLevels, ...parsed };
+        } catch (e) {
+            console.warn('No se pudo leer niveles desbloqueados, usando valores por defecto.');
+        }
+    }
+}
+
+function saveUnlockedLevels() {
+    safeLocalSet('paes_unlocked_levels', JSON.stringify(state.unlockedLevels));
+}
+
+function unlockNextLevel(currentLevel) {
+    const nextLevel = currentLevel + 1;
+    if (nextLevel <= 4 && !state.unlockedLevels[nextLevel]) {
+        state.unlockedLevels[nextLevel] = true;
+        saveUnlockedLevels();
+        updateLevelStatusDisplay();
+        console.log('🔓 Nivel ' + nextLevel + ' desbloqueado.');
+    }
+}
+
+function updateLevelStatusDisplay() {
+    for (let i = 2; i <= 4; i++) {
+        const statusEl = document.getElementById('status-level-' + i);
+        if (statusEl) {
+            if (state.unlockedLevels[i]) {
+                statusEl.textContent = '✅ Disponible';
+                statusEl.style.color = '#10B981';
+            } else {
+                statusEl.textContent = '🔒 Bloqueado';
+                statusEl.style.color = '#94A3B8';
+            }
+        }
+    }
+}
 
 function createSpeedBonusToast() {
     if (document.getElementById('speed-bonus-toast')) return;
@@ -320,7 +1095,6 @@ function showSpeedBonus(points) {
     setTimeout(() => { toast.classList.remove('show', 'hide'); }, 2000);
 }
 
-// Interfaz auxiliar para detonar ráfagas desde botones
 function triggerVisualCoinsFromElement(element, count = 12) {
     if (window.effectsManager) {
         window.effectsManager.triggerCoinExplosionFromElement(element, count);
@@ -328,10 +1102,13 @@ function triggerVisualCoinsFromElement(element, count = 12) {
 }
 
 function setupSplashScreen() {
-    const skipBtn = document.getElementById('skip-splash-btn');
     const splashScreen = document.getElementById('splash-screen');
-    setTimeout(() => { if (splashScreen && !splashScreen.classList.contains('hidden')) splashScreen.classList.add('hidden'); }, 6000);
-    if (skipBtn) skipBtn.addEventListener('click', () => splashScreen.classList.add('hidden'));
+    setTimeout(() => {
+        if (splashScreen && !splashScreen.classList.contains('hidden')) {
+            console.warn('⏰ Fallback: Splash screen ocultado por timeout de seguridad (60s).');
+            splashScreen.classList.add('hidden');
+        }
+    }, 60000);
 }
 
 function setupPowerups() {
@@ -352,6 +1129,7 @@ function showScreen(screenId) {
     }
     if (screenId === 'screen-badges') loadBadges();
     if (screenId === 'screen-leaderboard') loadLeaderboard();
+    if (screenId === 'screen-welcome') updateLevelStatusDisplay();
     if (typeof injectRabbitSVGs === 'function') setTimeout(injectRabbitSVGs, 50);
 }
 
@@ -371,25 +1149,27 @@ function startGame() {
     state.currentQuestion = 0; state.currentLevel = 1; state.answeredCorrectly = {}; state.topicScores = {};
     state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
     state.levelStars = {};
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
     document.body.className = 'level-1';
     startLevel(1);
 }
 
 function startLevel(levelNum) {
+    if (!state.unlockedLevels[levelNum]) {
+        console.warn('Nivel ' + levelNum + ' bloqueado. No se puede iniciar.');
+        return;
+    }
+    
     state.currentLevel = levelNum; state.currentQuestion = 0; state.lives = 3; state.streak = 0;
     state.levelScore = 0; state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
     state.bonusQuestionActive = false; state.correctInLevel = 0;
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
     
     document.body.className = `level-${levelNum}`;
     
-    if (state.mode === 'timed') {
-        if (levelNum === 1) state.timer = 30;
-        else if (levelNum === 2) state.timer = 25;
-        else state.timer = 20;
-    }
-    
-    const rawQuestions = levelQuestionsMap[levelNum] || fondoEmergenciaQuestions;
-    // FIX: clonado profundo — nunca mutar el banco original de preguntas
+    const rawQuestions = levelQuestionsMap[levelNum] || paesLenguajeQuestions;
     state.questions = shuffleArray(deepCloneQuestions(rawQuestions)).slice(0, 10);
     
     if (Math.random() < 0.33 && levelNum >= 2) {
@@ -411,25 +1191,28 @@ function startLevel(levelNum) {
 
 function goToNextLevel() {
     const nextLevel = state.currentLevel + 1;
-    if (nextLevel <= 4) { startLevel(nextLevel); }
-    else { showFinalResults(); }
+    if (nextLevel <= 4 && state.unlockedLevels[nextLevel]) {
+        startLevel(nextLevel);
+    } else if (nextLevel > 4) {
+        showFinalResults();
+    } else {
+        console.warn('Nivel ' + nextLevel + ' bloqueado.');
+        showScreen('screen-welcome');
+    }
 }
 
 function updateLevelDisplay() {
     const ld = document.getElementById('level-display');
     if (!ld) return;
     ld.textContent = `Nivel ${state.currentLevel}`;
-    ld.style.background = levelColors[state.currentLevel] || '#10B981';
+    ld.style.background = levelColors[state.currentLevel] || '#8B5CF6';
 }
 
 function shuffleArray(array) { const arr = [...array]; for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
 
-// ===== REACCIONES DEL CONEJO =====
+// ===== REACCIONES DEL CONEJO (Textos adaptados para PAES Challenge) =====
 function updateRabbitReaction(reaction) {
     document.querySelectorAll('.rabbit-svg').forEach(rabbit => {
-        // FIX: si la reacción es la misma que ya tenía, el className no cambia
-        // y el navegador no reinicia la animación (ej. dos aciertos seguidos
-        // sin racha). Forzamos un reflow entre quitar y poner la clase.
         rabbit.className = 'rabbit-svg';
         void rabbit.offsetWidth;
         rabbit.className = 'rabbit-svg ' + reaction;
@@ -437,21 +1220,71 @@ function updateRabbitReaction(reaction) {
     
     const speech = document.getElementById('question-speech');
     const messages = {
-        'thinking': ['¡Piensa bien tu respuesta! 🤔', 'Tú puedes hacerlo 💪', 'Analiza con cuidado 📊'],
-        'nervous': ['¡El tiempo se acaba! ⏰', '¡Rápido! 😰', '¡No te congeles! ❄️'],
-        'bored': ['¡Despierta! ☕', '¡Vamos, tú puedes! 😴', '¡No te duermas! 💤'],
-        'impressed': ['¡Impresionante racha! 🤩', '¡Eres increíble! 🌟', '¡Qué genio! 🧠'],
-        'sad': ['¡No te rindas! 💪', '¡Aprende del error! 📚', '¡La próxima será! 🎯'],
-        'celebrating': ['¡Perfecto! 🥳', '¡Nivel impecable! 🎉', '¡Eres el mejor! 🏆'],
-        'deep-think': ['¡Nivel experto! 🔬', '¡Piensa profundamente! 🧐', '¡Confía en tus cálculos! 📐'],
-        'confident': ['¡Eliminamos dos! 😎', '¡Ahora es más fácil! ✨', '¡Tú tienes el control! 🕶️'],
-        'frozen': ['¡Tiempo congelado! 🥶', '¡Relájate y piensa! ❄️', '¡Sin prisa! ⛄'],
-        'determined': ['¡Ahora sí! 😤', '¡Con más ganas! 💪', '¡Esta no falla! 🔥'],
-        'graduate': ['¡Lo lograste! 🎓', '¡Graduado financiero! 🏅', '¡Eres un maestro! 👨‍🎓']
+        'thinking': [
+            '¡Piensa bien tu respuesta! 🤔', 'Tú puedes lograrlo 💪', 'Analiza con cuidado 📖',
+            'Confío en tu razonamiento 🧠', 'Lee cada opción con atención 👀',
+            '¿Cuál será la correcta? 🤓', 'Tómate tu tiempo ⏳', 'Confía en lo que sabes 📚'
+        ],
+        'nervous': [
+            '¡El tiempo se acaba! ⏰', '¡Rápido, confía en ti! 😰', '¡No te congeles! ❄️',
+            '¡Elige ya, tú sabes! ⚡', '¡Últimos segundos! 🚨', '¡Vamos, no te detengas! 🏃'
+        ],
+        'bored': [
+            '¡Despierta, futuro universitario! ☕', '¡Vamos, tú puedes! 😴', '¡No te duermas! 💤',
+            '¡Espabila esa mente! 🧃', '¡Que no decaiga el ánimo! 🎈', '¿Necesitas un café virtual? ☕✨'
+        ],
+        'impressed': [
+            '¡Impresionante racha! 🤩', '¡Eres increíble! 🌟', '¡Qué genio! 🧠',
+            '¡Nadie te para hoy! 🔥', '¡Estás arrasando! 💥', '¡Eres una máquina! ⚙️💨',
+            '¡Vas directo a la universidad! 🎓✨'
+        ],
+        'celebrating': [
+            '¡Perfecto, nivel impecable! 🥳', '¡Orgullo PAES! 🎉',
+            '¡Nivel superado con honores! 🏆', '¡Así se hace, crack! 🌟',
+            '¡Cada vez más cerca de la cima! ⛰️', '¡Qué satisfacción da aprender! 🎓✨'
+        ],
+        'deep-think': [
+            '¡Nivel experto activado! 🔬', '¡Piensa profundamente! 🧐', '¡Confía en tus cálculos! 📐',
+            'Esto es para mentes brillantes 💡', '¡Activa tu modo calculadora! 🧮', 'Los números no mienten 🔢'
+        ],
+        'confident': [
+            '¡Eliminamos dos, ahora es fácil! 😎', '¡El 50/50 te respalda! ✨',
+            '¡Tú tienes el control! 🕶️', '¡Camino despejado hacia el éxito! 🛤️',
+            '¡Ahora solo quedan las buenas! ✅', '¡Con esta ayuda es pan comido! 🍞'
+        ],
+        'frozen': [
+            '¡Tiempo congelado! 🥶', '¡Relájate y piensa tranquilo! ❄️', '¡Sin prisa, el reloj se detuvo! ⛄',
+            '¡Respira hondo, tienes tiempo! 🌬️', '¡Aprovecha estos segundos extra! ⏸️', '¡El frío te da claridad mental! 🧊'
+        ],
+        'determined': [
+            '¡Ahora sí, con todo! 😤', '¡Esta no la fallo! 💪🔥', '¡Con más ganas que nunca! 🦾',
+            '¡A corregir el rumbo! 🧭', '¡El error me hizo más fuerte! ⚡', '¡Voy con todo en esta! 🎯',
+            'Cada error es una lección aprendida 📚', '¡Los genios también se equivocan y aprenden! 🧠💡'
+        ],
+        'graduate': [
+            '¡Lo lograste, futuro universitario! 🎓', '¡Graduado con honores PAES! 🏅',
+            '¡Tu futuro es brillante! 👨‍🎓✨', '¡La universidad te espera! 🎓🌟',
+            '¡De estudiante a UNIVERSITARIO! 🧠👑', '¡Hoy celebras tu conocimiento! 🎉📚'
+        ],
+        'correct': [
+            '¡Respuesta correcta! ✨', '¡Bien hecho! 🌟', '¡Así se hace! 💪',
+            '¡Esa es la actitud! 🎯', '¡Vas por buen camino! 🛤️'
+        ],
+        'incorrect': [
+            '¡No era esa, pero no pasa nada! 💪', '¡Aprender es equivocarse! 📚',
+            '¡Revisa la explicación! 👀', '¡La próxima la tienes! 🎯',
+            '¡Error detectado, conocimiento ganado! 🧠'
+        ]
     };
     
     const list = messages[reaction] || messages['thinking'];
-    if (speech) speech.textContent = list[Math.floor(Math.random() * list.length)];
+    if (speech) {
+        speech.textContent = list[Math.floor(Math.random() * list.length)];
+        speech.className = 'character-speech state-' + reaction;
+        speech.style.animation = 'none';
+        speech.offsetHeight;
+        speech.style.animation = 'speechBubbleIn 0.4s ease-out';
+    }
 }
 
 // ===== CARGA DE PREGUNTAS =====
@@ -459,7 +1292,11 @@ function loadQuestion() {
     if (state.currentQuestion >= state.totalQuestions) { endLevel(); return; }
     
     clearInterval(state.timerInterval);
+    state.timerInterval = null;
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
+    state.isFrozen = false;
     
     state.questionStartTime = Date.now();
     
@@ -484,7 +1321,7 @@ function loadQuestion() {
     const qText = document.getElementById('question-text');
     if (qText) qText.textContent = question.question;
     
-    if (state.currentLevel === 4) updateRabbitReaction('deep-think');
+    if (state.currentLevel === 3 || state.currentLevel === 4) updateRabbitReaction('deep-think');
     else updateRabbitReaction('thinking');
     
     switch (question.type) {
@@ -555,6 +1392,7 @@ function loadMatching(question) {
                     matches[this.dataset.pairId] = true; selectedLeft = null;
                     if (Object.keys(matches).length === question.pairs.length) {
                         clearInterval(state.timerInterval);
+                        state.timerInterval = null;
                         showFeedback(`¡Perfecto! ${question.explanation || 'Emparejaste todos los conceptos correctamente.'}`, 'correct');
                         triggerVisualCoinsFromElement(matchingContainer, 16);
                         handleCorrectAnswer(question.points);
@@ -597,6 +1435,7 @@ function loadSlider(question) {
     submitBtn.addEventListener('click', () => {
         if (window.effectsManager) window.effectsManager.ensureAudio();
         clearInterval(state.timerInterval);
+        state.timerInterval = null;
         const userAnswer = parseFloat(input.value);
         if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
             showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
@@ -641,7 +1480,6 @@ function loadDrag(question) {
         draggable.dataset.originalIndex = question.items.indexOf(item);
         draggable.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', draggable.dataset.originalIndex); draggable.style.opacity = '0.5'; });
         draggable.addEventListener('dragend', () => { draggable.style.opacity = '1'; });
-        // Soporte táctil básico (el drag & drop HTML5 nativo no funciona bien en móvil/tablet)
         enableTouchDragForItem(draggable, question);
         itemsContainer.appendChild(draggable);
     });
@@ -649,8 +1487,6 @@ function loadDrag(question) {
     dragContainer.appendChild(itemsContainer);
 }
 
-/** Soporte táctil manual para las preguntas de tipo 'drag', ya que la API
- *  HTML5 de drag & drop nativa no dispara eventos táctiles en móvil/tablet. */
 function enableTouchDragForItem(draggable, question) {
     draggable.addEventListener('touchstart', () => {
         if (window.effectsManager) window.effectsManager.ensureAudio();
@@ -672,12 +1508,27 @@ function enableTouchDragForItem(draggable, question) {
         const el = document.elementFromPoint(touch.clientX, touch.clientY);
         const zone = el && el.closest ? el.closest('.drop-zone') : null;
         document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
+        
+        if (window.effectsManager) {
+            window.effectsManager.playSound('coin');
+        }
+        
         if (zone && !zone.dataset.filled) {
             const index = parseInt(zone.dataset.index, 10);
             zone.textContent = `${index + 1}. ${question.items[draggable.dataset.originalIndex]}`;
             zone.dataset.filled = draggable.dataset.originalIndex;
             draggable.style.opacity = '0.3';
             draggable.style.pointerEvents = 'none';
+            
+            if (window.effectsManager) {
+                const rect = zone.getBoundingClientRect();
+                window.effectsManager.triggerExplosion(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2,
+                    0.5, '#93C5FD'
+                );
+            }
+            
             checkDragComplete(question);
         }
     });
@@ -693,12 +1544,13 @@ function checkDragComplete(question) {
     });
     if (allFilled) { 
         clearInterval(state.timerInterval);
+        state.timerInterval = null;
         if (allCorrect) {
             showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
             triggerVisualCoinsFromElement(dragContainer, 16);
             handleCorrectAnswer(question.points); 
         } else {
-            showFeedback(`Orden incorrecto. Revisa el flujo lógico de los procesos financieros.`, 'incorrect');
+            showFeedback(`Orden incorrecto. Revisa el flujo lógico.`, 'incorrect');
             handleIncorrectAnswer(question); 
         }
     }
@@ -717,6 +1569,7 @@ function checkMultipleAnswer(originalIndex, question) {
     
     const responseTime = (Date.now() - state.questionStartTime) / 1000;
     clearInterval(state.timerInterval);
+    state.timerInterval = null;
     
     if (originalIndex === question.correct) {
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
@@ -747,6 +1600,8 @@ function checkMultipleAnswer(originalIndex, question) {
 }
 
 function handleCorrectAnswer(points) {
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    
     state.score += points;
     state.levelScore += points;
     state.streak++;
@@ -762,13 +1617,14 @@ function handleCorrectAnswer(points) {
     
     updateScore(); updateStreak();
     
-    // === DESPACHO CENTRALIZADO DE EFECTOS DE ACIERTO ===
     playSound('correct');
     if (window.effectsManager) window.effectsManager.triggerConfetti();
     
-    // FIX: el conejo reacciona a CADA acierto individual (orejas arriba +
-    // brillo dorado), no solo cuando hay racha. Si además hay racha activa,
-    // un instante después pasa a 'impressed'.
+    const responseTime = (Date.now() - state.questionStartTime) / 1000;
+    if (responseTime < 3 && window.effectsManager) {
+        window.effectsManager.triggerScreenFlash(180);
+    }
+    
     updateRabbitReaction('correct');
     if (state.streak >= 5) {
         document.getElementById('streak-display')?.classList.add('on-fire');
@@ -785,6 +1641,8 @@ function handleCorrectAnswer(points) {
 }
 
 function handleIncorrectAnswer(question) {
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    
     state.lives--; state.streak = 0; state.levelPerfect = false;
     document.getElementById('streak-display')?.classList.remove('on-fire');
     
@@ -795,14 +1653,11 @@ function handleIncorrectAnswer(question) {
     
     updateLives(); updateStreak();
     
-    // === DESPACHO CENTRALIZADO DE EFECTOS DE ERROR ===
     playSound('incorrect');
     
-    // FIX: reacción inmediata 'incorrect' (orejas caídas), igual que ahora
-    // ocurre con los aciertos, antes de pasar a 'sad' o 'determined'.
     updateRabbitReaction('incorrect');
     if (state.lives <= 0) {
-        setTimeout(() => updateRabbitReaction('sad'), 350);
+        setTimeout(() => updateRabbitReaction('determined'), 350);
         setTimeout(() => endLevel(), 1500);
     } else {
         setTimeout(() => updateRabbitReaction('determined'), 350);
@@ -820,6 +1675,12 @@ function showFeedback(message, type) {
 }
 
 function nextQuestion() {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    state.isFrozen = false;
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
+    
     state.currentQuestion++;
     document.getElementById('streak-display')?.classList.remove('on-fire');
     loadQuestion();
@@ -828,14 +1689,17 @@ function nextQuestion() {
 // ===== FIN DE NIVEL =====
 function endLevel() {
     clearInterval(state.timerInterval);
+    state.timerInterval = null;
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
+    state.isFrozen = false;
     
     const totalQ = state.totalQuestions || 10;
-    // FIX: usar el contador real de aciertos en vez de inferirlo dividiendo
-    // levelScore / basePoints (que se descuadraba con bonus de velocidad y
-    // preguntas de puntaje doble)
     const starCount = state.levelPerfect ? 3 : (state.correctInLevel >= totalQ * 0.7 ? 2 : 1);
     state.levelStars[state.currentLevel] = starCount;
+    
+    unlockNextLevel(state.currentLevel);
     
     if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
@@ -871,7 +1735,7 @@ function endLevel() {
         const lvlScoreDisp = document.getElementById('level-score-display');
         
         if (transTitle) transTitle.textContent = `${levelNames[state.currentLevel]} Completado`;
-        if (transSpeech) transSpeech.textContent = `¡Excelente! Nivel ${state.currentLevel} superado 🎉`;
+        if (transSpeech) transSpeech.textContent = `¡Excelente! ${levelNames[state.currentLevel]} superado 🎉`;
         if (lvlScoreDisp) lvlScoreDisp.textContent = state.levelScore;
         
         let starsHTML = '<div class="star-rating">';
@@ -896,6 +1760,13 @@ function endLevel() {
         showScreen('screen-level-transition');
         playSound('levelup');
         if (window.effectsManager) window.effectsManager.triggerFireworks();
+        
+        if (window.effectsManager) {
+            window.effectsManager.triggerConfetti(2000, 2);
+            setTimeout(() => {
+                if (window.effectsManager) window.effectsManager.triggerConfetti(1500, 1.5);
+            }, 800);
+        }
     } else {
         updateRabbitReaction('graduate');
         showFinalResults();
@@ -913,14 +1784,18 @@ function showFinalResults() {
         topicAnalysis.innerHTML = '';
         
         const topicNames = {
-            'presupuesto': 'Presupuesto', 'ahorro': 'Ahorro', 'inversion': 'Inversión', 'credito': 'Crédito',
-            'contabilidad': 'Contabilidad', 'finanzas': 'Finanzas', 'fondo-emergencia': 'Fondo de Emergencia',
-            'tributacion': 'Tributación', 'nomina': 'Nómina', 'estados-financieros': 'Estados Financieros',
-            'analisis-financiero': 'Análisis Financiero', 'inventario': 'Inventarios',
-            'matematica-financiera': 'Matemática Financiera'
+            'numeros': 'Números y Operaciones',
+            'algebra': 'Álgebra y Funciones',
+            'geometria': 'Geometría',
+            'probabilidad': 'Probabilidad',
+            'estadistica': 'Estadística',
+            'matematica-financiera': 'Matemática Financiera',
+            'localizar': 'Competencia Lectora: Localizar',
+            'interpretar': 'Competencia Lectora: Interpretar',
+            'evaluar': 'Competencia Lectora: Evaluar'
         };
         
-        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#E63946', '#6366F1', '#14B8A6', '#F97316', '#84CC16'];
+        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316'];
         let colorIndex = 0;
         
         for (const [topic, scores] of Object.entries(state.topicScores)) {
@@ -945,12 +1820,11 @@ function showFinalResults() {
     }
     
     const speech = document.getElementById('result-character-speech');
-    const maxScore = 7000;
     if (speech) {
-        if (state.score >= maxScore * 0.9) speech.textContent = '¡Rendimiento excepcional! Conti Conti te admira. 🏆🐰';
-        else if (state.score >= maxScore * 0.7) speech.textContent = '¡Excelente resultado! Bases muy sólidas. 👏🐰';
-        else if (state.score >= maxScore * 0.4) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚🐰';
-        else speech.textContent = '¡El aprendizaje es un camino diario! 💡🐰';
+        if (state.score >= 7000) speech.textContent = '¡Rendimiento excepcional! ¡La universidad te espera! 🎓✨';
+        else if (state.score >= 5000) speech.textContent = '¡Excelente resultado! Vas por muy buen camino. 👏🎓';
+        else if (state.score >= 3000) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
+        else speech.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
     
     showScreen('screen-results');
@@ -959,6 +1833,11 @@ function showFinalResults() {
 }
 
 function restartGame() {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    state._freezeTimeout = null;
+    state.isFrozen = false;
     state.currentQuestion = 0; state.score = 0; state.levelScore = 0; state.lives = 3;
     state.streak = 0; state.currentLevel = 1; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
     state.levelStars = {}; state.bonusQuestionActive = false; state.correctInLevel = 0;
@@ -992,12 +1871,14 @@ function usePowerup(type) {
         case 'fifty': applyFiftyFifty(); updateRabbitReaction('confident'); break;
         case 'time': if (state.mode === 'timed') { state.timer += 15; updateTimerDisplay(); } break;
         case 'freeze': 
+            if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
             state.isFrozen = true; 
             updateRabbitReaction('frozen');
             const td = document.getElementById('timer-display');
             if (td) td.style.backgroundColor = '#10B981';
-            setTimeout(() => { 
+            state._freezeTimeout = setTimeout(() => { 
                 state.isFrozen = false; 
+                state._freezeTimeout = null;
                 updateRabbitReaction('thinking'); 
                 if (td) td.style.backgroundColor = 'var(--azul-oscuro)'; 
             }, 10000);
@@ -1027,17 +1908,27 @@ function applyHint() {
     if (!question) return;
     const fb = document.getElementById('feedback-box');
     if (!fb) return;
-    // FIX: proteger contra preguntas sin 'explanation' (ej. tipo 'matching'),
-    // que antes rompían con un TypeError al llamar .split() sobre undefined
-    const hintText = question.explanation
-        ? question.explanation.split('.')[0] + '.'
-        : 'Analiza cada opción con calma, ¡tú puedes lograrlo!';
+    
+    const hintText = question.hint
+        ? question.hint
+        : (question.explanation
+            ? question.explanation.split('.')[0] + '.'
+            : 'Analiza cada opción con calma, ¡tú puedes lograrlo!');
+    
     fb.textContent = `💡 Pista: ${hintText}`;
     fb.className = 'feedback-box correct';
 }
 
 // ===== TEMPORIZADOR =====
 function startTimer() {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    
+    if (state.currentLevel === 1) state.timer = 60; // Lenguaje: más tiempo por textos largos
+    else if (state.currentLevel === 2) state.timer = 45; // M1
+    else if (state.currentLevel === 3) state.timer = 35; // M2
+    else state.timer = 40; // Mixto
+    
     updateTimerDisplay();
     const timerDisplay = document.getElementById('timer-display');
     if (timerDisplay) timerDisplay.classList.remove('warning');
@@ -1047,13 +1938,22 @@ function startTimer() {
         state.timer--;
         updateTimerDisplay();
         
-        if (state.timer <= 5) {
+        if (state.timer <= 10 && state.timer > 0) {
             if (timerDisplay) timerDisplay.classList.add('warning');
             updateRabbitReaction('nervous');
-            playSound('tick');
+            if (window.effectsManager) {
+                window.effectsManager.playTick();
+            }
         }
         if (state.timer <= 0) {
             clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            if (timerDisplay) timerDisplay.classList.remove('warning');
+            
+            if (window.effectsManager) {
+                window.effectsManager.playIncorrectFallback();
+            }
+            
             showFeedback(`¡Tiempo agotado! ${state.questions[state.currentQuestion].explanation}`, 'incorrect');
             handleIncorrectAnswer(state.questions[state.currentQuestion]);
         }
@@ -1064,7 +1964,7 @@ function startTimer() {
         if (state.currentQuestion < state.totalQuestions && (!nextBtn || nextBtn.style.display === 'none')) {
             updateRabbitReaction('bored');
         }
-    }, 15000);
+    }, 20000); // Más tolerancia para textos largos
 }
 
 function updateTimerDisplay() {
@@ -1079,6 +1979,10 @@ function updateScore() {
     badge.textContent = `⭐ ${state.score} pts`;
     badge.classList.add('pop');
     setTimeout(() => badge.classList.remove('pop'), 300);
+    
+    if (window.effectsManager && typeof window.effectsManager.triggerScoreBadgeFlash === 'function') {
+        window.effectsManager.triggerScoreBadgeFlash();
+    }
 }
 
 function updateLives() {
@@ -1113,12 +2017,12 @@ function updatePowerupButtons() {
 
 // ===== INSIGNIAS =====
 function checkBadges() {
-    if (state.score >= 2000 && !state.badges.financierPro) {
-        state.badges.financierPro = true;
+    if (state.score >= 2000 && !state.badges.paesPro) {
+        state.badges.paesPro = true;
         playSound('achievement');
         if (window.effectsManager) window.effectsManager.triggerFireworks();
         setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: Financiero Pro!', { icon: '🏆', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', duration: 3500 });
+            if (window.effectsManager) window.effectsManager.triggerToast('¡Nueva insignia: PAES Pro!', { icon: '🏆', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', duration: 3500 });
         }, 300);
         saveBadges();
     }
@@ -1143,22 +2047,22 @@ function checkBadges() {
 }
 
 function getBadgeIcon(badge) {
-    const icons = { perfectScore: '💯', speedDemon: '⚡', survivor: '🛡️', streaker: '🔥', financierPro: '🏆', noPowerups: '💪' };
+    const icons = { perfectScore: '💯', speedDemon: '⚡', survivor: '🛡️', streaker: '🔥', paesPro: '🏆', noPowerups: '💪' };
     return icons[badge] || '🏅';
 }
 
 function getBadgeName(badge) {
-    const names = { perfectScore: 'Puntaje Perfecto', speedDemon: 'Velocista', survivor: 'Sobreviviente', streaker: 'Rachador', financierPro: 'Financiero Pro', noPowerups: 'Poder Natural' };
+    const names = { perfectScore: 'Puntaje Perfecto', speedDemon: 'Velocista', survivor: 'Sobreviviente', streaker: 'Rachador', paesPro: 'PAES Pro', noPowerups: 'Poder Natural' };
     return names[badge] || badge;
 }
 
 function loadBadges() {
-    const saved = safeLocalGet('conti_badges', null);
+    const saved = safeLocalGet('paes_badges', null);
     if (saved) {
         try {
             state.badges = { ...state.badges, ...JSON.parse(saved) };
         } catch (e) {
-            console.warn('No se pudo leer conti_badges guardado, se ignora.');
+            console.warn('No se pudo leer paes_badges guardado, se ignora.');
         }
     }
     const grid = document.getElementById('badges-grid');
@@ -1172,13 +2076,11 @@ function loadBadges() {
 }
 
 function saveBadges() {
-    safeLocalSet('conti_badges', JSON.stringify(state.badges));
+    safeLocalSet('paes_badges', JSON.stringify(state.badges));
 }
 
 // ===== LEADERBOARD =====
 
-/** Modal propio para pedir el nombre del jugador (reemplaza a prompt(),
- *  que interrumpe la experiencia visual del resto del juego). */
 function showNamePromptModal(onSubmit) {
     const overlay = document.createElement('div');
     overlay.style.cssText = `
@@ -1196,13 +2098,13 @@ function showNamePromptModal(onSubmit) {
     box.innerHTML = `
         <div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B;">¡Buen trabajo! 🎉</div>
         <div style="margin-bottom:16px;color:#64748B;font-size:0.9rem;">Ingresa tu nombre para el ranking</div>
-        <input id="conti-name-input" type="text" maxlength="20" placeholder="Jugador"
+        <input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador"
             style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;
                    margin-bottom:16px;font-family:inherit;font-size:1rem;box-sizing:border-box;outline:none;">
         <div style="display:flex;gap:10px;justify-content:center;">
-            <button id="conti-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;
+            <button id="paes-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;
                 background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer;font-family:inherit;">Omitir</button>
-            <button id="conti-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;
+            <button id="paes-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;
                 background:linear-gradient(135deg, #2563EB, #1D4ED8);color:white;font-weight:700;
                 cursor:pointer;font-family:inherit;">Guardar</button>
         </div>
@@ -1210,7 +2112,7 @@ function showNamePromptModal(onSubmit) {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    const input = box.querySelector('#conti-name-input');
+    const input = box.querySelector('#paes-name-input');
     input.focus();
 
     const close = (value) => {
@@ -1218,20 +2120,27 @@ function showNamePromptModal(onSubmit) {
         onSubmit(value);
     };
 
-    box.querySelector('#conti-name-ok').addEventListener('click', () => close(input.value.trim() || 'Jugador'));
-    box.querySelector('#conti-name-skip').addEventListener('click', () => close(null));
+    box.querySelector('#paes-name-ok').addEventListener('click', () => close(input.value.trim() || 'Jugador'));
+    box.querySelector('#paes-name-skip').addEventListener('click', () => close(null));
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') close(input.value.trim() || 'Jugador');
+    });
+    
+    document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+            close(null);
+            document.removeEventListener('keydown', escapeHandler);
+        }
     });
 }
 
 function saveToLeaderboard() {
     showNamePromptModal((playerName) => {
         if (!playerName) return;
-        const leaderboard = JSON.parse(safeLocalGet('conti_leaderboard', '[]'));
+        const leaderboard = JSON.parse(safeLocalGet('paes_leaderboard', '[]'));
         leaderboard.push({ name: playerName, score: state.score, badges: Object.values(state.badges).filter(Boolean).length, date: new Date().toLocaleDateString() });
         leaderboard.sort((a, b) => b.score - a.score);
-        safeLocalSet('conti_leaderboard', JSON.stringify(leaderboard.slice(0, 20)));
+        safeLocalSet('paes_leaderboard', JSON.stringify(leaderboard.slice(0, 20)));
         loadLeaderboard();
     });
 }
@@ -1239,9 +2148,9 @@ function saveToLeaderboard() {
 function loadLeaderboard() {
     let leaderboard = [];
     try {
-        leaderboard = JSON.parse(safeLocalGet('conti_leaderboard', '[]'));
+        leaderboard = JSON.parse(safeLocalGet('paes_leaderboard', '[]'));
     } catch (e) {
-        console.warn('No se pudo leer conti_leaderboard guardado, se ignora.');
+        console.warn('No se pudo leer paes_leaderboard guardado, se ignora.');
     }
     const tbody = document.getElementById('leaderboard-body');
     if (!tbody) return;
@@ -1255,9 +2164,9 @@ function loadLeaderboard() {
 
 // ===== COMPARTIR =====
 function shareResults() {
-    const text = `🎉 ¡Acabo de conseguir ${state.score} puntos en Conti Conti Desafío Financiero! ¿Puedes superarme? 🏆`;
+    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ¿Puedes superarme? 🏆`;
     if (navigator.share) {
-        navigator.share({ title: 'Conti Conti', text, url: window.location.href }).catch(() => {});
+        navigator.share({ title: 'PAES Challenge', text, url: window.location.href }).catch(() => {});
     } else {
         navigator.clipboard.writeText(text).then(() => {
             if (window.effectsManager) {
@@ -1270,3 +2179,5 @@ function shareResults() {
         });
     }
 }
+
+// ContiGame Engine adaptado a PAES Challenge v1.0.0
