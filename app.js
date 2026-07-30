@@ -1,22 +1,10 @@
-
 /**
  * ============================================================
- * PAES Challenge Engine v2.0.0 — Producción
+ * PAES Challenge Engine v2.2.0 — Producción
  * Lógica del juego + Sistema de Lotes Aleatorios + Sabiondo 🦉
+ * + Cronómetro de desempeño + Sonido next.mp3
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
- *
- * Novedades v2.0.0:
- *   - NUEVO: Sistema de 3 lotes aleatorios por usuario
- *   - NUEVO: Selector de lote en pantalla de bienvenida
- *   - NUEVO: Persistencia de lotes en localStorage
- *   - NUEVO: Regeneración automática al agotar lotes
- *   - NUEVO: Personaje Sabiondo el Búho 🦉
- *   - NUEVO: Estados emocionales: preocupación y alivio
- *   - MEJORA: Separación banco de preguntas / lógica
- *   - FIX: Ítem 2014 con fracción 5/12
- *   - FIX: Función checkDragComplete corregida
- *   - FIX: Accesibilidad aria-label en botones
  */
 
 // ===== ESTADO GLOBAL =====
@@ -67,7 +55,12 @@ const state = {
     currentLote: null,
     loteData: null,
     lotesDisponibles: [],
-    ultimoEstadoBocadillo: null
+    ultimoEstadoBocadillo: null,
+    // Cronómetro de desempeño
+    desafioStartTime: null,
+    desafioEndTime: null,
+    tiempoTotalDesafio: 0,
+    totalPreguntasRespondidas: 0
 };
 
 // ===== MAPA DE NIVELES =====
@@ -272,7 +265,7 @@ function shuffleArray(array) {
 
 // ===== SISTEMA DE SONIDO =====
 function playSound(type) {
-    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'powerup'];
+    const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'powerup', 'next'];
     if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
     if (window.effectsManager) {
         window.effectsManager.playSound(type);
@@ -550,6 +543,12 @@ function startGame() {
     }
 
     if (window.effectsManager) window.effectsManager.ensureAudio();
+    
+    // Iniciar cronómetro de desempeño
+    state.desafioStartTime = Date.now();
+    state.desafioEndTime = null;
+    state.tiempoTotalDesafio = 0;
+    state.totalPreguntasRespondidas = 0;
     
     state.score = 0; 
     state.levelScore = 0; 
@@ -1070,6 +1069,9 @@ function checkMultipleAnswer(originalIndex, question) {
     state.timerInterval = null;
 
     if (originalIndex === question.correct) {
+        // Contar pregunta respondida
+        state.totalPreguntasRespondidas++;
+        
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
         let starCount = 15;
@@ -1089,6 +1091,9 @@ function checkMultipleAnswer(originalIndex, question) {
         showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
         handleCorrectAnswer(totalPoints);
     } else {
+        // Contar pregunta respondida
+        state.totalPreguntasRespondidas++;
+        
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
         if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
         showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
@@ -1145,6 +1150,9 @@ function handleCorrectAnswer(points) {
 function handleIncorrectAnswer(question) {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
 
+    // Contar pregunta respondida (timeout también cuenta)
+    state.totalPreguntasRespondidas++;
+
     state.lives--;
     state.streak = 0;
     state.levelPerfect = false;
@@ -1184,6 +1192,11 @@ function showFeedback(message, type) {
 }
 
 function nextQuestion() {
+    // Reproducir sonido de siguiente pregunta
+    if (window.effectsManager) {
+        window.effectsManager.playSound('next');
+    }
+    
     clearInterval(state.timerInterval);
     state.timerInterval = null;
     state.isFrozen = false;
@@ -1288,8 +1301,37 @@ function endLevel() {
 }
 
 function showFinalResults() {
+    // Detener cronómetro y calcular tiempo de desempeño
+    state.desafioEndTime = Date.now();
+    state.tiempoTotalDesafio = (state.desafioEndTime - state.desafioStartTime) / 1000;
+    
     const finalScore = document.getElementById('final-score');
     if (finalScore) finalScore.textContent = state.score;
+    
+    // Mostrar tiempo de desempeño
+    const tiempoDesempeno = document.getElementById('tiempo-desempeno');
+    if (tiempoDesempeno && state.totalPreguntasRespondidas > 0) {
+        const promedio = state.tiempoTotalDesafio / state.totalPreguntasRespondidas;
+        const minutos = Math.floor(state.tiempoTotalDesafio / 60);
+        const segundos = Math.floor(state.tiempoTotalDesafio % 60);
+        
+        let emojiVelocidad = '🐢 Sin prisa, lo importante es aprender';
+        if (promedio < 15) emojiVelocidad = '🏆 ¡Excelente velocidad!';
+        else if (promedio < 30) emojiVelocidad = '👍 Buen ritmo';
+        else if (promedio < 60) emojiVelocidad = '📚 Tómate tu tiempo para leer';
+        
+        tiempoDesempeno.innerHTML = `
+            <div style="margin-top:12px; padding:14px; background:#F5F3FF; border-radius:12px; border-left:4px solid #8B5CF6; text-align:left;">
+                <strong>⏱️ Desempeño de tiempo:</strong><br>
+                <span style="font-size:0.9rem;">
+                • Tiempo total: <b>${minutos}m ${segundos}s</b><br>
+                • Preguntas respondidas: <b>${state.totalPreguntasRespondidas}</b><br>
+                • Promedio por pregunta: <b>${promedio.toFixed(1)} segundos</b><br>
+                • ${emojiVelocidad}
+                </span>
+            </div>
+        `;
+    }
 
     const topicAnalysis = document.getElementById('topic-analysis');
     if (topicAnalysis) {
@@ -1374,6 +1416,10 @@ function restartGame() {
     state.currentLote = null;
     state.loteData = null;
     state.ultimoEstadoBocadillo = null;
+    state.desafioStartTime = null;
+    state.desafioEndTime = null;
+    state.tiempoTotalDesafio = 0;
+    state.totalPreguntasRespondidas = 0;
     
     document.body.className = 'level-1';
     document.getElementById('streak-display')?.classList.remove('on-fire');
@@ -1644,6 +1690,8 @@ function saveToLeaderboard() {
             name: playerName,
             score: state.score,
             badges: Object.values(state.badges).filter(Boolean).length,
+            tiempo: state.tiempoTotalDesafio,
+            promedio: state.totalPreguntasRespondidas > 0 ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) : 0,
             date: new Date().toLocaleDateString()
         });
         leaderboard.sort((a, b) => b.score - a.score);
@@ -1667,7 +1715,8 @@ function loadLeaderboard() {
 
 // ===== COMPARTIR =====
 function shareResults() {
-    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ¿Puedes superarme? 🦉`;
+    const promedio = state.totalPreguntasRespondidas > 0 ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) : '---';
+    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ⏱️ Promedio: ${promedio}s por pregunta. ¿Puedes superarme? 🦉`;
     if (navigator.share) {
         navigator.share({ title: 'PAES Challenge', text, url: window.location.href }).catch(() => {});
     } else {
