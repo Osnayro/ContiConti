@@ -1,24 +1,14 @@
 
 /**
  * ============================================================
- * PAES Challenge — Sabiondo Effects Manager v1.0.0
+ * PAES Challenge — Sabiondo Effects Manager v1.1.0
  * Efectos visuales académicos (Canvas 2D) + Sonidos + Toasts
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
- * Cambios sobre la versión original de Contabilidad:
- *   - Monedas ($) → Estrellas de conocimiento (⭐)
- *   - Colores de confeti → Paleta académica universitaria
- *   - NUEVO: Explosión de libros (📚)
- *   - NUEVO: Plumas voladoras (🪶)
- *   - NUEVO: Lluvia de estrellas
- *   - NUEVO: Fuegos artificiales académicos
- *   - NUEVO: Toast de Sabiondo
- *   - NUEVO: Destello con colores institucionales
- *
- * Estructura de archivos requerida:
- *   /sounds/splash.mp3, correct.mp3, incorrect.mp3, levelup.mp3,
- *   levelstart.mp3, achievement.mp3, powerup.mp3, star.mp3, explosion.mp3
+ * Cambios v1.1.0:
+ *   - NUEVO: Sonido next.mp3 para cambio de pregunta
+ *   - Cambios anteriores: Estrellas, libros, plumas, confeti académico
  */
 
 class ContiEffectsManager {
@@ -55,10 +45,11 @@ class ContiEffectsManager {
             star:        'sounds/star.mp3',
             explosion:   'sounds/explosion.mp3',
             pluma:       'sounds/pluma.mp3',
+            next:        'sounds/next.mp3'
         };
 
         this.audioPool = [];
-        this.maxAudioPool = 8;
+        this.maxAudioPool = 10;
         this.audioPoolIndex = 0;
         this.audioBuffers = {};
         this.audioLoaded = false;
@@ -70,22 +61,16 @@ class ContiEffectsManager {
 
         // Paleta de colores académica
         this.colors = {
-            // Estrellas doradas
             star:      ['#FFD700', '#FFC107', '#FFB300', '#FFA000', '#FFF8DC', '#FFE082'],
             estrellas: ['#FFD700', '#FFC107', '#FFB300', '#FFA000', '#FFF8DC', '#FFE082'],
-            // Confeti universitario
             confetti:  [
                 '#1E3A63', '#3B82F6', '#8B5CF6', '#FFD700', '#10B981',
                 '#F59E0B', '#EC4899', '#6366F1', '#14B8A6', '#84CC16',
                 '#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626'
             ],
-            // Libros morados
             libro:     ['#8B5CF6', '#6366F1', '#A78BFA', '#C4B5FD', '#DDD6FE', '#7C3AED'],
-            // Fuegos artificiales
             fuego:     ['#FF4500', '#FFD700', '#FF6347', '#FFA500', '#FFFFFF', '#FF1493', '#00FF88', '#3B82F6'],
-            // Plumas azules
             pluma:     ['#EFF6FF', '#DBEAFE', '#BFDBFE', '#93C5FD', '#60A5FA', '#3B82F6'],
-            // Magia
             magic:     ['#A78BFA', '#818CF8', '#C4B5FD', '#6366F1', '#DDD6FE'],
         };
 
@@ -94,7 +79,7 @@ class ContiEffectsManager {
         this.startLoop();
         this._preloadSounds();
 
-        console.log('🦉 Sabiondo Effects Manager v1.0.0 listo | Partículas:', this.maxParticles, '| Volumen:', this.masterVolume);
+        console.log('🦉 Sabiondo Effects Manager v1.1.0 listo | Partículas:', this.maxParticles, '| Volumen:', this.masterVolume);
     }
 
     // ================================================================
@@ -226,9 +211,6 @@ class ContiEffectsManager {
     //  DIBUJOS DE PARTÍCULAS
     // ================================================================
 
-    /**
-     * Dibuja una estrella de 5 puntas con gradiente dorado
-     */
     _drawEstrella(ctx, p) {
         const spikes = 5;
         const outerR = p.size;
@@ -257,11 +239,7 @@ class ContiEffectsManager {
         ctx.stroke();
     }
 
-    /**
-     * Dibuja un mini libro abierto
-     */
     _drawLibro(ctx, p) {
-        // Tapa izquierda
         ctx.fillStyle = '#8B5CF6';
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -271,7 +249,6 @@ class ContiEffectsManager {
         ctx.closePath();
         ctx.fill();
 
-        // Tapa derecha
         ctx.fillStyle = '#7C3AED';
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -281,7 +258,6 @@ class ContiEffectsManager {
         ctx.closePath();
         ctx.fill();
 
-        // Líneas de texto simuladas
         ctx.strokeStyle = 'rgba(255,255,255,0.5)';
         ctx.lineWidth = 0.5;
         for (let i = 0; i < 3; i++) {
@@ -296,7 +272,6 @@ class ContiEffectsManager {
             ctx.stroke();
         }
 
-        // Lomo
         ctx.strokeStyle = '#4C1D95';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -305,21 +280,15 @@ class ContiEffectsManager {
         ctx.stroke();
     }
 
-    /**
-     * Dibuja una pluma flotante
-     */
     _drawPluma(ctx, p) {
         ctx.fillStyle = p.color;
         ctx.strokeStyle = '#6B7280';
         ctx.lineWidth = 0.6;
-
-        // Cuerpo de la pluma
         ctx.beginPath();
         ctx.ellipse(0, 0, p.size * 0.25, p.size, -0.2, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Línea central (raquis)
         ctx.strokeStyle = '#9CA3AF';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
@@ -332,10 +301,6 @@ class ContiEffectsManager {
     //  EFECTOS VISUALES ACADÉMICOS
     // ================================================================
 
-    /**
-     * Explosión de estrellas de conocimiento ⭐
-     * Reemplaza a triggerCoinExplosion
-     */
     triggerStarExplosion(x, y, count = 15) {
         if (!this.canvas) return;
         count = Math.min(count, 50);
@@ -363,9 +328,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Explosión de libros 📚
-     */
     triggerBookExplosion(x, y, count = 10) {
         if (!this.canvas) return;
         for (let i = 0; i < count; i++) {
@@ -392,10 +354,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Lluvia de estrellas ⭐
-     * Reemplaza a triggerCoinRain
-     */
     triggerStarRain(count = 30) {
         if (!this.canvas) return;
         for (let i = 0; i < count; i++) {
@@ -422,10 +380,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Confeti académico con colores universitarios
-     * Reemplaza a triggerConfetti
-     */
     triggerConfettiAcademico(duration = 2500, density = 3) {
         if (!this.canvas) return;
         const startTime = performance.now();
@@ -457,10 +411,6 @@ class ContiEffectsManager {
         requestAnimationFrame(spawn);
     }
 
-    /**
-     * Fuegos artificiales académicos
-     * Reemplaza a triggerFireworks
-     */
     triggerFuegosAcademicos(count = 3) {
         if (!this.canvas) return;
         for (let i = 0; i < count; i++) {
@@ -499,9 +449,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Plumas voladoras 🪶
-     */
     triggerPlumasVoladoras(count = 12) {
         if (!this.canvas) return;
         for (let i = 0; i < count; i++) {
@@ -528,9 +475,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Destello en pantalla con color institucional
-     */
     triggerScreenFlash(duration = 200) {
         const flash = document.createElement('div');
         flash.style.cssText = `
@@ -544,9 +488,6 @@ class ContiEffectsManager {
         setTimeout(() => flash.remove(), duration + 60);
     }
 
-    /**
-     * Destello del score badge
-     */
     triggerScoreBadgeFlash() {
         if (!this.scoreBadge) return;
         this.scoreBadge.classList.add('ultra-pop');
@@ -577,9 +518,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Explosión genérica (estrellas)
-     */
     triggerExplosion(x, y, scale = 1.0, color = '#FFD700') {
         if (!this.canvas) return;
         const count = Math.floor(22 * scale);
@@ -607,9 +545,6 @@ class ContiEffectsManager {
         }
     }
 
-    /**
-     * Texto flotante
-     */
     triggerFloatingText(x, y, text, options = {}) {
         if (!this.canvas) return;
         this.floatingTexts.push({
@@ -631,9 +566,6 @@ class ContiEffectsManager {
     //  TOASTS
     // ================================================================
 
-    /**
-     * Toast académico de Sabiondo
-     */
     triggerToastAcademico(message, options = {}) {
         const {
             icon = '🦉',
@@ -676,10 +608,9 @@ class ContiEffectsManager {
     }
 
     // ================================================================
-    //  MÉTODOS DE CONVENIENCIA (mantienen compatibilidad)
+    //  MÉTODOS DE CONVENIENCIA
     // ================================================================
 
-    // Estrellas desde elemento HTML
     triggerStarsFromElement(element, count = 15) {
         if (!element || !this.canvas) return;
         const rect = element.getBoundingClientRect();
@@ -687,14 +618,12 @@ class ContiEffectsManager {
         this.playSound('star');
     }
 
-    // Libros desde elemento HTML
     triggerBooksFromElement(element, count = 10) {
         if (!element || !this.canvas) return;
         const rect = element.getBoundingClientRect();
         this.triggerBookExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, count);
     }
 
-    // Alias compatibles con app.js original
     triggerCoinExplosion(x, y, count) {
         this.triggerStarExplosion(x, y, count);
     }
