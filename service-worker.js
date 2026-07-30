@@ -1,12 +1,12 @@
 
 /**
  * ============================================================
- * PAES Challenge — Service Worker v1.0.0
+ * PAES Challenge — Service Worker v2.2.0
  * Cache y funcionalidad offline para PWA
  * ============================================================
  */
 
-const CACHE_NAME = 'paes-challenge-v1.0.0';
+const CACHE_NAME = 'paes-challenge-v2.2.0';
 
 // Archivos a cachear para funcionamiento offline
 const ASSETS = [
@@ -30,7 +30,7 @@ const ASSETS = [
     './sounds/achievement.mp3',
     './sounds/powerup.mp3',
     './sounds/star.mp3',
-    './sounds/explosion.mp3',
+    './sounds/next.mp3',
     './sounds/pluma.mp3'
 ];
 
