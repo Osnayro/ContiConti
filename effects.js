@@ -1,14 +1,21 @@
 
 /**
  * ============================================================
- * PAES Challenge — Sabiondo Effects Manager v1.1.0
+ * PAES Challenge — Sabiondo Effects Manager v1.2.0
  * Efectos visuales académicos (Canvas 2D) + Sonidos + Toasts
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
- * Cambios v1.1.0:
- *   - NUEVO: Sonido next.mp3 para cambio de pregunta
- *   - Cambios anteriores: Estrellas, libros, plumas, confeti académico
+ * ARCHIVOS DE SONIDO REQUERIDOS EN /sounds/:
+ *   - splash.mp3      → Pantalla de carga
+ *   - correct.mp3     → Respuesta correcta
+ *   - incorrect.mp3   → Respuesta incorrecta
+ *   - levelup.mp3     → Subir de nivel
+ *   - levelstart.mp3  → Iniciar nivel
+ *   - achievement.mp3 → Nueva insignia
+ *   - powerup.mp3     → Usar power-up
+ *   - star.mp3        → Efecto de estrellas
+ *   - next.mp3        → Siguiente pregunta
  */
 
 class ContiEffectsManager {
@@ -33,7 +40,10 @@ class ContiEffectsManager {
         this.animationId = null;
         this.isRunning = false;
 
-        // Archivos de sonido
+        // ================================================================
+        // REGISTRO DE ARCHIVOS DE SONIDO
+        // Todos deben existir en la carpeta /sounds/
+        // ================================================================
         this.soundFiles = {
             splash:      'sounds/splash.mp3',
             correct:     'sounds/correct.mp3',
@@ -43,19 +53,22 @@ class ContiEffectsManager {
             achievement: 'sounds/achievement.mp3',
             powerup:     'sounds/powerup.mp3',
             star:        'sounds/star.mp3',
-            explosion:   'sounds/explosion.mp3',
-            pluma:       'sounds/pluma.mp3',
             next:        'sounds/next.mp3'
         };
 
+        // Pool de audio para reproducción simultánea
         this.audioPool = [];
-        this.maxAudioPool = 10;
+        this.maxAudioPool = 9;
         this.audioPoolIndex = 0;
+
+        // Buffers de audio precargados
         this.audioBuffers = {};
         this.audioLoaded = false;
         this.audioLoadError = false;
         this.soundsLoadedCount = 0;
         this.soundsTotalCount = Object.keys(this.soundFiles).length;
+
+        // AudioContext para síntesis de sonido (tick, fallback)
         this.audioCtx = null;
         this.audioCtxReady = false;
 
@@ -79,7 +92,9 @@ class ContiEffectsManager {
         this.startLoop();
         this._preloadSounds();
 
-        console.log('🦉 Sabiondo Effects Manager v1.1.0 listo | Partículas:', this.maxParticles, '| Volumen:', this.masterVolume);
+        console.log('🦉 Sabiondo Effects Manager v1.2.0 listo');
+        console.log('📁 Sonidos a cargar:', this.soundsTotalCount, 'archivos');
+        console.log('🔊 Volumen:', this.masterVolume);
     }
 
     // ================================================================
@@ -319,8 +334,7 @@ class ContiEffectsManager {
                 rotationSpeed: (Math.random() - 0.5) * 0.35,
                 scale: 0.55 + Math.random() * 0.9,
                 size: 10 + Math.random() * 10,
-                life: 1,
-                maxLife: 1,
+                life: 1, maxLife: 1,
                 decay: 0.005 + Math.random() * 0.01,
                 color: this.colors.star[Math.floor(Math.random() * this.colors.star.length)],
                 attractTo: true,
@@ -335,18 +349,15 @@ class ContiEffectsManager {
             const speed = 2 + Math.random() * 6;
             this.particles.push({
                 type: 'libro',
-                x,
-                y,
+                x, y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed - 4,
-                gravity: 0.15,
-                friction: 0.97,
+                gravity: 0.15, friction: 0.97,
                 rotation: Math.random() * Math.PI,
                 rotationSpeed: (Math.random() - 0.5) * 0.2,
                 scale: 0.5 + Math.random() * 0.8,
                 size: 8 + Math.random() * 10,
-                life: 1,
-                maxLife: 1,
+                life: 1, maxLife: 1,
                 decay: 0.008 + Math.random() * 0.012,
                 color: this.colors.libro[Math.floor(Math.random() * this.colors.libro.length)],
                 attractTo: false,
@@ -364,14 +375,12 @@ class ContiEffectsManager {
                     y: -40,
                     vx: (Math.random() - 0.5) * 3.5,
                     vy: 3 + Math.random() * 6,
-                    gravity: 0.14,
-                    friction: 0.994,
+                    gravity: 0.14, friction: 0.994,
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.25,
                     scale: 0.45 + Math.random() * 0.55,
                     size: 7 + Math.random() * 8,
-                    life: 1,
-                    maxLife: 1,
+                    life: 1, maxLife: 1,
                     decay: 0.004 + Math.random() * 0.007,
                     color: this.colors.star[Math.floor(Math.random() * this.colors.star.length)],
                     attractTo: false,
@@ -393,14 +402,12 @@ class ContiEffectsManager {
                     y: -25,
                     vx: (Math.random() - 0.5) * 5,
                     vy: 2 + Math.random() * 5,
-                    gravity: 0.06,
-                    friction: 0.994,
+                    gravity: 0.06, friction: 0.994,
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.25,
                     scale: 0.7 + Math.random() * 1.3,
                     size: 8 + Math.random() * 14,
-                    life: 1,
-                    maxLife: 1,
+                    life: 1, maxLife: 1,
                     decay: 0.003 + Math.random() * 0.006,
                     color: colors[Math.floor(Math.random() * colors.length)],
                     attractTo: false,
@@ -430,18 +437,15 @@ class ContiEffectsManager {
             const speed = 3 + Math.random() * 9;
             this.particles.push({
                 type: 'star',
-                x,
-                y,
+                x, y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
-                gravity: 0.09,
-                friction: 0.965,
+                gravity: 0.09, friction: 0.965,
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.12,
                 scale: 0.3 + Math.random() * 0.6,
                 size: 4 + Math.random() * 8,
-                life: 1,
-                maxLife: 1,
+                life: 1, maxLife: 1,
                 decay: 0.009 + Math.random() * 0.016,
                 color: colors[Math.floor(Math.random() * colors.length)],
                 attractTo: false,
@@ -459,14 +463,12 @@ class ContiEffectsManager {
                     y: -20,
                     vx: (Math.random() - 0.5) * 2,
                     vy: 1 + Math.random() * 3,
-                    gravity: 0.02,
-                    friction: 0.996,
+                    gravity: 0.02, friction: 0.996,
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.15,
                     scale: 0.6 + Math.random() * 0.8,
                     size: 6 + Math.random() * 8,
-                    life: 1,
-                    maxLife: 1,
+                    life: 1, maxLife: 1,
                     decay: 0.002 + Math.random() * 0.005,
                     color: this.colors.pluma[Math.floor(Math.random() * this.colors.pluma.length)],
                     attractTo: false,
@@ -499,21 +501,14 @@ class ContiEffectsManager {
             const angle = (i / 10) * Math.PI * 2;
             this.particles.push({
                 type: 'star',
-                x: cx,
-                y: cy,
+                x: cx, y: cy,
                 vx: Math.cos(angle) * 2.5,
                 vy: Math.sin(angle) * 2.5,
-                gravity: 0,
-                friction: 0.9,
-                rotation: 0,
-                rotationSpeed: 0,
-                scale: 0.5,
-                size: 3 + Math.random() * 3,
-                life: 1,
-                maxLife: 1,
-                decay: 0.035,
-                color: '#FFD700',
-                attractTo: false,
+                gravity: 0, friction: 0.9,
+                rotation: 0, rotationSpeed: 0,
+                scale: 0.5, size: 3 + Math.random() * 3,
+                life: 1, maxLife: 1, decay: 0.035,
+                color: '#FFD700', attractTo: false,
             });
         }
     }
@@ -525,22 +520,16 @@ class ContiEffectsManager {
             const angle = Math.random() * Math.PI * 2;
             const speed = (2 + Math.random() * 7) * scale;
             this.particles.push({
-                type: 'star',
-                x,
-                y,
+                type: 'star', x, y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
-                gravity: 0.12,
-                friction: 0.955,
-                rotation: 0,
-                rotationSpeed: 0,
+                gravity: 0.12, friction: 0.955,
+                rotation: 0, rotationSpeed: 0,
                 scale: 0.45 + Math.random() * 0.85,
                 size: 3 + Math.random() * 9 * scale,
-                life: 1,
-                maxLife: 1,
+                life: 1, maxLife: 1,
                 decay: 0.014 + Math.random() * 0.022,
-                color: color,
-                attractTo: false,
+                color: color, attractTo: false,
             });
         }
     }
@@ -548,14 +537,8 @@ class ContiEffectsManager {
     triggerFloatingText(x, y, text, options = {}) {
         if (!this.canvas) return;
         this.floatingTexts.push({
-            x,
-            y,
-            text,
-            vy: -1.6,
-            life: 1,
-            maxLife: 1,
-            decay: 0.011,
-            alpha: 1,
+            x, y, text, vy: -1.6,
+            life: 1, maxLife: 1, decay: 0.011, alpha: 1,
             color: options.color || '#FFD700',
             fontSize: options.fontSize || 28,
             fontWeight: options.fontWeight || '800',
@@ -567,40 +550,19 @@ class ContiEffectsManager {
     // ================================================================
 
     triggerToastAcademico(message, options = {}) {
-        const {
-            icon = '🦉',
-            bg = 'linear-gradient(135deg, #1E3A63, #3B82F6)',
-            duration = 3000,
-            position = 'top'
-        } = options;
-
+        const { icon = '🦉', bg = 'linear-gradient(135deg, #1E3A63, #3B82F6)', duration = 3000, position = 'top' } = options;
         let container = document.getElementById('toast-container');
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.style.cssText = `
-                position: fixed; left: 50%; transform: translateX(-50%);
-                z-index: 2000; display: flex; flex-direction: column;
-                gap: 12px; pointer-events: none;
-            `;
+            container.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:12px;pointer-events:none;';
             document.body.appendChild(container);
         }
         container.style.top = position === 'center' ? '40%' : '8%';
-
         const toast = document.createElement('div');
-        toast.style.cssText = `
-            background: ${bg}; color: white; padding: 15px 26px;
-            border-radius: 18px; font-weight: 700; font-size: 0.95rem;
-            font-family: 'Poppins', sans-serif; text-align: center;
-            box-shadow: 0 14px 35px rgba(0,0,0,0.28);
-            pointer-events: auto;
-            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            display: flex; align-items: center; gap: 12px;
-            white-space: nowrap; letter-spacing: 0.3px;
-        `;
-        toast.innerHTML = '<span style="font-size:1.6rem; line-height:1">' + icon + '</span> ' + message;
+        toast.style.cssText = `background:${bg};color:white;padding:15px 26px;border-radius:18px;font-weight:700;font-size:0.95rem;font-family:'Poppins',sans-serif;text-align:center;box-shadow:0 14px 35px rgba(0,0,0,0.28);pointer-events:auto;animation:toastSlideIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards;display:flex;align-items:center;gap:12px;white-space:nowrap;letter-spacing:0.3px;`;
+        toast.innerHTML = '<span style="font-size:1.6rem;line-height:1">' + icon + '</span> ' + message;
         container.appendChild(toast);
-
         setTimeout(() => {
             toast.style.animation = 'toastSlideOut 0.4s ease-in forwards';
             setTimeout(() => toast.remove(), 400);
@@ -608,7 +570,7 @@ class ContiEffectsManager {
     }
 
     // ================================================================
-    //  MÉTODOS DE CONVENIENCIA
+    //  MÉTODOS DE CONVENIENCIA (COMPATIBILIDAD)
     // ================================================================
 
     triggerStarsFromElement(element, count = 15) {
@@ -624,39 +586,27 @@ class ContiEffectsManager {
         this.triggerBookExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, count);
     }
 
-    triggerCoinExplosion(x, y, count) {
-        this.triggerStarExplosion(x, y, count);
-    }
-
-    triggerCoinExplosionFromElement(element, count) {
-        this.triggerStarsFromElement(element, count);
-    }
-
-    triggerConfetti(duration, density) {
-        this.triggerConfettiAcademico(duration, density);
-    }
-
-    triggerFireworks(count) {
-        this.triggerFuegosAcademicos(count);
-    }
-
-    triggerCoinRain() {
-        this.triggerStarRain();
-    }
-
-    triggerToast(message, options) {
-        this.triggerToastAcademico(message, options);
-    }
+    triggerCoinExplosion(x, y, count) { this.triggerStarExplosion(x, y, count); }
+    triggerCoinExplosionFromElement(element, count) { this.triggerStarsFromElement(element, count); }
+    triggerConfetti(duration, density) { this.triggerConfettiAcademico(duration, density); }
+    triggerFireworks(count) { this.triggerFuegosAcademicos(count); }
+    triggerCoinRain() { this.triggerStarRain(); }
+    triggerToast(message, options) { this.triggerToastAcademico(message, options); }
 
     // ================================================================
-    //  AUDIO - PRECARGA MP3
+    //  AUDIO - PRECARGA DE SONIDOS
     // ================================================================
 
     _preloadSounds(onProgress) {
         const loaderFill = document.getElementById('loader-fill');
+        const loaderLabel = document.getElementById('loader-label');
+
         if (loaderFill) {
             loaderFill.style.width = '0%';
             loaderFill.style.animation = 'none';
+        }
+        if (loaderLabel) {
+            loaderLabel.textContent = 'Cargando sonidos...';
         }
 
         for (let i = 0; i < this.maxAudioPool; i++) {
@@ -676,23 +626,30 @@ class ContiEffectsManager {
                 this.soundsLoadedCount++;
                 this.audioBuffers[key] = audio;
                 if (loaderFill) {
-                    loaderFill.style.width = (this.soundsLoadedCount / this.soundsTotalCount) * 100 + '%';
+                    const progress = (this.soundsLoadedCount / this.soundsTotalCount) * 100;
+                    loaderFill.style.width = progress + '%';
+                }
+                if (loaderLabel) {
+                    loaderLabel.textContent = `Cargando sonidos... (${this.soundsLoadedCount}/${this.soundsTotalCount})`;
                 }
                 if (onProgress) onProgress(this.soundsLoadedCount, this.soundsTotalCount);
                 if (this.soundsLoadedCount === this.soundsTotalCount) {
                     this.audioLoaded = true;
+                    console.log('✅ Todos los sonidos cargados:', this.soundsTotalCount, 'archivos');
                     this._showSplashButton();
                 }
             }, { once: true });
 
             audio.addEventListener('error', () => {
                 this.soundsLoadedCount++;
+                console.warn('⚠️ Error al cargar sonido:', path);
                 if (loaderFill) {
                     loaderFill.style.width = (this.soundsLoadedCount / this.soundsTotalCount) * 100 + '%';
                 }
                 if (onProgress) onProgress(this.soundsLoadedCount, this.soundsTotalCount);
                 if (this.soundsLoadedCount === this.soundsTotalCount && !this.audioLoaded) {
                     this.audioLoadError = true;
+                    console.warn('⚠️ Algunos sonidos no se cargaron. La app funcionará sin ellos.');
                     this._showSplashButton();
                 }
             });
@@ -725,7 +682,7 @@ class ContiEffectsManager {
     }
 
     // ================================================================
-    //  AUDIO - AUDIOCONTEXT GLOBAL
+    //  AUDIO - CONTEXTO GLOBAL
     // ================================================================
 
     initGlobalAudio() {
@@ -805,7 +762,6 @@ class ContiEffectsManager {
         const ctx = this.audioCtx;
         const now = ctx.currentTime;
         const vol = this.masterVolume;
-
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
