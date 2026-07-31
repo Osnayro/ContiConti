@@ -19,24 +19,19 @@
     <canvas id="effects-canvas"></canvas>
 
     <!-- ============================================================ -->
-    <!-- SPLASH SCREEN OPTIMIZADO — SABIONDO 3D -->
+    <!-- SPLASH SCREEN -->
     <!-- ============================================================ -->
     <div id="splash-screen" style="background-image: url('buho.PNG');">
         <div class="splash-overlay">
-            <!-- Logo en el tercio superior -->
             <div class="splash-logo-container">
                 <h1 class="splash-logo-text">PAES Challenge</h1>
                 <p class="splash-logo-subtitle">Desafío de Admisión Universitaria 2025-2026</p>
             </div>
-            
-            <!-- Barra de carga en la zona inferior -->
             <div class="splash-loader-bottom">
                 <div class="splash-loader-bar">
                     <div class="splash-loader-fill" id="loader-fill"></div>
                 </div>
                 <span class="splash-loader-label" id="loader-label">Preparando tu desafío...</span>
-                
-                <!-- Botón Iniciar -->
                 <button class="splash-start-btn" id="skip-splash-btn" style="display: none;" disabled>
                     <span class="splash-btn-text">¡Comenzar!</span>
                     <span class="splash-btn-icon">🚀</span>
@@ -49,7 +44,7 @@
     <!-- APP PRINCIPAL -->
     <!-- ============================================================ -->
     <div class="app-card" id="app-card">
-        <!-- Header con Sabiondo -->
+        <!-- Header -->
         <div class="app-header">
             <img src="buho.PNG" alt="Sabiondo" class="school-logo" onerror="this.classList.add('logo-placeholder'); this.alt='🦉 PAES Challenge';">
             <div class="logo-placeholder" style="display:none;">🦉 PAES Challenge 2025-2026</div>
@@ -61,10 +56,9 @@
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
             <div class="score-badge" id="score-badge">⭐ 0 pts</div>
-            <div class="lives-display" id="lives-display">❤️❤️❤️</div>
             <div class="streak-display" id="streak-display">🔥 0</div>
             <div class="timer-display" id="timer-display">⏱️ 60s</div>
-            <div class="level-display" id="level-display" style="background: #8B5CF6; color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">Nivel 1</div>
+            <div class="level-display" id="level-display" style="background: #8B5CF6; color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">📖 Competencia Lectora</div>
         </div>
 
         <!-- Power-ups Bar -->
@@ -95,18 +89,18 @@
             </div>
             
             <h2 class="welcome-title">¿Estás listo para la prueba de admisión?</h2>
-            <p class="welcome-sub">Demuestra tus conocimientos en los 4 niveles del desafío</p>
+            <p class="welcome-sub">Demuestra tus conocimientos en los 3 niveles del desafío</p>
 
+            <!-- Selector de Partidas -->
             <div id="lote-selector" style="width:100%;"></div>
-            
             <div id="lote-confirmacion" style="display:none; width:100%; margin:8px 0; padding:10px; background:#F0FDF4; border-radius:12px; text-align:center; font-size:0.9rem; color:#166534;"></div>
 
+            <!-- Info de niveles -->
             <div class="info-card">
                 <strong>🎯 Niveles del desafío PAES:</strong><br>
-                🟣 <b>Nivel 1:</b> Competencia Lectora (60s) <span style="color: #10B981;">✅ Disponible</span><br>
-                🔵 <b>Nivel 2:</b> Matemática 1 - M1 (45s) <span id="status-level-2" style="color: #94A3B8;">🔒 Bloqueado</span><br>
-                🟢 <b>Nivel 3:</b> Matemática 2 - M2 (35s) <span id="status-level-3" style="color: #94A3B8;">🔒 Bloqueado</span><br>
-                🔴 <b>Nivel 4:</b> Desafío Final Mixto (40s) <span id="status-level-4" style="color: #94A3B8;">🔒 Bloqueado</span>
+                🟣 <b>Nivel 1:</b> Competencia Lectora (60s) — 20 preguntas<br>
+                🔵 <b>Nivel 2:</b> Matemática 1 - M1 (45s) — 25 preguntas<br>
+                🟢 <b>Nivel 3:</b> Matemática 2 - M2 (35s) — 25 preguntas
             </div>
 
             <div class="info-card" style="border-left-color: #8B5CF6; background: #F5F3FF;">
@@ -116,6 +110,7 @@
                 • Matemática 2: Logaritmos, Trigonometría, Financiera, Complejos
             </div>
 
+            <!-- Modo de juego -->
             <div class="mode-grid">
                 <div class="mode-card selected" id="mode-normal" onclick="selectMode('normal')">
                     <div class="mode-icon">🐢</div>
@@ -152,6 +147,10 @@
                 <div class="buho-svg-container" id="buho-svg"></div>
                 <div class="character-speech" id="question-speech">¡Analiza con sabiduría! 🦉</div>
             </div>
+            
+            <!-- Panel de Lectura (Nivel 1) -->
+            <div id="lectura-container" style="display:none; width:100%; max-height:200px; overflow-y:auto; margin-bottom:10px;"></div>
+            
             <div class="question-text" id="question-text"></div>
             <img class="question-image" id="question-image" alt="Imagen de la pregunta" style="display:none;">
             <div class="options-grid" id="options-grid"></div>
@@ -236,11 +235,10 @@
             </div>
             <div class="info-card" style="border-left-color: #8B5CF6; background: #F5F3FF;">
                 📊 <b>Temario cubierto:</b><br>
-                • Competencia Matemática 1 (M1) — 38 preguntas<br>
-                • Competencia Matemática 2 (M2) — 35 preguntas<br>
-                • Competencia Lectora — 32 preguntas<br>
-                • Cultura General Científica — 2 preguntas<br>
-                • Total: 107 preguntas alineadas al DEMRE
+                • Competencia Lectora — 77 preguntas<br>
+                • Matemática 1 (M1) — 100 preguntas<br>
+                • Matemática 2 (M2) — 100 preguntas<br>
+                • Total: 277 preguntas alineadas al DEMRE
             </div>
             <p style="font-size: 0.9rem; font-weight: 700; color: var(--azul-oscuro); margin: 6px 0; text-align: center;">
                 "Tu futuro comienza con una buena preparación" 🦉
@@ -283,9 +281,11 @@
     <!-- ============================================================ -->
     <!-- SCRIPTS -->
     <!-- ============================================================ -->
+    <script src="banco-lectora.js"></script>
+    <script src="banco-matematica1.js"></script>
+    <script src="banco-matematica2.js"></script>
     <script src="buho-svg.js"></script>
     <script src="effects.js"></script>
-    <script src="banco-preguntas.js"></script>
     <script src="app.js"></script>
 
     <!-- Service Worker (PWA) -->
