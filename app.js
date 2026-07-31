@@ -1,20 +1,17 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v3.0.0 — Producción
+ * PAES Challenge Engine v3.1.0 — Producción
  * Lógica del juego + 4 Lotes por nivel + Sabiondo 🦉
  * + Cronómetro de desempeño + Sonido next.mp3
+ * + Agrupación de preguntas por lectura (Nivel 1)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
- * Cambios v3.0.0:
- *   - 3 niveles: Competencia Lectora, Matemática 1, Matemática 2
- *   - 4 lotes por nivel generados aleatoriamente
- *   - M1: 25 preguntas por lote (de 100)
- *   - M2: 25 preguntas por lote (de 100)
- *   - Lectora: ~19-20 preguntas por lote (de 77)
- *   - Sin niveles bloqueados: todos disponibles
- *   - Sin sistema de vidas: puntuación directa
+ * Cambios v3.1.0:
+ *   - Nivel 1: preguntas agrupadas por lectura (textKey)
+ *   - Misma lectura = preguntas consecutivas
+ *   - Orden de grupos aleatorio, preguntas internas por ID
  */
 
 // ===== ESTADO GLOBAL =====
@@ -87,14 +84,14 @@ const levelTimerDefaults = {
 
 // Cantidad de preguntas por nivel
 const questionsPerLevel = {
-    1: 20,  // Competencia Lectora (~19-20 de 77)
-    2: 25,  // Matemática 1 (25 de 100)
-    3: 25   // Matemática 2 (25 de 100)
+    1: 20,
+    2: 25,
+    3: 25
 };
 
 // ===== SISTEMA DE 4 LOTES POR NIVEL =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v3';
-const LOTES_VERSION = '3.0.0';
+const LOTES_VERSION = '3.1.0';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -114,7 +111,6 @@ function generarLotes() {
     const m1Shuffle = shuffleArr(todasM1);
     const m2Shuffle = shuffleArr(todasM2);
 
-    // Dividir cada banco en 4 partes
     const dividirEn4 = (arr) => {
         const len = arr.length;
         const parteSize = Math.ceil(len / 4);
@@ -130,10 +126,8 @@ function generarLotes() {
     const m1Parts = dividirEn4(m1Shuffle);
     const m2Parts = dividirEn4(m2Shuffle);
 
-    // Generar 4 lotes, cada uno con preguntas de los 3 niveles
     const lotes = [];
     for (let i = 0; i < 4; i++) {
-        // Para M1 y M2: tomar exactamente 25 preguntas (o las disponibles)
         const m1Lote = m1Parts[i].slice(0, questionsPerLevel[2]);
         const m2Lote = m2Parts[i].slice(0, questionsPerLevel[3]);
         const lecLote = lecParts[i].slice(0, questionsPerLevel[1]);
@@ -180,7 +174,6 @@ function cargarLotes() {
                     usado: safeLocalGet(`paes_lote_${l.id}_usado_v3`, 'false') === 'true'
                 }));
                 
-                // Si todos los lotes están usados, regenerar
                 if (lotesConEstado.every(l => l.usado)) {
                     const nuevosLotes = generarLotes();
                     guardarLotes(nuevosLotes);
@@ -267,6 +260,48 @@ function shuffleArray(array) {
         [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+}
+
+/**
+ * Agrupa las preguntas de Competencia Lectora por su lectura (textKey).
+ * Las preguntas de una misma lectura aparecen juntas y ordenadas por ID.
+ * El orden de los grupos es aleatorio.
+ * Las preguntas sin textKey se colocan al final.
+ */
+function agruparPreguntasPorLectura(preguntas) {
+    const grupos = {};
+    const sinLectura = [];
+    
+    preguntas.forEach(q => {
+        if (q.textKey) {
+            if (!grupos[q.textKey]) {
+                grupos[q.textKey] = [];
+            }
+            grupos[q.textKey].push(q);
+        } else {
+            sinLectura.push(q);
+        }
+    });
+    
+    // Ordenar preguntas dentro de cada grupo por ID
+    Object.values(grupos).forEach(grupo => {
+        grupo.sort((a, b) => a.id - b.id);
+    });
+    
+    // Convertir grupos a array y mezclar el orden de los grupos
+    const gruposArray = Object.values(grupos);
+    const gruposMezclados = shuffleArray(gruposArray);
+    
+    // Aplanar: todas las preguntas de un mismo grupo van juntas
+    const resultado = [];
+    gruposMezclados.forEach(grupo => {
+        grupo.forEach(q => resultado.push(q));
+    });
+    
+    // Agregar preguntas sin lectura al final
+    sinLectura.forEach(q => resultado.push(q));
+    
+    return resultado;
 }
 
 // ===== SISTEMA DE SONIDO =====
@@ -553,7 +588,16 @@ function startLevel(levelNum) {
     document.body.className = `level-${levelNum}`;
 
     const rawQuestions = getPreguntasNivel(levelNum);
-    state.questions = shuffleArray(deepCloneQuestions(rawQuestions));
+    const cloned = deepCloneQuestions(rawQuestions);
+
+    // Nivel 1: agrupar preguntas por lectura (textKey)
+    // Niveles 2 y 3: mezclar aleatoriamente
+    if (levelNum === 1) {
+        state.questions = agruparPreguntasPorLectura(cloned);
+    } else {
+        state.questions = shuffleArray(cloned);
+    }
+
     state.totalQuestions = state.questions.length;
     state.timer = levelTimerDefaults[levelNum] || 60;
 
@@ -846,9 +890,6 @@ function loadMatching(question) {
     });
 }
 
-// Las funciones loadSlider, loadDrag, enableTouchDragForItem, checkDragComplete
-// se mantienen igual que en la versión anterior (sin cambios)
-
 function loadSlider(question) {
     const sliderContainer = document.getElementById('slider-container');
     if (!sliderContainer) return;
@@ -1025,7 +1066,7 @@ function handleCorrectAnswer(points) {
     }
 
     updateBuhoReaction('correct');
-    if (state.streak === 1 && state.streak === 1) {
+    if (state.streak === 1) {
         setTimeout(() => updateBuhoReaction('alivio'), 400);
     }
     if (state.streak >= 5) {
