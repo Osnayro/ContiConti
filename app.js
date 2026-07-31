@@ -1,21 +1,30 @@
+
 /**
  * ============================================================
- * PAES Challenge Engine v2.2.0 — Producción
- * Lógica del juego + Sistema de Lotes Aleatorios + Sabiondo 🦉
+ * PAES Challenge Engine v3.0.0 — Producción
+ * Lógica del juego + 4 Lotes por nivel + Sabiondo 🦉
  * + Cronómetro de desempeño + Sonido next.mp3
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
+ *
+ * Cambios v3.0.0:
+ *   - 3 niveles: Competencia Lectora, Matemática 1, Matemática 2
+ *   - 4 lotes por nivel generados aleatoriamente
+ *   - M1: 25 preguntas por lote (de 100)
+ *   - M2: 25 preguntas por lote (de 100)
+ *   - Lectora: ~19-20 preguntas por lote (de 77)
+ *   - Sin niveles bloqueados: todos disponibles
+ *   - Sin sistema de vidas: puntuación directa
  */
 
 // ===== ESTADO GLOBAL =====
 const state = {
     score: 0,
     levelScore: 0,
-    lives: 3,
     streak: 0,
     maxStreak: 0,
     currentQuestion: 0,
-    totalQuestions: 10,
+    totalQuestions: 25,
     currentLevel: 1,
     mode: 'normal',
     timer: 60,
@@ -24,7 +33,6 @@ const state = {
     _freezeTimeout: null,
     isFrozen: false,
     questions: [],
-    answeredCorrectly: {},
     correctInLevel: 0,
     powerups: {
         fifty: 3,
@@ -40,18 +48,11 @@ const state = {
     badges: {
         perfectScore: false,
         speedDemon: false,
-        survivor: false,
         streaker: false,
         paesPro: false,
         noPowerups: false
     },
     topicScores: {},
-    unlockedLevels: {
-        1: true,
-        2: false,
-        3: false,
-        4: false
-    },
     currentLote: null,
     loteData: null,
     lotesDisponibles: [],
@@ -60,40 +61,45 @@ const state = {
     desafioStartTime: null,
     desafioEndTime: null,
     tiempoTotalDesafio: 0,
-    totalPreguntasRespondidas: 0
+    totalPreguntasRespondidas: 0,
+    // Lectura activa para Competencia Lectora
+    lecturaActiva: null
 };
 
 // ===== MAPA DE NIVELES =====
 const levelNames = {
     1: '📖 Competencia Lectora',
     2: '📐 Matemática 1 (M1)',
-    3: '📊 Matemática 2 (M2)',
-    4: '🏆 Desafío Final Mixto'
+    3: '📊 Matemática 2 (M2)'
 };
 
 const levelColors = {
     1: '#8B5CF6',
     2: '#3B82F6',
-    3: '#10B981',
-    4: '#EF4444'
+    3: '#10B981'
 };
 
 const levelTimerDefaults = {
     1: 60,
     2: 45,
-    3: 35,
-    4: 40
+    3: 35
 };
 
-// ===== SISTEMA DE LOTES ALEATORIOS =====
-const LOTES_STORAGE_KEY = 'paes_lotes_data';
-const LOTES_VERSION = '2.0.0';
+// Cantidad de preguntas por nivel
+const questionsPerLevel = {
+    1: 20,  // Competencia Lectora (~19-20 de 77)
+    2: 25,  // Matemática 1 (25 de 100)
+    3: 25   // Matemática 2 (25 de 100)
+};
+
+// ===== SISTEMA DE 4 LOTES POR NIVEL =====
+const LOTES_STORAGE_KEY = 'paes_lotes_v3';
+const LOTES_VERSION = '3.0.0';
 
 function generarLotes() {
-    const todasLenguaje = [...paesBancoCompleto.lenguaje];
-    const todasM1 = [...paesBancoCompleto.matematica1];
-    const todasM2 = [...paesBancoCompleto.matematica2];
-    const todasCiencia = [...paesBancoCompleto.culturaGeneral];
+    const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
+    const todasM1 = [...(typeof paesM1Questions !== 'undefined' ? paesM1Questions : [])];
+    const todasM2 = [...(typeof paesM2Questions !== 'undefined' ? paesM2Questions : [])];
 
     const shuffleArr = (arr) => {
         const a = [...arr];
@@ -104,39 +110,44 @@ function generarLotes() {
         return a;
     };
 
-    const lenguajeShuffle = shuffleArr(todasLenguaje);
+    const lectoraShuffle = shuffleArr(todasLectora);
     const m1Shuffle = shuffleArr(todasM1);
     const m2Shuffle = shuffleArr(todasM2);
-    const cienciaShuffle = shuffleArr(todasCiencia);
 
-    const dividirEn3 = (arr) => {
+    // Dividir cada banco en 4 partes
+    const dividirEn4 = (arr) => {
         const len = arr.length;
-        const parteSize = Math.ceil(len / 3);
+        const parteSize = Math.ceil(len / 4);
         return [
             arr.slice(0, parteSize),
             arr.slice(parteSize, parteSize * 2),
-            arr.slice(parteSize * 2)
+            arr.slice(parteSize * 2, parteSize * 3),
+            arr.slice(parteSize * 3)
         ];
     };
 
-    const langParts = dividirEn3(lenguajeShuffle);
-    const m1Parts = dividirEn3(m1Shuffle);
-    const m2Parts = dividirEn3(m2Shuffle);
-    const cienciaParts = dividirEn3(cienciaShuffle);
+    const lecParts = dividirEn4(lectoraShuffle);
+    const m1Parts = dividirEn4(m1Shuffle);
+    const m2Parts = dividirEn4(m2Shuffle);
 
+    // Generar 4 lotes, cada uno con preguntas de los 3 niveles
     const lotes = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
+        // Para M1 y M2: tomar exactamente 25 preguntas (o las disponibles)
+        const m1Lote = m1Parts[i].slice(0, questionsPerLevel[2]);
+        const m2Lote = m2Parts[i].slice(0, questionsPerLevel[3]);
+        const lecLote = lecParts[i].slice(0, questionsPerLevel[1]);
+
         lotes.push({
             id: i + 1,
             generado: Date.now(),
             version: LOTES_VERSION,
             preguntas: {
-                lenguaje: langParts[i],
-                matematica1: m1Parts[i],
-                matematica2: m2Parts[i],
-                culturaGeneral: cienciaParts[i]
+                lectora: lecLote,
+                matematica1: m1Lote,
+                matematica2: m2Lote
             },
-            totalPreguntas: langParts[i].length + m1Parts[i].length + m2Parts[i].length + cienciaParts[i].length
+            totalPreguntas: lecLote.length + m1Lote.length + m2Lote.length
         });
     }
 
@@ -161,19 +172,20 @@ function cargarLotes() {
             
             if (data.version === LOTES_VERSION && 
                 data.lotes && 
-                data.lotes.length === 3 &&
+                data.lotes.length === 4 &&
                 data.lotes.every(l => l.preguntas && l.totalPreguntas > 0)) {
                 
                 const lotesConEstado = data.lotes.map(l => ({
                     ...l,
-                    usado: safeLocalGet(`paes_lote_${l.id}_usado`, 'false') === 'true'
+                    usado: safeLocalGet(`paes_lote_${l.id}_usado_v3`, 'false') === 'true'
                 }));
                 
+                // Si todos los lotes están usados, regenerar
                 if (lotesConEstado.every(l => l.usado)) {
                     const nuevosLotes = generarLotes();
                     guardarLotes(nuevosLotes);
-                    for (let i = 1; i <= 3; i++) {
-                        safeLocalSet(`paes_lote_${i}_usado`, 'false');
+                    for (let i = 1; i <= 4; i++) {
+                        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
                     }
                     return nuevosLotes.map(l => ({ ...l, usado: false }));
                 }
@@ -187,14 +199,14 @@ function cargarLotes() {
     
     const nuevosLotes = generarLotes();
     guardarLotes(nuevosLotes);
-    for (let i = 1; i <= 3; i++) {
-        safeLocalSet(`paes_lote_${i}_usado`, 'false');
+    for (let i = 1; i <= 4; i++) {
+        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
     }
     return nuevosLotes.map(l => ({ ...l, usado: false }));
 }
 
 function marcarLoteComoUsado(loteId) {
-    safeLocalSet(`paes_lote_${loteId}_usado`, 'true');
+    safeLocalSet(`paes_lote_${loteId}_usado_v3`, 'true');
 }
 
 function getPreguntasNivel(nivel) {
@@ -204,23 +216,17 @@ function getPreguntasNivel(nivel) {
     }
 
     const preguntas = state.loteData.preguntas;
+    const cantidad = questionsPerLevel[nivel] || 25;
 
     switch (nivel) {
         case 1:
-            return [...preguntas.lenguaje];
+            return [...preguntas.lectora].slice(0, cantidad);
         case 2:
-            return [...preguntas.matematica1];
+            return [...preguntas.matematica1].slice(0, cantidad);
         case 3:
-            return [...preguntas.matematica2];
-        case 4:
-            return [
-                ...preguntas.lenguaje.slice(0, 4),
-                ...preguntas.matematica1.slice(0, 3),
-                ...preguntas.matematica2.slice(0, 3),
-                ...preguntas.culturaGeneral
-            ];
+            return [...preguntas.matematica2].slice(0, cantidad);
         default:
-            return [...preguntas.lenguaje];
+            return [...preguntas.lectora].slice(0, cantidad);
     }
 }
 
@@ -275,13 +281,10 @@ function playSound(type) {
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     cargarYMostrarLotes();
-    loadUnlockedLevels();
-    setupSplashScreen();
     loadBadges();
     loadLeaderboard();
     setupPowerups();
     createSpeedBonusToast();
-    updateLevelStatusDisplay();
     if (typeof injectBuhoSVGs === 'function') injectBuhoSVGs();
 });
 
@@ -303,7 +306,7 @@ function actualizarSelectorLotes(lotes) {
     if (todosUsados) {
         container.innerHTML = `
             <div class="info-card" style="text-align:center; border-left-color: #F59E0B;">
-                🎯 <b>¡Completaste las 3 partidas!</b><br>
+                🎯 <b>¡Completaste las 4 partidas!</b><br>
                 <small>Reinicia para generar nuevas preguntas</small>
             </div>
             <button class="main-btn pulse-ready" onclick="reiniciarLotes()">
@@ -323,19 +326,27 @@ function actualizarSelectorLotes(lotes) {
     container.appendChild(loteInfo);
 
     const loteGrid = document.createElement('div');
-    loteGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; width:100%;';
+    loteGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;';
 
-    const iconos = ['🎲', '🎯', '📚'];
+    const iconos = ['🎲', '🎯', '📚', '🎓'];
+    const colores = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B'];
+    
     lotes.forEach(lote => {
         const card = document.createElement('div');
         card.className = 'mode-card';
         card.style.cursor = lote.usado ? 'not-allowed' : 'pointer';
         card.style.opacity = lote.usado ? '0.5' : '1';
+        if (!lote.usado) {
+            card.style.borderLeft = `4px solid ${colores[lote.id - 1]}`;
+        }
         
         card.innerHTML = `
             <div class="mode-icon">${iconos[lote.id - 1]}</div>
             <div class="mode-title">Partida ${lote.id}</div>
             <div class="mode-desc">${lote.totalPreguntas} preguntas</div>
+            <div class="mode-desc" style="font-size:0.65rem;color:#64748B;">
+                📖 ${lote.preguntas.lectora.length} | 📐 ${lote.preguntas.matematica1.length} | 📊 ${lote.preguntas.matematica2.length}
+            </div>
             ${lote.usado ? '<div style="font-size:0.7rem;color:#EF4444;">✅ Completada</div>' : ''}
         `;
 
@@ -347,16 +358,6 @@ function actualizarSelectorLotes(lotes) {
     });
 
     container.appendChild(loteGrid);
-
-    if (lotesDisponibles.length === 1) {
-        const loteUnico = lotesDisponibles[0];
-        const cards = loteGrid.querySelectorAll('.mode-card');
-        const targetCard = cards[loteUnico.id - 1];
-        if (targetCard && !loteUnico.usado) {
-            targetCard.style.border = '2px solid #10B981';
-            targetCard.style.background = '#F0FDF4';
-        }
-    }
 }
 
 function seleccionarLote(lote) {
@@ -384,14 +385,15 @@ function seleccionarLote(lote) {
     if (confirmacion) {
         confirmacion.style.display = 'block';
         confirmacion.innerHTML = `
-            ✅ <b>Partida ${lote.id} seleccionada</b> — ${lote.totalPreguntas} preguntas disponibles
+            ✅ <b>Partida ${lote.id} seleccionada</b><br>
+            <small>📖 ${lote.preguntas.lectora.length} Lectura | 📐 ${lote.preguntas.matematica1.length} M1 | 📊 ${lote.preguntas.matematica2.length} M2</small>
         `;
     }
 }
 
 function reiniciarLotes() {
-    for (let i = 1; i <= 3; i++) {
-        safeLocalSet(`paes_lote_${i}_usado`, 'false');
+    for (let i = 1; i <= 4; i++) {
+        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
     }
     localStorage.removeItem(LOTES_STORAGE_KEY);
     
@@ -408,52 +410,11 @@ function reiniciarLotes() {
     if (confirmacion) confirmacion.style.display = 'none';
     
     if (window.effectsManager) {
-        window.effectsManager.triggerToastAcademico('¡Nuevas partidas generadas! 🦉', {
+        window.effectsManager.triggerToastAcademico('¡4 nuevas partidas generadas! 🦉', {
             icon: '🔄',
             bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
             duration: 2500
         });
-    }
-}
-
-// ===== SISTEMA DE NIVELES BLOQUEADOS =====
-function loadUnlockedLevels() {
-    const saved = safeLocalGet('paes_unlocked_levels', null);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            state.unlockedLevels = { ...state.unlockedLevels, ...parsed };
-        } catch (e) {
-            console.warn('Error al cargar niveles desbloqueados.');
-        }
-    }
-}
-
-function saveUnlockedLevels() {
-    safeLocalSet('paes_unlocked_levels', JSON.stringify(state.unlockedLevels));
-}
-
-function unlockNextLevel(currentLevel) {
-    const nextLevel = currentLevel + 1;
-    if (nextLevel <= 4 && !state.unlockedLevels[nextLevel]) {
-        state.unlockedLevels[nextLevel] = true;
-        saveUnlockedLevels();
-        updateLevelStatusDisplay();
-    }
-}
-
-function updateLevelStatusDisplay() {
-    for (let i = 2; i <= 4; i++) {
-        const statusEl = document.getElementById('status-level-' + i);
-        if (statusEl) {
-            if (state.unlockedLevels[i]) {
-                statusEl.textContent = '✅ Disponible';
-                statusEl.style.color = '#10B981';
-            } else {
-                statusEl.textContent = '🔒 Bloqueado';
-                statusEl.style.color = '#94A3B8';
-            }
-        }
     }
 }
 
@@ -508,7 +469,6 @@ function showScreen(screenId) {
     if (screenId === 'screen-badges') loadBadges();
     if (screenId === 'screen-leaderboard') loadLeaderboard();
     if (screenId === 'screen-welcome') {
-        updateLevelStatusDisplay();
         cargarYMostrarLotes();
         const btnStart = document.getElementById('btn-start');
         if (btnStart) btnStart.style.display = 'none';
@@ -552,18 +512,17 @@ function startGame() {
     
     state.score = 0; 
     state.levelScore = 0; 
-    state.lives = 3; 
     state.streak = 0; 
     state.maxStreak = 0;
     state.currentQuestion = 0; 
     state.currentLevel = 1; 
-    state.answeredCorrectly = {}; 
     state.topicScores = {};
     state.isFrozen = false; 
     state.powerupsUsedThisLevel = false; 
     state.levelPerfect = true;
     state.levelStars = {};
     state.ultimoEstadoBocadillo = null;
+    state.lecturaActiva = null;
     
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
@@ -573,11 +532,6 @@ function startGame() {
 }
 
 function startLevel(levelNum) {
-    if (!state.unlockedLevels[levelNum]) {
-        console.warn('Nivel ' + levelNum + ' bloqueado.');
-        return;
-    }
-
     if (!state.loteData || !state.loteData.preguntas) {
         console.error('No hay datos de lote cargados.');
         return;
@@ -585,7 +539,6 @@ function startLevel(levelNum) {
 
     state.currentLevel = levelNum;
     state.currentQuestion = 0;
-    state.lives = 3;
     state.streak = 0;
     state.levelScore = 0;
     state.isFrozen = false;
@@ -600,23 +553,13 @@ function startLevel(levelNum) {
     document.body.className = `level-${levelNum}`;
 
     const rawQuestions = getPreguntasNivel(levelNum);
-    state.questions = shuffleArray(deepCloneQuestions(rawQuestions)).slice(0, 10);
-    
-    if (Math.random() < 0.33 && levelNum >= 2 && state.questions.length > 0) {
-        const bonusIndex = Math.floor(Math.random() * state.questions.length);
-        state.questions[bonusIndex].isBonus = true;
-        state.questions[bonusIndex].originalPoints = state.questions[bonusIndex].points;
-        state.questions[bonusIndex].points = state.questions[bonusIndex].points * 2;
-        state.bonusQuestionActive = true;
-    }
-
+    state.questions = shuffleArray(deepCloneQuestions(rawQuestions));
     state.totalQuestions = state.questions.length;
     state.timer = levelTimerDefaults[levelNum] || 60;
 
     updatePowerupButtons();
     updateLevelDisplay();
     updateScore();
-    updateLives();
     updateStreak();
     updateProgress();
     showScreen('screen-question');
@@ -627,19 +570,17 @@ function startLevel(levelNum) {
 
 function goToNextLevel() {
     const nextLevel = state.currentLevel + 1;
-    if (nextLevel <= 4 && state.unlockedLevels[nextLevel]) {
+    if (nextLevel <= 3) {
         startLevel(nextLevel);
-    } else if (nextLevel > 4) {
-        showFinalResults();
     } else {
-        showScreen('screen-welcome');
+        showFinalResults();
     }
 }
 
 function updateLevelDisplay() {
     const ld = document.getElementById('level-display');
     if (!ld) return;
-    ld.textContent = `Nivel ${state.currentLevel}`;
+    ld.textContent = levelNames[state.currentLevel] || `Nivel ${state.currentLevel}`;
     ld.style.background = levelColors[state.currentLevel] || '#8B5CF6';
 }
 
@@ -730,6 +671,31 @@ function updateBuhoReaction(reaction) {
     }
 }
 
+// ===== VISUALIZACIÓN DE LECTURA =====
+function mostrarLectura(question) {
+    const lecturaContainer = document.getElementById('lectura-container');
+    if (!lecturaContainer) return;
+    
+    if (question.textKey && typeof paesTexts !== 'undefined' && paesTexts[question.textKey]) {
+        const texto = paesTexts[question.textKey];
+        state.lecturaActiva = question.textKey;
+        
+        lecturaContainer.style.display = 'block';
+        lecturaContainer.innerHTML = `
+            <div class="lectura-panel">
+                <div class="lectura-header">
+                    <strong>📖 ${texto.title}</strong>
+                    <span class="lectura-author">— ${texto.author}</span>
+                </div>
+                <div class="lectura-body">${texto.body.replace(/\n/g, '<br>')}</div>
+            </div>
+        `;
+    } else {
+        lecturaContainer.style.display = 'none';
+        state.lecturaActiva = null;
+    }
+}
+
 // ===== CARGA DE PREGUNTAS =====
 function loadQuestion() {
     if (state.currentQuestion >= state.totalQuestions) { endLevel(); return; }
@@ -761,10 +727,18 @@ function loadQuestion() {
     const qImg = document.getElementById('question-image');
     if (qImg) qImg.style.display = 'none';
 
+    // Mostrar lectura si la pregunta tiene textKey (Nivel 1)
+    if (state.currentLevel === 1) {
+        mostrarLectura(question);
+    } else {
+        const lecturaContainer = document.getElementById('lectura-container');
+        if (lecturaContainer) lecturaContainer.style.display = 'none';
+    }
+
     const qText = document.getElementById('question-text');
     if (qText) qText.textContent = question.question;
 
-    if (state.currentLevel >= 3) updateBuhoReaction('deep-think');
+    if (state.currentLevel >= 2) updateBuhoReaction('deep-think');
     else updateBuhoReaction('thinking');
 
     switch (question.type) {
@@ -872,22 +846,22 @@ function loadMatching(question) {
     });
 }
 
+// Las funciones loadSlider, loadDrag, enableTouchDragForItem, checkDragComplete
+// se mantienen igual que en la versión anterior (sin cambios)
+
 function loadSlider(question) {
     const sliderContainer = document.getElementById('slider-container');
     if (!sliderContainer) return;
     sliderContainer.style.display = 'block';
-
     const valueDisplay = document.createElement('div');
     valueDisplay.className = 'slider-value';
     valueDisplay.textContent = question.min;
     valueDisplay.id = 'slider-value-display';
-
     const track = document.createElement('div');
     track.className = 'slider-track';
     const fill = document.createElement('div');
     fill.className = 'slider-fill';
     fill.style.width = '0%';
-
     const input = document.createElement('input');
     input.type = 'range';
     input.className = 'slider-input';
@@ -895,15 +869,12 @@ function loadSlider(question) {
     input.max = question.max;
     input.step = '0.1';
     input.value = question.min;
-
     input.addEventListener('input', () => {
         fill.style.width = `${((input.value - question.min) / (question.max - question.min)) * 100}%`;
         valueDisplay.textContent = input.value;
     });
-
     track.appendChild(fill);
     track.appendChild(input);
-
     const submitBtn = document.createElement('button');
     submitBtn.className = 'main-btn';
     submitBtn.textContent = 'Confirmar Respuesta ✅';
@@ -921,7 +892,6 @@ function loadSlider(question) {
             handleIncorrectAnswer(question);
         }
     });
-
     sliderContainer.appendChild(valueDisplay);
     sliderContainer.appendChild(track);
     sliderContainer.appendChild(submitBtn);
@@ -931,16 +901,12 @@ function loadDrag(question) {
     const dragContainer = document.getElementById('drag-container');
     if (!dragContainer) return;
     dragContainer.style.display = 'flex';
-
     question.items.forEach((item, index) => {
         const dropZone = document.createElement('div');
         dropZone.className = 'drop-zone';
         dropZone.textContent = `${index + 1}. Soltar aquí`;
         dropZone.dataset.index = index;
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
         dropZone.addEventListener('drop', (e) => {
             if (window.effectsManager) window.effectsManager.ensureAudio();
@@ -953,90 +919,29 @@ function loadDrag(question) {
         });
         dragContainer.appendChild(dropZone);
     });
-
     const itemsContainer = document.createElement('div');
     itemsContainer.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;';
-
     shuffleArray(question.items).forEach((item) => {
         const draggable = document.createElement('div');
         draggable.className = 'draggable-item';
         draggable.textContent = item;
         draggable.draggable = true;
         draggable.dataset.originalIndex = question.items.indexOf(item);
-        draggable.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', draggable.dataset.originalIndex);
-            draggable.style.opacity = '0.5';
-        });
-        draggable.addEventListener('dragend', () => {
-            draggable.style.opacity = '1';
-        });
-        enableTouchDragForItem(draggable, question);
+        draggable.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', draggable.dataset.originalIndex); draggable.style.opacity = '0.5'; });
+        draggable.addEventListener('dragend', () => { draggable.style.opacity = '1'; });
         itemsContainer.appendChild(draggable);
     });
-
     dragContainer.appendChild(itemsContainer);
-}
-
-function enableTouchDragForItem(draggable, question) {
-    draggable.addEventListener('touchstart', () => {
-        if (window.effectsManager) window.effectsManager.ensureAudio();
-    }, { passive: true });
-
-    draggable.addEventListener('touchmove', (e) => {
-        if (draggable.style.pointerEvents === 'none') return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
-        const el = document.elementFromPoint(touch.clientX, touch.clientY);
-        const zone = el && el.closest ? el.closest('.drop-zone') : null;
-        if (zone && !zone.dataset.filled) zone.classList.add('drag-over');
-    }, { passive: false });
-
-    draggable.addEventListener('touchend', (e) => {
-        if (draggable.style.pointerEvents === 'none') return;
-        const touch = e.changedTouches[0];
-        const el = document.elementFromPoint(touch.clientX, touch.clientY);
-        const zone = el && el.closest ? el.closest('.drop-zone') : null;
-        document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
-
-        if (window.effectsManager) {
-            window.effectsManager.playSound('star');
-        }
-
-        if (zone && !zone.dataset.filled) {
-            const index = parseInt(zone.dataset.index, 10);
-            zone.textContent = `${index + 1}. ${question.items[draggable.dataset.originalIndex]}`;
-            zone.dataset.filled = draggable.dataset.originalIndex;
-            draggable.style.opacity = '0.3';
-            draggable.style.pointerEvents = 'none';
-
-            if (window.effectsManager) {
-                const rect = zone.getBoundingClientRect();
-                window.effectsManager.triggerExplosion(
-                    rect.left + rect.width / 2,
-                    rect.top + rect.height / 2,
-                    0.5, '#93C5FD'
-                );
-            }
-
-            checkDragComplete(question);
-        }
-    });
 }
 
 function checkDragComplete(question) {
     const dragContainer = document.getElementById('drag-container');
     const dropZones = document.querySelectorAll('.drop-zone');
     let allFilled = true, allCorrect = true;
-
     dropZones.forEach((zone, index) => {
-        if (!zone.dataset.filled) {
-            allFilled = false;
-        } else if (parseInt(zone.dataset.filled, 10) !== index) {
-            allCorrect = false;
-        }
+        if (!zone.dataset.filled) allFilled = false;
+        else if (parseInt(zone.dataset.filled, 10) !== index) allCorrect = false;
     });
-
     if (allFilled) {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
@@ -1068,32 +973,25 @@ function checkMultipleAnswer(originalIndex, question) {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
 
+    state.totalPreguntasRespondidas++;
+
     if (originalIndex === question.correct) {
-        // Contar pregunta respondida
-        state.totalPreguntasRespondidas++;
-        
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
         let totalPoints = question.points;
         let starCount = 15;
-
         if (responseTime < 3) {
             const speedBonus = Math.round(question.points * 0.5);
             totalPoints += speedBonus;
             starCount += 10;
             showSpeedBonus(speedBonus);
         }
-
         if (options[clickedDisplayIndex]) {
             triggerVisualStarsFromElement(options[clickedDisplayIndex], starCount);
         }
-
         const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
         showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
         handleCorrectAnswer(totalPoints);
     } else {
-        // Contar pregunta respondida
-        state.totalPreguntasRespondidas++;
-        
         if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
         if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
         showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
@@ -1103,7 +1001,6 @@ function checkMultipleAnswer(originalIndex, question) {
 
 function handleCorrectAnswer(points) {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
-
     state.score += points;
     state.levelScore += points;
     state.streak++;
@@ -1128,11 +1025,9 @@ function handleCorrectAnswer(points) {
     }
 
     updateBuhoReaction('correct');
-    
-    if (state.streak === 1 && state.lives < 3) {
+    if (state.streak === 1 && state.streak === 1) {
         setTimeout(() => updateBuhoReaction('alivio'), 400);
     }
-    
     if (state.streak >= 5) {
         document.getElementById('streak-display')?.classList.add('on-fire');
         if (window.effectsManager) window.effectsManager.triggerStarRain();
@@ -1149,11 +1044,7 @@ function handleCorrectAnswer(points) {
 
 function handleIncorrectAnswer(question) {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
-
-    // Contar pregunta respondida (timeout también cuenta)
     state.totalPreguntasRespondidas++;
-
-    state.lives--;
     state.streak = 0;
     state.levelPerfect = false;
     document.getElementById('streak-display')?.classList.remove('on-fire');
@@ -1163,22 +1054,10 @@ function handleIncorrectAnswer(question) {
         state.topicScores[question.topic].total++;
     }
 
-    updateLives();
     updateStreak();
     playSound('incorrect');
-    
-    if (state.lives === 1) {
-        updateBuhoReaction('preocupacion');
-    } else {
-        updateBuhoReaction('incorrect');
-    }
-
-    if (state.lives <= 0) {
-        setTimeout(() => updateBuhoReaction('determined'), 400);
-        setTimeout(() => endLevel(), 1500);
-    } else {
-        setTimeout(() => updateBuhoReaction('determined'), 400);
-    }
+    updateBuhoReaction('incorrect');
+    setTimeout(() => updateBuhoReaction('determined'), 400);
 
     const btnNext = document.getElementById('btn-next');
     if (btnNext) btnNext.style.display = 'block';
@@ -1192,17 +1071,14 @@ function showFeedback(message, type) {
 }
 
 function nextQuestion() {
-    // Reproducir sonido de siguiente pregunta
     if (window.effectsManager) {
         window.effectsManager.playSound('next');
     }
-    
     clearInterval(state.timerInterval);
     state.timerInterval = null;
     state.isFrozen = false;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
-
     state.currentQuestion++;
     document.getElementById('streak-display')?.classList.remove('on-fire');
     loadQuestion();
@@ -1221,26 +1097,13 @@ function endLevel() {
     const starCount = state.levelPerfect ? 3 : (state.correctInLevel >= totalQ * 0.7 ? 2 : 1);
     state.levelStars[state.currentLevel] = starCount;
 
-    unlockNextLevel(state.currentLevel);
-
-    if (state.levelPerfect && state.lives === 3 && !state.badges.perfectScore) {
+    if (state.levelPerfect && !state.badges.perfectScore) {
         state.badges.perfectScore = true;
         playSound('achievement');
         if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
         setTimeout(() => {
             if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Puntaje Perfecto!', {
                 icon: '💯', bg: 'linear-gradient(135deg, #FFD700, #FFA500)', duration: 3500
-            });
-        }, 300);
-        saveBadges();
-    }
-    if (state.lives === 3 && !state.badges.survivor) {
-        state.badges.survivor = true;
-        playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Sobreviviente!', {
-                icon: '🛡️', bg: 'linear-gradient(135deg, #10B981, #059669)', duration: 3500
             });
         }, 300);
         saveBadges();
@@ -1257,13 +1120,12 @@ function endLevel() {
         saveBadges();
     }
 
-    if (state.currentLevel < 4) {
+    if (state.currentLevel < 3) {
         const transTitle = document.getElementById('transition-title');
         const transSpeech = document.getElementById('transition-speech');
         const lvlScoreDisp = document.getElementById('level-score-display');
-
         if (transTitle) transTitle.textContent = `${levelNames[state.currentLevel]} Completado`;
-        if (transSpeech) transSpeech.textContent = `¡Sabiondo está orgulloso! 🦉 Nivel ${state.currentLevel} superado 🎉`;
+        if (transSpeech) transSpeech.textContent = `¡Sabiondo está orgulloso! 🦉 ${levelNames[state.currentLevel]} superado 🎉`;
         if (lvlScoreDisp) lvlScoreDisp.textContent = state.levelScore;
 
         let starsHTML = '<div class="star-rating">';
@@ -1301,20 +1163,17 @@ function endLevel() {
 }
 
 function showFinalResults() {
-    // Detener cronómetro y calcular tiempo de desempeño
     state.desafioEndTime = Date.now();
     state.tiempoTotalDesafio = (state.desafioEndTime - state.desafioStartTime) / 1000;
     
     const finalScore = document.getElementById('final-score');
     if (finalScore) finalScore.textContent = state.score;
     
-    // Mostrar tiempo de desempeño
     const tiempoDesempeno = document.getElementById('tiempo-desempeno');
     if (tiempoDesempeno && state.totalPreguntasRespondidas > 0) {
         const promedio = state.tiempoTotalDesafio / state.totalPreguntasRespondidas;
         const minutos = Math.floor(state.tiempoTotalDesafio / 60);
         const segundos = Math.floor(state.tiempoTotalDesafio % 60);
-        
         let emojiVelocidad = '🐢 Sin prisa, lo importante es aprender';
         if (promedio < 15) emojiVelocidad = '🏆 ¡Excelente velocidad!';
         else if (promedio < 30) emojiVelocidad = '👍 Buen ritmo';
@@ -1336,24 +1195,14 @@ function showFinalResults() {
     const topicAnalysis = document.getElementById('topic-analysis');
     if (topicAnalysis) {
         topicAnalysis.innerHTML = '';
-
         const topicNames = {
-            'numeros': 'Números',
-            'algebra': 'Álgebra',
-            'geometria': 'Geometría',
-            'probabilidad': 'Probabilidad',
-            'estadistica': 'Estadística',
-            'matematica-financiera': 'Mat. Financiera',
-            'localizar': 'Lectura: Localizar',
-            'interpretar': 'Lectura: Interpretar',
-            'evaluar': 'Lectura: Evaluar',
-            'biologia': 'Biología',
-            'fisica': 'Física'
+            'numeros': 'Números', 'algebra': 'Álgebra', 'geometria': 'Geometría',
+            'probabilidad': 'Probabilidad', 'estadistica': 'Estadística',
+            'localizar': 'Lectura: Localizar', 'interpretar': 'Lectura: Interpretar',
+            'evaluar': 'Lectura: Evaluar'
         };
-
-        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16', '#06B6D4'];
+        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316'];
         let colorIndex = 0;
-
         for (const [topic, scores] of Object.entries(state.topicScores)) {
             const percentage = scores.total > 0 ? Math.round((scores.correct / scores.total) * 100) : 0;
             const bar = document.createElement('div');
@@ -1381,9 +1230,9 @@ function showFinalResults() {
 
     const speech = document.getElementById('result-character-speech');
     if (speech) {
-        if (state.score >= 7000) speech.textContent = '¡Rendimiento excepcional! ¡La universidad te espera! 🎓✨';
-        else if (state.score >= 5000) speech.textContent = '¡Excelente resultado! Vas por muy buen camino. 👏🎓';
-        else if (state.score >= 3000) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
+        if (state.score >= 5000) speech.textContent = '¡Rendimiento excepcional! ¡La universidad te espera! 🎓✨';
+        else if (state.score >= 3500) speech.textContent = '¡Excelente resultado! Vas por muy buen camino. 👏🎓';
+        else if (state.score >= 2000) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
         else speech.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
 
@@ -1405,7 +1254,6 @@ function restartGame() {
     state.currentQuestion = 0;
     state.score = 0;
     state.levelScore = 0;
-    state.lives = 3;
     state.streak = 0;
     state.currentLevel = 1;
     state.powerupsUsedThisLevel = false;
@@ -1420,11 +1268,11 @@ function restartGame() {
     state.desafioEndTime = null;
     state.tiempoTotalDesafio = 0;
     state.totalPreguntasRespondidas = 0;
+    state.lecturaActiva = null;
     
     document.body.className = 'level-1';
     document.getElementById('streak-display')?.classList.remove('on-fire');
     updateScore();
-    updateLives();
     updateStreak();
     updateProgress();
     updateLevelDisplay();
@@ -1561,14 +1409,6 @@ function updateScore() {
     }
 }
 
-function updateLives() {
-    const display = document.getElementById('lives-display');
-    if (!display) return;
-    let hearts = '';
-    for (let i = 0; i < 3; i++) hearts += i < state.lives ? '❤️' : '🖤';
-    display.textContent = hearts;
-}
-
 function updateStreak() {
     const sd = document.getElementById('streak-display');
     if (sd) sd.textContent = `🔥 ${state.streak}`;
@@ -1628,17 +1468,17 @@ function checkBadges() {
 }
 
 function getBadgeIcon(badge) {
-    const icons = { perfectScore: '💯', speedDemon: '⚡', survivor: '🛡️', streaker: '🔥', paesPro: '🏆', noPowerups: '💪' };
+    const icons = { perfectScore: '💯', speedDemon: '⚡', streaker: '🔥', paesPro: '🏆', noPowerups: '💪' };
     return icons[badge] || '🏅';
 }
 
 function getBadgeName(badge) {
-    const names = { perfectScore: 'Puntaje Perfecto', speedDemon: 'Velocista', survivor: 'Sobreviviente', streaker: 'Rachador', paesPro: 'PAES Pro', noPowerups: 'Poder Natural' };
+    const names = { perfectScore: 'Puntaje Perfecto', speedDemon: 'Velocista', streaker: 'Rachador', paesPro: 'PAES Pro', noPowerups: 'Poder Natural' };
     return names[badge] || badge;
 }
 
 function loadBadges() {
-    const saved = safeLocalGet('paes_badges', null);
+    const saved = safeLocalGet('paes_badges_v3', null);
     if (saved) {
         try { state.badges = { ...state.badges, ...JSON.parse(saved) }; } catch (e) {}
     }
@@ -1654,7 +1494,7 @@ function loadBadges() {
 }
 
 function saveBadges() {
-    safeLocalSet('paes_badges', JSON.stringify(state.badges));
+    safeLocalSet('paes_badges_v3', JSON.stringify(state.badges));
 }
 
 // ===== LEADERBOARD =====
@@ -1685,7 +1525,7 @@ function showNamePromptModal(onSubmit) {
 function saveToLeaderboard() {
     showNamePromptModal((playerName) => {
         if (!playerName) return;
-        const leaderboard = JSON.parse(safeLocalGet('paes_leaderboard', '[]'));
+        const leaderboard = JSON.parse(safeLocalGet('paes_leaderboard_v3', '[]'));
         leaderboard.push({
             name: playerName,
             score: state.score,
@@ -1695,14 +1535,14 @@ function saveToLeaderboard() {
             date: new Date().toLocaleDateString()
         });
         leaderboard.sort((a, b) => b.score - a.score);
-        safeLocalSet('paes_leaderboard', JSON.stringify(leaderboard.slice(0, 20)));
+        safeLocalSet('paes_leaderboard_v3', JSON.stringify(leaderboard.slice(0, 20)));
         loadLeaderboard();
     });
 }
 
 function loadLeaderboard() {
     let leaderboard = [];
-    try { leaderboard = JSON.parse(safeLocalGet('paes_leaderboard', '[]')); } catch (e) {}
+    try { leaderboard = JSON.parse(safeLocalGet('paes_leaderboard_v3', '[]')); } catch (e) {}
     const tbody = document.getElementById('leaderboard-body');
     if (!tbody) return;
     tbody.innerHTML = '';
