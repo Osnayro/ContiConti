@@ -1,15 +1,13 @@
 
-
 /**
  * ============================================================
- * PAES Challenge — Service Worker v3.0.0
+ * PAES Challenge — Service Worker v4.0.0
  * Cache y funcionalidad offline para PWA
  * ============================================================
  */
 
-const CACHE_NAME = 'paes-challenge-v3.0.0';
+const CACHE_NAME = 'paes-challenge-v4.0.0';
 
-// Archivos a cachear para funcionamiento offline
 const ASSETS = [
     './',
     './index.html',
@@ -18,13 +16,13 @@ const ASSETS = [
     './banco-lectora.js',
     './banco-matematica1.js',
     './banco-matematica2.js',
+    './banco-ciencias.js',
     './app.js',
     './buho-svg.js',
     './buho.PNG',
     './buho-uniforme.PNG',
     './icono-app.PNG',
     './manifest.json',
-    // Sonidos
     './sounds/splash.mp3',
     './sounds/correct.mp3',
     './sounds/incorrect.mp3',
@@ -36,12 +34,8 @@ const ASSETS = [
     './sounds/next.mp3'
 ];
 
-// ================================================================
-// EVENTO: INSTALACIÓN
-// ================================================================
 self.addEventListener('install', (event) => {
-    console.log('🦉 PAES Challenge v3.0.0 - Instalando Service Worker...');
-    
+    console.log('🦉 PAES Challenge v4.0.0 - Instalando...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -58,18 +52,13 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// ================================================================
-// EVENTO: ACTIVACIÓN
-// ================================================================
 self.addEventListener('activate', (event) => {
-    console.log('🦉 PAES Challenge v3.0.0 - Activando Service Worker...');
-    
+    console.log('🦉 PAES Challenge v4.0.0 - Activando...');
     event.waitUntil(
         caches.keys()
             .then((keys) => {
                 return Promise.all(
-                    keys
-                        .filter((key) => key !== CACHE_NAME)
+                    keys.filter((key) => key !== CACHE_NAME)
                         .map((key) => {
                             console.log('🗑️ Eliminando caché antigua:', key);
                             return caches.delete(key);
@@ -83,63 +72,34 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ================================================================
-// EVENTO: FETCH
-// Estrategia: Cache First, luego Network
-// ================================================================
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
-    
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                
+                if (cachedResponse) return cachedResponse;
                 return fetch(event.request)
                     .then((networkResponse) => {
-                        if (!networkResponse || networkResponse.status !== 200) {
-                            return networkResponse;
-                        }
-                        
+                        if (!networkResponse || networkResponse.status !== 200) return networkResponse;
                         const responseClone = networkResponse.clone();
                         caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, responseClone);
-                            })
+                            .then((cache) => cache.put(event.request, responseClone))
                             .catch(() => {});
-                        
                         return networkResponse;
                     })
                     .catch(() => {
-                        if (event.request.mode === 'navigate') {
-                            return caches.match('./index.html');
-                        }
-                        
-                        return new Response('Recurso no disponible offline', {
-                            status: 503,
-                            statusText: 'Service Unavailable'
-                        });
+                        if (event.request.mode === 'navigate') return caches.match('./index.html');
+                        return new Response('Recurso no disponible offline', { status: 503, statusText: 'Service Unavailable' });
                     });
             })
     );
 });
 
-// ================================================================
-// EVENTO: MENSAJE
-// ================================================================
 self.addEventListener('message', (event) => {
-    if (event.data === 'skipWaiting') {
-        self.skipWaiting();
-    }
-    
+    if (event.data === 'skipWaiting') self.skipWaiting();
     if (event.data === 'clearCache') {
-        caches.delete(CACHE_NAME)
-            .then(() => {
-                console.log('🗑️ Caché eliminada por solicitud del usuario');
-            });
+        caches.delete(CACHE_NAME).then(() => console.log('🗑️ Caché eliminada'));
     }
 });
 
-console.log('🦉 PAES Challenge Service Worker v3.0.0 registrado');
+console.log('🦉 PAES Challenge Service Worker v4.0.0 registrado');
