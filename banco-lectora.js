@@ -1,8 +1,7 @@
-
 /**
  * ============================================================
- * PAES CHALLENGE — BANCO DE COMPETENCIA LECTORA v2.0.0
- * 10 Lecturas completas + preguntas
+ * PAES CHALLENGE — BANCO DE COMPETENCIA LECTORA v2.0.0 (AMPLIADO)
+ * 10 Lecturas completas + 10 preguntas por lectura (100 preguntas total)
  * Fuentes: DEMRE - PAES 2025-2026-2027
  * ============================================================
  */
@@ -11,7 +10,7 @@ const paesTexts = {
   discurso_nobel: {
     title: "Discurso de recepción del Premio Nobel de Literatura",
     author: "Wisława Szymborska (1996)",
-    body: "Se dice que en un discurso lo más difícil es siempre la primera frase... Pues ya la dije... Pero presiento que las que siguen van a ser igualmente difíciles, la tercera, la sexta, la décima, hasta la última, ya que debo hablar sobre poesía. Muy raras veces me he expresado acerca de este tema, casi nunca, y siempre con la convicción de que no lo hago muy bien. Por eso mi discurso no va a ser demasiado largo. Toda imperfección resulta más fácil de aguantar si se sirve en pequeñas dosis.\n\nEl poeta contemporáneo es escéptico y desconfía incluso —o más bien principalmente— de sí mismo. Con desgano confiesa públicamente que es poeta —como si se tratara de algo vergonzoso—. En estos tiempos bulliciosos es más fácil que admitamos los vicios propios, con tal de causar efectos fuertes; mucho más difícil es reconocer las virtudes, ya que están escondidas más profundamente, y hasta uno mismo no cree tanto en ellas. En las encuestas o en los encuentros con amigos ocasionales, cuando el poeta se ve forzado a definir su profesión, acude al término genérico 'escritor' o al de alguna otra profesión que adicionalmente ejerza. El empleado público o los eventuales compañeros de viaje reciben con cierta perplejidad e inquietud la noticia de que están tratando con un poeta.\n\nNo existen profesores de poesía, lo que haría suponer que esta actividad requiere de estudios especializados, exámenes presentados en fechas precisas, disertaciones teóricas rematadas con bibliografía y notas y, finalmente, los diplomas recibidos con solemnidad. Recordemos que justamente esta fue la razón por la que condenaron al destierro a Josef Brodsky, orgullo de la poesía rusa, quien más tarde fue galardonado con el Premio Nobel. A Brodsky se le clasificó como 'parásito', por no contar con un certificado oficial que le permitiera ser poeta.\n\nHay algo que resulta muy característico. Continuamente se filman películas biográficas sobre grandes científicos y artistas. La tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo que condujo a importantes descubrimientos científicos o a la creación de grandes obras de arte. Se puede, con aceptables resultados, mostrar el trabajo de algunos científicos: laboratorios, instrumentos diversos y aparatos puestos en marcha logran por unos momentos mantener la atención de los espectadores. Las películas sobre los compositores se llenan con su música. Todo sigue siendo muy ingenuo y no dice nada sobre el extraño estado de ánimo que se conoce comúnmente como inspiración, pero por lo menos hay algo para ver y oír. El peor de los casos es el de los poetas. Su trabajo resulta irremediablemente poco fotogénico.\n\nHe mencionado la inspiración. A la pregunta de qué cosa es, suponiendo que sea algo, los poetas contemporáneos responden de modo evasivo. Y no porque nunca hayan sentido los beneficios de este impulso interior, más bien se debe a otra causa: no es fácil explicar a los demás algo que ni siquiera se comprende bien. Yo misma he evadido el asunto cuando me lo han preguntado. Y contesto lo siguiente: la inspiración no es privilegio exclusivo de los poetas ni de los artistas en general. Hay, hubo, habrá siempre un número de personas en quienes de vez en cuando se despierta la inspiración. A este grupo pertenecen los que escogen su trabajo y lo cumplen con amor e imaginación. Hay médicos así, hay maestros, hay también jardineros y centenares de oficios más. Su trabajo puede ser una aventura sin fin, a condición de que sepan encontrar en él nuevos desafíos cada vez. Sin importar los esfuerzos y fracasos, su inquietud no desfallece. De cada problema resuelto surge un enjambre de nuevas preguntas. La inspiración, cualquier cosa que sea, nace de un perpetuo 'no lo sé'.\n\nSi Isaac Newton no se hubiera dicho 'no sé', las manzanas en su jardín podrían seguir cayendo como granizo, y él, en el mejor de los casos, solamente se inclinaría para recogerlas y comérselas. Si mi compatriota Marie Sklodowska-Curie no se hubiera dicho 'no sé', probablemente se habría quedado como maestra de química en un colegio para señoritas de buena familia y en este trabajo, por otra parte muy decente, se le hubiera ido la vida. Pero siguió repitiéndose 'no sé' y justo estas palabras la trajeron dos veces a Estocolmo, donde se otorgan los premios Nobel a personas de espíritu inquieto y en búsqueda constante.\n\nTambién el poeta, si es un verdadero poeta, tiene que repetirse perpetuamente 'no sé'. Con cada verso intenta responder, pero en el momento en que pone el punto final, le asaltan las dudas y empieza a advertir que su respuesta es temporal y en ningún caso satisfactoria. Entonces prueba otra vez y otra vez, para que a las sucesivas muestras de su insatisfacción consigo mismo los historiadores de la literatura las sujeten con un clip enorme para denominarlas 'La Obra'."
+    body: "Se dice que en un discurso lo más difícil es siempre la primera frase... Pues ya la dije... Pero presiento que las que siguen van a ser igualmente difíciles, la tercera, la sexta, la décica, hasta la última, ya que debo hablar sobre poesía. Muy raras veces me he expresado acerca de este tema, casi nunca, y siempre con la convicción de que no lo hago muy bien. Por eso mi discurso no va a ser demasiado largo. Toda imperfección resulta más fácil de aguantar si se sirve en pequeñas dosis.\n\nEl poeta contemporáneo es escéptico y desconfía incluso —o más bien principalmente— de sí mismo. Con desgano confiesa públicamente que es poeta —como si se tratara de algo vergonzoso—. En estos tiempos bulliciosos es más fácil que admitamos los vicios propios, con tal de causar efectos fuertes; mucho más difícil es reconocer las virtutes, ya que están escondidas más profundamente, y hasta uno mismo no cree tanto en ellas. En las encuestas o en los encuentros con amigos ocasionales, cuando el poeta se ve forzado a definir su profesión, acude al término genérico 'escritor' o al de alguna otra profesión que adicionalmente ejerza. El empleado público o los eventuales compañeros de viaje reciben con cierta perplejidad e inquietud la noticia de que están tratando con un poeta.\n\nNo existen profesores de poesía, lo que haría suponer que esta actividad requiere de estudios especializados, exámenes presentados en fechas precisas, disertaciones teóricas rematadas con bibliografía y notas y, finalmente, los diplomas recibidos con solemnidad. Recordemos que justamente esta fue la razón por la que condenaron al destierro a Josef Brodsky, orgullo de la poesía rusa, quien más tarde fue galardonado con el Premio Nobel. A Brodsky se le clasificó como 'parásito', por no contar con un certificado oficial que le permitiera ser poeta.\n\nHay algo que resulta muy característico. Continuamente se filman películas biográficas sobre grandes científicos y artistas. La tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo que condujo a importantes descubrimientos científicos o a la creación de grandes obras de arte. Se puede, con aceptables resultados, mostrar el trabajo de algunos científicos: laboratorios, instrumentos diversos y aparatos puestos en marcha logran por unos momentos mantener la atención de los espectadores. Las películas sobre los compositores se llenan con su música. Todo sigue siendo muy ingenuo y no dice nada sobre el extraño estado de ánimo que se conoce comúnmente como inspiración, pero por lo menos hay algo para ver y oír. El peor de los casos es el de los poetas. Su trabajo resulta irremediablemente poco fotogénico.\n\nHe mencionado la inspiración. A la pregunta de qué cosa es, suponiendo que sea algo, los poetas contemporáneos responden de modo evasivo. Y no porque nunca hayan sentido los beneficios de este impulso interior, más bien se debe a otra causa: no es fácil explicar a los demás algo que ni siquiera se comprende bien. Yo misma he evadido el asunto cuando me lo han preguntado. Y contesto lo siguiente: la inspiración no es privilegio exclusivo de los poetas ni de los artistas en general. Hay, hubo, habrá siempre un número de personas en quienes de vez en cuando se despierta la inspiración. A este grupo pertenecen los que escogen su trabajo y lo cumplen con amor e imaginación. Hay médicos así, hay maestros, hay también jardineros y centenares de oficios más. Su trabajo puede ser una aventura sin fin, a condición de que sepan encontrar en él nuevos desafíos cada vez. Sin importar los esfuerzos y fracasos, su inquietud no desfallece. De cada problema resuelto surge un enjambre de nuevas preguntas. La inspiración, cualquier cosa que sea, nace de un perpetuo 'no lo sé'.\n\nSi Isaac Newton no se hubiera dicho 'no sé', las manzanas en su jardín podrían seguir cayendo como granizo, y él, en el mejor de los casos, solamente se inclinaría para recogerlas y comérselas. Si mi compatriota Marie Sklodowska-Curie no se hubiera dicho 'no sé', probablemente se habría quedado como maestra de química en un colegio para señoritas de buena familia y en este trabajo, por otra parte muy decente, se le hubiera ido la vida. Pero siguió repitiéndose 'no sé' y justo estas palabras la trajeron dos veces a Estocolmo, donde se otorgan los premios Nobel a personas de espíritu inquieto y en búsqueda constante.\n\nTambién el poeta, si es un verdadero poeta, tiene que repetirse perpetuamente 'no sé'. Con cada verso intenta responder, pero en el momento en que pone el punto final, le asaltan las dudas y empieza a advertir que su respuesta es temporal y en ningún caso satisfactoria. Entonces prueba otra vez y otra vez, para que a las sucesivas muestras de su insatisfacción consigo mismo los historiadores de la literatura las sujeten con un clip enorme para denominarlas 'La Obra'."
   },
   oasis_dicha: {
     title: "Un oasis de dicha",
@@ -56,17 +55,13 @@ const paesTexts = {
   parmenides: {
     title: "Parménides",
     author: "César Aira (2018)",
-    body: "Esta es la historia triste y fatal del escritor Perinola, que vivió a comienzos del siglo quinto antes de Cristo en una colonia griega de la costa italiana del sur. Cuando empezó la historia, aunque ya estaba empezando a dejar de ser joven, era un escritor joven, una 'promesa' como suele decirse; no había gran cosa en la que basar la promesa, pero con poco alcanza, y hasta con nada, si lo que se promete es algo tan inverificable como la poesía. En realidad, no había escrito casi nada, y lo habían leído menos, pero eso no significaba que la consideración en que lo tenía un puñado de entendidos o supuestos entendidos en poesía careciera de todo fundamento.\n\nPor minúsculo que fuera este círculo de entendidos, bastó para poner en marcha la historia, pues tuvo que ser alguno de sus miembros el que hiciera llegar el nombre de Perinola a un prominente jerarca, cuando este necesitaba los servicios de un escritor, o amanuense, o secretario. Este personaje, que se llamaba Parménides, debió de confiar en su informante, porque lo mandó llamar y le ofreció sin más el trabajo, que Perinola, tras una breve vacilación más formal que real, aceptó.\n\nEl primer encuentro, en el que se conocieron, tuvo lugar en los augustos salones de la Judicatura. Perinola conocía el edificio de afuera, era parte del paisaje que veía cotidianamente, pero nunca había traspuesto sus pórticos encolumnados. Sin embargo, alguna elucubración subliminal debía de haber hecho, pues lo que encontró al entrar lo decepcionó, y la decepción no podía obedecer más que a una expectativa previa. Había mucho mármol, mucho bronce, mucho espacio, pero todo de mal gusto y hasta mezquino.\n\nComo le había dicho el esclavo, Parménides lo esperaba. No tuvo que hacer antesala. Era un hombre joven, no debía de llegar a los cuarenta años (Perinola tenía veintinueve), alto y bastante majestuoso, apuesto, con una gran nariz. Algo en el aire indicaba que realmente lo estaba esperando, y hasta con cierta ansiedad.\n\nLo primero que le dijo fue que él no entendía nada de poesía, ni estaba al tanto de quienes la practicaban en la actualidad, motivo por el cual había mandado hacer una somera investigación de la que surgieron dos nombres, que oía por primera vez, tanto uno como el otro. Uno de esos nombres era el de Perinola... Con lo cual quedaba explicado este encuentro.\n\nActo seguido hubo un pequeño exceso suplementario de honestidad. Sin que se lo preguntara, Parménides le dijo que el otro nombre que le habían dado era el de Zenón. Y había mandado a llamar primero a Zenón. Aclaró que lo había hecho solo porque era el primero en la lista, y lo era por puro azar. Repitió que los dos nombres le eran desconocidos, y tanto le daba uno como el otro. Pero a Zenón no lo habían podido encontrar. En efecto, Perinola sabía que su colega estaba de viaje.\n\nEsta vez su corazón fue menos generoso con la disculpa. De pronto la ignorancia de Parménides, y la de los informantes en los que confiaba, le mostraba su cara difamatoria. Ponerlo a él en la misma lista, de igual a igual, con un pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén. Siendo así, lo sorprendente era que incluyeran el nombre de Perinola."
+    body: "Esta es la historia triste y fatal del escritor Perinola, que vivió a comienzos del siglo quinto antes de Cristo en una colonia griega de la costa italiana del sur. Cuando empezó la historia, aunque ya estaba empezando a dejar de ser joven, era un escritor joven, una 'promesa' como suele decirse; no había gran cosa en la que basar la promesa, pero con poco alcanza, y hasta con nada, si lo que se promete es algo tan inverificable como la poesía. En realidad, no había escrito casi nada, y lo habían leído menos, pero eso no significaba que la consideración en que lo tenía un puñado de entendidos o supuestos entendidos en poesía careciera de todo fundamento.\n\nPor minúsculo que fuera este círculo de entendidos, bastó para poner en marcha la historia, pues tuvo que ser alguno de sus miembros el que hiciera llegar el nombre de Perinola a un prominente jerarca, cuando este necesitaba los servicios de un escritor, o amanuense, o secretario. Este personaje, que se llamaba Parménides, debió de confiar en su informante, porque lo mandó llamar y le ofreció sin más el trabajo, que Perinola, tras una breve vacilación más formal que real, aceptó.\n\nEl primer encuentro, en el que se conocieron, tuvo lugar en los augustos salones de la Judicatura. Perinola conocía el edificio de afuera, era parte del paisaje que veía cotidianamente, pero nunca había traspuesto sus pórticos encolumnados. Sin embargo, alguna elucubración subliminal debía de haber hecho, pues lo que encontró al entrar lo decepcionó, y la decepción no podía obedecer más que a una expectativa previa. Había mucho mármol, mucho bronce, mucho espacio, pero todo de mal gusto y hasta mezquino.\n\nComo le había dicho el esclavo, Parménides lo esperaba. No tuvo que hacer antesala. Era un hombre joven, no debía de llegar a los cuarenta años (Perinola tenía veintinueve), alto y bastante majestuoso, apuesto, con una gran nariz. Algo en el aire indicaba que realmente lo estaba esperando, y hasta con cierta ansiedad.\n\nLo primero que le dijo fue que él no entendía nada de poesía, ni estaba al tanto de quienes la practicaban en la actualidad, motivo por el cual había mandado hacer una somera investigación de la que surgieron dos nombres, que oía por primera vez, tanto uno como el otro. Uno de esos nombres era el de Perinola... Con lo cual quedaba explicado este encuentro.\n\nActo visto hubo un pequeño exceso suplementario de honestidad. Sin que se lo preguntara, Parménides le dijo que el otro nombre que le habían dado era el de Zenón. Y había mandado a llamar primero a Zenón. Aclaró que lo había hecho solo porque era el primero en la lista, y lo era por puro azar. Repitió que los dos nombres le eran desconocidos, y tanto le daba uno como el otro. Pero a Zenón no lo habían podido encontrar. En efecto, Perinola sabía que su colega estaba de viaje.\n\nEsta vez su corazón fue menos generoso con la disculpa. De pronto la ignorancia de Parménides, y la de los informantes en los que confiaba, le mostraba su cara difamatoria. Ponerlo a él en la misma lista, de igual a igual, con un pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén. Siendo así, lo sorprendente era que incluyeran el nombre de Perinola."
   }
 };
 
-
-// ============================================================================
-// II. BANCO DE PREGUNTAS
-// ============================================================================
 const paesLenguajeQuestions = [
   // ================================================================
-  // TEXTO 1: DISCURSO NOBEL (8 preguntas)
+  // TEXTO 1: DISCURSO NOBEL (10 preguntas)
   // ================================================================
   {
     id: 1001, textKey: 'discurso_nobel', topic: 'interpretar', type: 'multiple',
@@ -115,7 +110,7 @@ const paesLenguajeQuestions = [
     question: '¿Cuál es la crítica de la emisora a las películas biográficas sobre artistas y científicos?',
     options: [
       'Que excluyen los momentos clave de sus trayectorias vitales.',
-      'Que omiten el origen de sus procesos creativos e intelectuales.',
+      'Que omiten el origen de sus procesoc creativos e intelectuales.',
       'Que desestiman sus méritos en la búsqueda del reconocimiento.',
       'Que banalizan sus experiencias mediante la música y el dramatismo.'
     ],
@@ -180,9 +175,37 @@ const paesLenguajeQuestions = [
     hint: 'Busca en el texto la mención explícita sobre la meta de los directores de cine más ambiciosos.',
     points: 100
   },
+  {
+    id: 10081, textKey: 'discurso_nobel', topic: 'interpretar', type: 'multiple',
+    question: 'A partir de lo expresado en el último párrafo, ¿qué representa "La Obra" para un verdadero poeta?',
+    options: [
+      'El conjunto final y definitivo de sus certezas intelectuales.',
+      'La recopilación de sus constantes intentos y fallas temporales.',
+      'El reconocimiento oficial otorgado por los historiadores de la literatura.',
+      'La superación definitiva de sus dudas iniciales sobre la inspiración.'
+    ],
+    correct: 1,
+    explanation: 'La autora señala que el poeta experimenta una insatisfacción constante y que las respuestas en sus versos son temporales; "La Obra" es la acumulación de estas muestras sujetas por un clip.',
+    hint: 'Revisa la irónica metáfora final sobre el clip enorme y la insatisfacción del autor.',
+    points: 100
+  },
+  {
+    id: 10082, textKey: 'discurso_nobel', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué tienen en común un médico, un maestro y un jardinero según el planteamiento de la emisora?',
+    options: [
+      'Que pertenecen a profesiones subestimadas por la sociedad contemporánea.',
+      'Que pueden experimentar la inspiración si abordan su oficio con amor e imaginación.',
+      'Que requieren un certificado oficial que valide la excelencia de sus tareas.',
+      'Que basan su desarrollo profesional en la aplicación estricta de manuales científicos.'
+    ],
+    correct: 1,
+    explanation: 'La autora enfatiza que la inspiración no es exclusiva de artistas, sino de cualquiera que escoja su trabajo y lo cumpla con amor, imaginación y nuevos desafíos.',
+    hint: 'Rastrea los ejemplos de oficios que menciona el quinto párrafo y la definición extendida de la inspiración.',
+    points: 100
+  },
 
   // ================================================================
-  // TEXTO 2: UN OASIS DE DICHA (8 preguntas)
+  // TEXTO 2: UN OASIS DE DICHA (10 preguntas)
   // ================================================================
   {
     id: 1009, textKey: 'oasis_dicha', topic: 'interpretar', type: 'multiple',
@@ -296,9 +319,37 @@ const paesLenguajeQuestions = [
     hint: 'Determina qué connota el hecho de que una lista de nombres sea elegida de forma aleatoria.',
     points: 100
   },
+  {
+    id: 10161, textKey: 'oasis_dicha', topic: 'interpretar', type: 'multiple',
+    question: 'A partir del análisis cultural expuesto en el cuarto párrafo, ¿cuál es la relación entre la "seriedad" y el "progreso"?',
+    options: [
+      'La seriedad es la única fuerza capaz de gatillar la innovación científica.',
+      'La seriedad permite subsistir, pero el progreso se sustenta en el juego y la exploración.',
+      'El progreso anula la necesidad de orden y esfuerzo dentro de las sociedades.',
+      'Tanto la seriedad como el progreso operan de manera independiente en el arte.'
+    ],
+    correct: 1,
+    explanation: 'El texto aclara que cualidades ligadas a la seriedad sirven para subsistir en un territorio, pero los factores de invención que sustentan la ciencia y los mitos provienen del juego y la curiosidad.',
+    hint: 'Busca la distinción explícita que hace la autora entre las herramientas de preservación social y las de avance evolutivo.',
+    points: 100
+  },
+  {
+    id: 10162, textKey: 'oasis_dicha', topic: 'evaluar', type: 'multiple',
+    question: '¿Qué tesis sintetiza adecuadamente la postura existencial del "viajero jugador" descrita al final del texto?',
+    options: [
+      'La planificación exhaustiva maximiza el disfrute lúdico de una travesía.',
+      'El viaje verdadero es una actividad seria que persigue recolectar hitos estéticos.',
+      'El valor de viajar radica en la apertura al instante y en la renovación personal.',
+      'Los imperativos comerciales del turismo moderno garantizan el apetito de vivir.'
+    ],
+    correct: 2,
+    explanation: 'El viajero jugador evita planificarlo todo, se mueve según su deseo del instante y busca una oportunidad para renovarse a sí mismo, a diferencia del turista serio.',
+    hint: 'Contrapón la idea de "coleccionar recuerdos cual mariposas" con la noción de cambio y aventura libre.',
+    points: 150
+  },
 
   // ================================================================
-  // TEXTO 3: PSICOLOGÍA (7 preguntas)
+  // TEXTO 3: PSICOLOGÍA (10 preguntas)
   // ================================================================
   {
     id: 1017, textKey: 'psicologia', topic: 'interpretar', type: 'multiple',
@@ -398,9 +449,51 @@ const paesLenguajeQuestions = [
     hint: 'Identifica el propósito valorativo subyacente de desmitificar la reducción de una ciencia a una sola de sus facetas.',
     points: 150
   },
+  {
+    id: 10231, textKey: 'psicologia', topic: 'localizar', type: 'multiple',
+    question: 'Según el texto, ¿qué factores propiciaron la denominada "crisis de identidad" académica de la psicología a fines del siglo XX?',
+    options: [
+      'La disminución de estudiantes interesados en el área de la psicoterapia.',
+      'La falta de regulaciones éticas por parte de la Asociación Americana de Psicología.',
+      'El surgimiento de tecnologías de investigación, nuevos campos de indagación y enfoques.',
+      'La separación radical entre los enfoques biológicos y las ciencias exactas.'
+    ],
+    correct: 2,
+    explanation: 'El segundo párrafo estipula que los avances tecnológicos, los nuevos campos y enfoques dieron lugar a una mayor especialización y colaboración, gatillando dicha redefinición.',
+    hint: 'Revisa las primeras líneas del segundo párrafo del texto.',
+    points: 100
+  },
+  {
+    id: 10232, textKey: 'psicologia', topic: 'localizar', type: 'multiple',
+    question: '¿Qué subcampo de la psicología se enfoca específicamente en estudiar los patrones universales y las variaciones individuales del crecimiento humano desde el periodo prenatal hasta la vejez?',
+    options: [
+      'La psicología experimental.',
+      'La psicología de la personalidad.',
+      'La psicología del desarrollo.',
+      'La neurociencia.'
+    ],
+    correct: 2,
+    explanation: 'El texto detalla explícitamente que los psicólogos del desarrollo estudian el crecimiento humano mental y físico a lo largo de todo el ciclo vital.',
+    hint: 'Busca la subdisciplina que hace alusión explícita a las fases del desarrollo cronológico humano.',
+    points: 100
+  },
+  {
+    id: 10233, textKey: 'psicologia', topic: 'interpretar', type: 'multiple',
+    question: '¿Cuál es el propósito investigativo fundamental de los genetistas conductuales?',
+    options: [
+      'Determinar el efecto de los medicamentos psicoactivos en el lóbulo frontal.',
+      'Evaluar el impacto de la herencia genética en los rasgos y conductas de los individuos.',
+      'Diseñar terapias clínicas basadas en el condicionamiento operante elemental.',
+      'Analizar los procesos básicos de la memoria a largo plazo en contextos de aislamiento.'
+    ],
+    correct: 1,
+    explanation: 'Al final de la sección de Neurociencia se especifica que "Los genetistas conductuales investigan el impacto de la herencia en los rasgos y conductas normales y anormales".',
+    hint: 'Busca la última frase del párrafo asignado a la neurociencia y fisiología.',
+    points: 100
+  },
 
   // ================================================================
-  // TEXTO 4: ARTES ESCÉNICAS (9 preguntas)
+  // TEXTO 4: ARTES ESCÉNICAS (10 preguntas)
   // ================================================================
   {
     id: 1024, textKey: 'artes_escenicas', topic: 'localizar', type: 'multiple',
@@ -523,9 +616,23 @@ const paesLenguajeQuestions = [
     hint: 'Identifica la definición genérica e integradora con la que cierra la argumentación.',
     points: 100
   },
+  {
+    id: 10321, textKey: 'artes_escenicas', topic: 'interpretar', type: 'multiple',
+    question: 'De acuerdo al primer párrafo, ¿cómo evolucionaron los lenguajes artísticos desde sus orígenes?',
+    options: [
+      'Nacieron en academias laicas y progresivamente adquirieron una dimensión de rito mágico.',
+      'Se derivaron de acciones rituales religiosas y con el tiempo ganaron una dimensión puramente cultural.',
+      'Surgieron para decorar edificios civiles y luego se adaptaron a los templos medievales.',
+      'Comenzaron como técnicas de floricultura y cambiaron hacia la gestión económica moderna.'
+    ],
+    correct: 1,
+    explanation: 'El texto detalla que los lenguajes artísticos se derivaron originalmente de acciones rituales de carácter mágico en religiones primitivas, perdiendo luego su cariz puramente religioso.',
+    hint: 'Busca la explicación genética del arte en las primeras líneas del texto.',
+    points: 100
+  },
 
   // ================================================================
-  // TEXTO 5: SEGURIDAD SOCIAL (8 preguntas)
+  // TEXTO 5: SEGURIDAD SOCIAL (10 preguntas)
   // ================================================================
   {
     id: 1033, textKey: 'seguridad_social', topic: 'localizar', type: 'multiple',
@@ -637,6 +744,29 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Se insta al trabajador a auditar que el empleador cumpla con registrar sus cotizaciones al día.',
     hint: 'Determina qué acción proactiva debe ejecutar el empleado para evitar perder sus coberturas.',
+    points: 100
+  },
+  {
+    id: 10401, textKey: 'seguridad_social', topic: 'localizar', type: 'multiple',
+    question: '¿Cuál es el plazo legal máximo para escriturar un contrato de trabajo regular desde el inicio de la relación laboral?',
+    options: ['5 días.', '10 días.', '15 días.', '30 días.'],
+    correct: 2,
+    explanation: 'El texto indica taxativamente que el contrato debe estar escrito y tramitado dentro de los primeros 15 días de iniciada la relación.',
+    hint: 'Busca el número de días exacto estipulado para contratos de carácter general en la Estación 1.',
+    points: 100
+  },
+  {
+    id: 10402, textKey: 'seguridad_social', topic: 'localizar', type: 'multiple',
+    question: '¿Bajo qué condiciones específicas está estrictamente prohibido aplicar la causal de despido por necesidades de la empresa?',
+    options: [
+      'Cuando el empleado posea ahorros voluntarios en su cuenta corriente individual.',
+      'Cuando el trabajador tenga una licencia médica vigente o goce de fuero laboral.',
+      'Cuando la empresa registre pérdidas económicas demostrables en la AFC.',
+      'Cuando el contrato sea por una obra o faena inferior a los treinta días.'
+    ],
+    correct: 1,
+    explanation: 'La ley prohíbe explícitamente la aplicación de esta causal en trabajadores con licencia médica vigente o fuero laboral.',
+    hint: 'Revisa la última frase del documento técnico.',
     points: 100
   },
 
@@ -773,7 +903,7 @@ const paesLenguajeQuestions = [
     id: 1050, textKey: 'formacion_civica', topic: 'localizar', type: 'multiple',
     question: 'Según el texto, ¿cuál es el fundamento de los Derechos Humanos?',
     options: [
-      'El reconocimiento del Estado.',
+      'El recognition del Estado.',
       'El desarrollo integral del individuo.',
       'La dignidad intrínseca de la persona.',
       'La adquisición del lenguaje.'
@@ -924,7 +1054,7 @@ const paesLenguajeQuestions = [
   },
 
   // ================================================================
-  // TEXTO 8: KIOSCOS SALUDABLES (6 preguntas)
+  // TEXTO 8: KIOSCOS SALUDABLES (10 preguntas)
   // ================================================================
   {
     id: 1061, textKey: 'kioscos_saludables', topic: 'interpretar', type: 'multiple',
@@ -970,16 +1100,16 @@ const paesLenguajeQuestions = [
   },
   {
     id: 1064, textKey: 'kioscos_saludables', topic: 'interpretar', type: 'multiple',
-    question: '¿Cuál es el aporte de la Tabla 1 al resto de la lectura?',
+    question: '¿Cuál de las siguientes afirmaciones explica el objetivo del etiquetado frontal de advertencia?',
     options: [
-      'Establece las obligaciones de cada tipo de kiosco.',
-      'Describe la existencia de tres tipos de kioscos.',
-      'Ejemplifica los tipos de kioscos del RSA.',
-      'Aclara la diferencia entre los tipos de kioscos.'
+      'Subsidiar la distribución de colaciones en escuelas vulnerables.',
+      'Alertar de forma clara sobre el exceso de nutrientes críticos en los productos.',
+      'Clasificar la infraestructura física de los kioscos en tipos A, B o C.',
+      'Monitorear el Reglamento Sanitario de los Alimentos los fines de semana.'
     ],
-    correct: 3,
-    explanation: 'La Tabla 1 sintetiza visualmente los requerimientos técnicos específicos de los tipos A, B y C, permitiendo diferenciarlos.',
-    hint: 'Analiza la función que cumple ordenar en celdas las distintas exigencias técnicas.',
+    correct: 1,
+    explanation: 'La Ley N° 20.606 implementó los sellos de advertencia para explicitar visualmente si un alimento supera los límites saludables de sodio, azúcares, grasas y calorías.',
+    hint: 'Analiza la función utilitaria del rótulo "ALTO EN" descrito en el tercer párrafo.',
     points: 100
   },
   {
@@ -1005,9 +1135,65 @@ const paesLenguajeQuestions = [
     hint: 'Examina el diagnóstico de salud inicial: las altas tasas de malnutrición por exceso.',
     points: 100
   },
+  {
+    id: 10661, textKey: 'kioscos_saludables', topic: 'localizar', type: 'multiple',
+    question: 'De acuerdo con la Ley N° 20.869, ¿en qué horario está prohibida la publicidad de alimentos "ALTOS EN" en televisión y cine?',
+    options: [
+      'Entre las 08:00 y las 18:00 h.',
+      'Entre las 06:00 y las 22:00 h.',
+      'Exclusivamente durante los bloques infantiles de la mañana.',
+      'De forma total e indefinida durante las 24 horas del día.'
+    ],
+    correct: 1,
+    explanation: 'El cuarto párrafo señala explícitamente que la Ley N° 20.869 prohibió la publicidad de estos alimentos en televisión y cine entre las 06:00 y las 22:00 h.',
+    hint: 'Busca los parámetros horarios explícitos vinculados al año 2015 en el texto.',
+    points: 100
+  },
+  {
+    id: 10662, textKey: 'kioscos_saludables', topic: 'interpretar', type: 'multiple',
+    question: 'Respecto a la infraestructura escolar, ¿qué diferencia al kiosco de Tipo C de los Tipos A y B?',
+    options: [
+      'Que el Tipo C está exento de poseer autorizaciones sanitarias.',
+      'Que posee una infraestructura completa que le permite vender todos los alimentos permitidos.',
+      'Que el Tipo C prohíbe de forma total la venta de frutas frescas envasadas.',
+      'Que es de carácter exclusivamente móvil y se instala fuera de los recintos.'
+    ],
+    correct: 1,
+    explanation: 'El texto detalla que los kioscos se clasifican en A, B y C. Los de tipo A y B pueden no tener agua potable, mientras que el C tiene una completa infraestructura que le permite expender todos los alimentos permitidos.',
+    hint: 'Compara la descripción del Tipo C con las dos clasificaciones anteriores en las subsecciones informativas.',
+    points: 100
+  },
+  {
+    id: 10663, textKey: 'kioscos_saludables', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué restricción publicitaria específica opera sobre las instalaciones físicas de los kioscos escolares?',
+    options: [
+      'Se prohíbe pintar el kiosco o usar afiches que promocionen alimentos con sellos "ALTOS EN".',
+      'Está estrictamente prohibido colocar mensajes educativos referidos al deporte.',
+      'Solo se permite la publicidad contratada por el Ministerio de Educación.',
+      'No se puede colocar el nombre o logotipo comercial del establecimiento.'
+    ],
+    correct: 0,
+    explanation: 'El texto señala que aquellos alimentos que superen los límites no pueden ser publicitados ni promocionados mediante afiches o el pintado de la infraestructura del kiosco.',
+    hint: 'Revisa las especificaciones técnicas sobre publicidad permitida y prohibida en el penúltimo párrafo.',
+    points: 100
+  },
+  {
+    id: 10664, textKey: 'kioscos_saludables', topic: 'evaluar', type: 'multiple',
+    question: '¿Cuál es el tono predominante en el documento elaborado por el Ministerio de Salud?',
+    options: [
+      'Crítico, porque evalúa los sesgos comerciales de los proveedores en Chile.',
+      'Normativo y orientador, porque entrega pautas técnicas y legales para entornos escolares.',
+      'Disuasivo, porque infunde temor sobre las sanciones penales del reglamento.',
+      'Provisorio, porque depende del éxito de encuestas complementarias de la JUNAEB.'
+    ],
+    correct: 1,
+    explanation: 'El texto adopta un tono institucional, formal y educativo con el fin de guiar a las comunidades en la correcta implementación de las leyes de nutrición.',
+    hint: 'Considera la naturaleza de una guía oficial ministerial dirigida a comunidades educativas.',
+    points: 150
+  },
 
   // ================================================================
-  // TEXTO 9: QUÍMICA - VITALISMO (4 preguntas NUEVAS)
+  // TEXTO 9: QUÍMICA - VITALISMO (10 preguntas)
   // ================================================================
   {
     id: 1067, textKey: 'quimica_vitalismo', topic: 'localizar', type: 'multiple',
@@ -1065,9 +1251,88 @@ const paesLenguajeQuestions = [
     hint: 'Presta atención a la valoración matizada que hace el autor.',
     points: 150
   },
+  {
+    id: 10701, textKey: 'quimica_vitalismo', topic: 'localizar', type: 'multiple',
+    question: '¿Qué criterio empírico inmediato utilizaba el ser humano de la antigüedad para dividir las sustancias en dos clases?',
+    options: [
+      'Su peso molecular absoluto.',
+      'Si se disolvían en agua pura o no.',
+      'Su capacidad para arder o no arder.',
+      'El color de los cristales resultantes al fundirse.'
+    ],
+    correct: 2,
+    explanation: 'El texto plantea desde el primer párrafo que "el hombre estuvo inevitablemente sujeto a dividir las sustancias en dos clases, según ardiesen o no".',
+    hint: 'Ubica la primera frase histórica con la que abre el fragmento de Asimov.',
+    points: 100
+  },
+  {
+    id: 10702, textKey: 'quimica_vitalismo', topic: 'localizar', type: 'multiple',
+    question: '¿Quién sugirió formalmente en el año 1807 el uso de los términos "orgánica" e "inorgánica" para clasificar las sustancias?',
+    options: ['Friedrich Wöhler.', 'Berzelius.', 'Marcelin Berthelot.', 'Adolf Wilhelm Hermann Kolbe.'],
+    correct: 1,
+    explanation: 'El cuarto párrafo detalla de manera explícita: "Las diferencias parecían fundamentales y, en 1807, Berzelius sugirió que las sustancias... se llamasen orgánicas".',
+    hint: 'Rastrea el nombre propio vinculado al año 1807 en el desarrollo cronológico del texto.',
+    points: 100
+  },
+  {
+    id: 10703, textKey: 'quimica_vitalismo', topic: 'interpretar', type: 'multiple',
+    question: 'Durante el siglo XVIII, ¿qué comportamiento diferenciaba a las sustancias inorgánicas (del medio no-vivo) de las orgánicas al ser calentadas?',
+    options: [
+      'Las inorgánicas ardían velozmente produciendo aceites esenciales aromáticos.',
+      'Las inorgánicas soportaban tratamientos enérgicos sin cambiar, mientras que las orgánicas humeaban y se carbonizaban.',
+      'Las orgánicas podían resolidificarse infinitas veces sin alterar su estructura geométrica.',
+      'Las orgánicas se transformaban espontáneamente en elementos minerales puros como arena.'
+    ],
+    correct: 1,
+    explanation: 'El texto señala que sustancias como el agua o la sal podían fundirse o hervirse sin cambiar, mientras que compuestos orgánicos como el azúcar humeaban y se carbonizaban bajo el calor.',
+    hint: 'Compara el experimento de calentamiento del aceite y el azúcar frente al agua descritos en el tercer párrafo.',
+    points: 100
+  },
+  {
+    id: 10704, textKey: 'quimica_vitalismo', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué asimetría química asombraba a los investigadores a comienzos del siglo XIX antes del colapso del vitalismo?',
+    options: [
+      'Las sustancias inorgánicas requerían catalizadores gaseosos inaccesibles en la Tierra.',
+      'Los compuestos orgánicos eran fácilmente convertibles en inorgánicos, pero el proceso inverso era desconocido.',
+      'La materia animal ardía a temperaturas mucho menores que la materia de origen vegetal.',
+      'Los elementos inanimados no poseían peso atómico medible en laboratorios convencionales.'
+    ],
+    correct: 1,
+    explanation: 'El quinto párrafo explica que la conversión de orgánico a inorgánico era sencilla mediante calor, pero el cambio inverso (de inorgánico a orgánico) se consideraba imposible sin una fuerza vital.',
+    hint: 'Identifica el postulado de unidireccionalidad que justificaba la existencia de la "fuerza vital".',
+    points: 100
+  },
+  {
+    id: 10705, textKey: 'quimica_vitalismo', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué científicos fueron maestro y alumno respectivamente en la genealogía de descubrimientos citada en el texto?',
+    options: [
+      'Berzelius fue alumno de Friedrich Wöhler.',
+      'Friedrich Wöhler fue maestro de Adolf Wilhelm Hermann Kolbe.',
+      'Marcelin Berthelot fue discípulo directo de Isaac Asimov.',
+      'Adolf Wilhelm Hermann Kolbe fue el preparador de Berzelius.'
+    ],
+    correct: 1,
+    explanation: 'El texto menciona en el noveno párrafo que Adolf Wilhelm Hermann Kolbe era "un alumno de Wöhler", quien a su vez había sido discípulo de Berzelius.',
+    hint: 'Rastrea los lazos académicos declarados entre Wöhler y Kolbe a la mitad del escrito.',
+    points: 100
+  },
+  {
+    id: 10706, textKey: 'quimica_vitalismo', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué hito consolidó Pierre Eugène Marcelin Berthelot durante la década de 1850?',
+    options: [
+      'Restauró las bases teóricas del vitalismo mediante el análisis del fuego.',
+      'Efectuó sistemáticamente la síntesis de múltiples compuestos orgánicos como metanol y benceno.',
+      'Descubrió que el cianato amónico era un compuesto de origen animal.',
+      'Negó la validez de la síntesis total del ácido acético realizada por Kolbe.'
+    ],
+    correct: 1,
+    explanation: 'El último párrafo estipula que Berthelot llevó las cosas más lejos al sintetizar sistemáticamente metanol, etanol, metano, benceno y acetileno, volviendo rutinario el cruce de líneas.',
+    hint: 'Revisa las actividades experimentales detalladas en el cierre del escrito de Asimov.',
+    points: 100
+  },
 
   // ================================================================
-  // TEXTO 10: PARMÉNIDES (4 preguntas NUEVAS)
+  // TEXTO 10: PARMÉNIDES (10 preguntas)
   // ================================================================
   {
     id: 1071, textKey: 'parmenides', topic: 'localizar', type: 'multiple',
@@ -1121,15 +1386,91 @@ const paesLenguajeQuestions = [
       'Su desinterés total por el trabajo intelectual.'
     ],
     correct: 1,
-    explanation: 'Parménides admite abiertamente que "no entendía nada de poesía" y que los nombres de los poetas le eran desconocidos, mostrando una honestidad que a Perinola "le gustaba".',
-    hint: 'Identifica el rasgo de carácter que el narrador valora positivamente.',
+    explanation: 'Parménides admite abiertamente que "no entendía nada de poesía" y que los nombres de los poetas le eran desconocidos, mostrando una honestidad sincera.',
+    hint: 'Identifica el rasgo de carácter que el narrador expone abiertamente durante el diálogo inicial.',
+    points: 150
+  },
+  {
+    id: 10741, textKey: 'parmenides', topic: 'localizar', type: 'multiple',
+    question: '¿En qué época histórica y ubicación geográfica se sitúa la acción del relato de César Aira?',
+    options: [
+      'A finales del siglo primero después de Cristo en Atenas continental.',
+      'A comienzos del siglo quinto antes de Cristo en una colonia griega de la costa italiana del sur.',
+      'A mediados de la Edad Media en las islas jónicas del mar Egeo.',
+      'Durante el Renacimiento en los tribunales imperiales de Roma.'
+    ],
+    correct: 1,
+    explanation: 'La primera línea del relato sitúa temporal y espacialmente al escritor Perinola a comienzos del siglo quinto A.C. en una colonia del sur de Italia.',
+    hint: 'Identifica los datos cronológicos y geográficos precisos del inicio de la lectura.',
+    points: 100
+  },
+  {
+    id: 10742, textKey: 'parmenides', topic: 'localizar', type: 'multiple',
+    question: '¿Qué edad exacta tenía el escritor Perinola al momento de concretar su primer encuentro con Parménides?',
+    options: ['Veintinueve años.', 'Treinta y cinco años.', 'Cuarenta años.', 'Veintiún años.'],
+    correct: 0,
+    explanation: 'El cuarto párrafo menciona de forma explícita entre paréntesis la edad exacta del protagonista: "(Perinola tenía veintinueve)".',
+    hint: 'Busca el valor numérico encerrado entre paréntesis que detalla la edad de Perinola.',
+    points: 100
+  },
+  {
+    id: 10743, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
+    question: '¿Por qué la consideración del "puñado de entendidos" hacia Perinola no carecía de fundamento a pesar de que casi no había escrito nada?',
+    options: [
+      'Porque poseía un diploma oficial validado por la Judicatura.',
+      'Porque la poesía funciona como una promesa artística que inicialmente puede ser inverificable.',
+      'Porque había derrotado a Zenón en un certamen público de oratoria clásica.',
+      'Porque era el hijo menor de un prominente jerarca militar de la costa italiana.'
+    ],
+    correct: 1,
+    explanation: 'El narrador reflexiona que con poco alcanza para basar una promesa si se trata de algo tan inverificable en sus inicios como la poesía.',
+    hint: 'Analiza el primer párrafo y la definición de una "promesa" literaria joven.',
+    points: 100
+  },
+  {
+    id: 10744, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
+    question: '¿Por qué Parménides terminó convocando a Perinola en primer lugar en vez de a Zenón?',
+    options: [
+      'Porque descartó a Zenón al enterarse de su falta de talento.',
+      'Porque Zenón se encontraba ausente por motivos de viaje y no pudieron localizarlo.',
+      'Porque consideraba que el nombre de Perinola denotaba un estatus social superior.',
+      'Porque los informantes judiciales tacharon a Zenón de parásito.'
+    ],
+    correct: 1,
+    explanation: 'Parménides confiesa que llamó a Zenón primero por azar al encabezar la lista, pero al estar de viaje y no hallarse en la ciudad, procedió a mandar a buscar a Perinola.',
+    hint: 'Busca la explicación logística sobre la ausencia de Zenón al final del texto.',
+    points: 100
+  },
+  {
+    id: 10745, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
+    question: '¿Qué connotación tiene para Perinola el hecho de figurar "de igual a igual" con Zenón en la lista de Parménides?',
+    options: [
+      'Una validación de su hermandad intelectual con los artistas locales.',
+      'Una muestra difamatoria de indiferencia o desdén por parte de la Judicatura.',
+      'Un alivio económico, ya que compartirían la remuneración del puesto.',
+      'Una prueba irrefutable del profundo gusto literario de los informantes.'
+    ],
+    correct: 1,
+    explanation: 'El texto explicita que para Perinola, ser igualado con un "pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén".',
+    hint: 'Examina los pensamientos de orgullo y resentimiento del protagonista en el último párrafo.',
+    points: 100
+  },
+  {
+    id: 10746, textKey: 'parmenides', topic: 'evaluar', type: 'multiple',
+    question: '¿Qué tipo de narrador articula la perspectiva de los hechos en este fragmento de Parménides?',
+    options: [
+      'Un narrador protagonista que relata en primera persona sus memorias en la Judicatura.',
+      'Un narrador heterodiegético (tercera persona) que se focaliza en el mundo interno y los juicios de Perinola.',
+      'Un narrador testigo encarnado por el esclavo de Parménides.',
+      'Un narrador omnisciente de carácter neutro que no emite valoraciones psicológicas.'
+    ],
+    correct: 1,
+    explanation: 'El relato se desenvuelve en tercera persona, pero adopta íntimamente la perspectiva emocional, decepciones y juicios críticos del escritor Perinola.',
+    hint: 'Evalúa si quien cuenta la historia está dentro de la escena como protagonista o la relata conociendo la mente de Perinola.',
     points: 150
   }
 ];
 
-// ============================================================================
-// III. EXPORTACIÓN
-// ============================================================================
 const paesBancoLectora = {
   version: "2.0.0",
   totalLecturas: Object.keys(paesTexts).length,
@@ -1138,4 +1479,4 @@ const paesBancoLectora = {
   questions: paesLenguajeQuestions
 };
 
-console.log('📖 Banco de Competencia Lectora v2.0.0 cargado: ' + paesLenguajeQuestions.length + ' preguntas en ' + Object.keys(paesTexts).length + ' lecturas');
+console.log('📖 Banco de Competencia Lectora v2.0.0 ampliado: ' + paesLenguajeQuestions.length + ' preguntas cargadas con éxito.');
