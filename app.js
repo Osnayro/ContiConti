@@ -1,17 +1,21 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v3.1.0 — Producción
- * Lógica del juego + 4 Lotes por nivel + Sabiondo 🦉
+ * PAES Challenge Engine v4.0.0 — Producción
+ * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
+ * + Nivel 4: Ciencias (Biología, Física, Química)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  *
- * Cambios v3.1.0:
- *   - Nivel 1: preguntas agrupadas por lectura (textKey)
- *   - Misma lectura = preguntas consecutivas
- *   - Orden de grupos aleatorio, preguntas internas por ID
+ * Niveles:
+ *   1. Competencia Lectora (60s) — 25 preguntas
+ *   2. Matemática 1 - M1 (45s) — 25 preguntas
+ *   3. Matemática 2 - M2 (35s) — 25 preguntas
+ *   4. Ciencias (40s) — 25 preguntas
+ *
+ * Lotes Nivel 1: 2 lecturas completas (10+10) + 1 parcial (5) = 25
  */
 
 // ===== ESTADO GLOBAL =====
@@ -54,12 +58,10 @@ const state = {
     loteData: null,
     lotesDisponibles: [],
     ultimoEstadoBocadillo: null,
-    // Cronómetro de desempeño
     desafioStartTime: null,
     desafioEndTime: null,
     tiempoTotalDesafio: 0,
     totalPreguntasRespondidas: 0,
-    // Lectura activa para Competencia Lectora
     lecturaActiva: null
 };
 
@@ -67,36 +69,40 @@ const state = {
 const levelNames = {
     1: '📖 Competencia Lectora',
     2: '📐 Matemática 1 (M1)',
-    3: '📊 Matemática 2 (M2)'
+    3: '📊 Matemática 2 (M2)',
+    4: '🔬 Ciencias'
 };
 
 const levelColors = {
     1: '#8B5CF6',
     2: '#3B82F6',
-    3: '#10B981'
+    3: '#10B981',
+    4: '#EF4444'
 };
 
 const levelTimerDefaults = {
     1: 60,
     2: 45,
-    3: 35
+    3: 35,
+    4: 40
 };
 
-// Cantidad de preguntas por nivel
 const questionsPerLevel = {
-    1: 20,
+    1: 25,
     2: 25,
-    3: 25
+    3: 25,
+    4: 25
 };
 
-// ===== SISTEMA DE 4 LOTES POR NIVEL =====
-const LOTES_STORAGE_KEY = 'paes_lotes_v3';
-const LOTES_VERSION = '3.1.0';
+// ===== SISTEMA DE 4 LOTES =====
+const LOTES_STORAGE_KEY = 'paes_lotes_v4';
+const LOTES_VERSION = '4.0.0';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
     const todasM1 = [...(typeof paesM1Questions !== 'undefined' ? paesM1Questions : [])];
     const todasM2 = [...(typeof paesM2Questions !== 'undefined' ? paesM2Questions : [])];
+    const todasCiencias = [...(typeof paesCienciasQuestions !== 'undefined' ? paesCienciasQuestions : [])];
 
     const shuffleArr = (arr) => {
         const a = [...arr];
@@ -107,9 +113,50 @@ function generarLotes() {
         return a;
     };
 
-    const lectoraShuffle = shuffleArr(todasLectora);
+    // Para Competencia Lectora: agrupar por lectura, luego dividir en 4 lotes
+    const lectoraPorLectura = agruparPorLectura(todasLectora);
+    const lecturasKeys = shuffleArr(Object.keys(lectoraPorLectura));
+    
+    const dividirLecturasEn4 = () => {
+        const total = lecturasKeys.length; // 10 lecturas
+        const porLote = Math.floor(total / 4); // 2 lecturas completas por lote
+        const sobrantes = total % 4; // 2 lecturas para dividir
+        
+        const resultado = [];
+        let idx = 0;
+        
+        for (let i = 0; i < 4; i++) {
+            const lote = [];
+            // Agregar 2 lecturas completas
+            for (let j = 0; j < porLote; j++) {
+                const key = lecturasKeys[idx];
+                lote.push(...lectoraPorLectura[key]);
+                idx++;
+            }
+            resultado.push(lote);
+        }
+        
+        // Distribuir las 2 lecturas sobrantes como parciales (5 preguntas cada una)
+        for (let i = 0; i < sobrantes; i++) {
+            const key = lecturasKeys[idx];
+            const preguntas = lectoraPorLectura[key];
+            const mitad = Math.ceil(preguntas.length / 2);
+            
+            // Primer lote recibe la primera mitad, segundo lote la segunda mitad
+            resultado[i].push(...preguntas.slice(0, mitad));
+            resultado[i + 2].push(...preguntas.slice(mitad));
+            idx++;
+        }
+        
+        return resultado;
+    };
+
+    const lecParts = dividirLecturasEn4();
+    
+    // Para M1, M2 y Ciencias: shuffle simple y dividir en 4
     const m1Shuffle = shuffleArr(todasM1);
     const m2Shuffle = shuffleArr(todasM2);
+    const cienciasShuffle = shuffleArr(todasCiencias);
 
     const dividirEn4 = (arr) => {
         const len = arr.length;
@@ -122,14 +169,15 @@ function generarLotes() {
         ];
     };
 
-    const lecParts = dividirEn4(lectoraShuffle);
     const m1Parts = dividirEn4(m1Shuffle);
     const m2Parts = dividirEn4(m2Shuffle);
+    const cienciasParts = dividirEn4(cienciasShuffle);
 
     const lotes = [];
     for (let i = 0; i < 4; i++) {
         const m1Lote = m1Parts[i].slice(0, questionsPerLevel[2]);
         const m2Lote = m2Parts[i].slice(0, questionsPerLevel[3]);
+        const cienciasLote = cienciasParts[i].slice(0, questionsPerLevel[4]);
         const lecLote = lecParts[i].slice(0, questionsPerLevel[1]);
 
         lotes.push({
@@ -139,118 +187,51 @@ function generarLotes() {
             preguntas: {
                 lectora: lecLote,
                 matematica1: m1Lote,
-                matematica2: m2Lote
+                matematica2: m2Lote,
+                ciencias: cienciasLote
             },
-            totalPreguntas: lecLote.length + m1Lote.length + m2Lote.length
+            totalPreguntas: lecLote.length + m1Lote.length + m2Lote.length + cienciasLote.length
         });
     }
 
     return lotes;
 }
 
-function guardarLotes(lotes) {
-    const data = {
-        version: LOTES_VERSION,
-        lotes: lotes,
-        timestamp: Date.now()
-    };
-    safeLocalSet(LOTES_STORAGE_KEY, JSON.stringify(data));
-}
-
-function cargarLotes() {
-    const saved = safeLocalGet(LOTES_STORAGE_KEY, null);
-    
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            
-            if (data.version === LOTES_VERSION && 
-                data.lotes && 
-                data.lotes.length === 4 &&
-                data.lotes.every(l => l.preguntas && l.totalPreguntas > 0)) {
-                
-                const lotesConEstado = data.lotes.map(l => ({
-                    ...l,
-                    usado: safeLocalGet(`paes_lote_${l.id}_usado_v3`, 'false') === 'true'
-                }));
-                
-                if (lotesConEstado.every(l => l.usado)) {
-                    const nuevosLotes = generarLotes();
-                    guardarLotes(nuevosLotes);
-                    for (let i = 1; i <= 4; i++) {
-                        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
-                    }
-                    return nuevosLotes.map(l => ({ ...l, usado: false }));
-                }
-                
-                return lotesConEstado;
-            }
-        } catch (e) {
-            console.warn('Error al cargar lotes, regenerando:', e);
-        }
-    }
-    
-    const nuevosLotes = generarLotes();
-    guardarLotes(nuevosLotes);
-    for (let i = 1; i <= 4; i++) {
-        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
-    }
-    return nuevosLotes.map(l => ({ ...l, usado: false }));
-}
-
-function marcarLoteComoUsado(loteId) {
-    safeLocalSet(`paes_lote_${loteId}_usado_v3`, 'true');
-}
-
-function getPreguntasNivel(nivel) {
-    if (!state.loteData || !state.loteData.preguntas) {
-        console.error('No hay lote cargado');
-        return [];
-    }
-
-    const preguntas = state.loteData.preguntas;
-    const cantidad = questionsPerLevel[nivel] || 25;
-
-    switch (nivel) {
-        case 1:
-            return [...preguntas.lectora].slice(0, cantidad);
-        case 2:
-            return [...preguntas.matematica1].slice(0, cantidad);
-        case 3:
-            return [...preguntas.matematica2].slice(0, cantidad);
-        default:
-            return [...preguntas.lectora].slice(0, cantidad);
-    }
-}
-
 // ===== UTILIDADES =====
+function agruparPorLectura(preguntas) {
+    const grupos = {};
+    preguntas.forEach(q => {
+        if (q.textKey) {
+            if (!grupos[q.textKey]) grupos[q.textKey] = [];
+            grupos[q.textKey].push(q);
+        }
+    });
+    // Ordenar preguntas dentro de cada grupo por ID
+    Object.values(grupos).forEach(g => g.sort((a, b) => a.id - b.id));
+    return grupos;
+}
+
+function agruparPreguntasPorLectura(preguntas) {
+    const grupos = agruparPorLectura(preguntas);
+    const gruposArray = shuffleArray(Object.values(grupos));
+    const resultado = [];
+    gruposArray.forEach(grupo => grupo.forEach(q => resultado.push(q)));
+    return resultado;
+}
+
 function deepCloneQuestions(arr) {
-    try {
-        return JSON.parse(JSON.stringify(arr));
-    } catch (e) {
-        console.warn('Error al clonar preguntas, usando array original.');
-        return arr;
-    }
+    try { return JSON.parse(JSON.stringify(arr)); }
+    catch (e) { return arr; }
 }
 
 function safeLocalGet(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw !== null ? raw : fallback;
-    } catch (e) {
-        console.warn('localStorage no disponible para', key);
-        return fallback;
-    }
+    try { const raw = localStorage.getItem(key); return raw !== null ? raw : fallback; }
+    catch (e) { return fallback; }
 }
 
 function safeLocalSet(key, value) {
-    try {
-        localStorage.setItem(key, value);
-        return true;
-    } catch (e) {
-        console.warn('No se pudo guardar en localStorage:', key);
-        return false;
-    }
+    try { localStorage.setItem(key, value); return true; }
+    catch (e) { return false; }
 }
 
 function shuffleArray(array) {
@@ -262,55 +243,57 @@ function shuffleArray(array) {
     return arr;
 }
 
-/**
- * Agrupa las preguntas de Competencia Lectora por su lectura (textKey).
- * Las preguntas de una misma lectura aparecen juntas y ordenadas por ID.
- * El orden de los grupos es aleatorio.
- * Las preguntas sin textKey se colocan al final.
- */
-function agruparPreguntasPorLectura(preguntas) {
-    const grupos = {};
-    const sinLectura = [];
-    
-    preguntas.forEach(q => {
-        if (q.textKey) {
-            if (!grupos[q.textKey]) {
-                grupos[q.textKey] = [];
-            }
-            grupos[q.textKey].push(q);
-        } else {
-            sinLectura.push(q);
-        }
-    });
-    
-    // Ordenar preguntas dentro de cada grupo por ID
-    Object.values(grupos).forEach(grupo => {
-        grupo.sort((a, b) => a.id - b.id);
-    });
-    
-    // Convertir grupos a array y mezclar el orden de los grupos
-    const gruposArray = Object.values(grupos);
-    const gruposMezclados = shuffleArray(gruposArray);
-    
-    // Aplanar: todas las preguntas de un mismo grupo van juntas
-    const resultado = [];
-    gruposMezclados.forEach(grupo => {
-        grupo.forEach(q => resultado.push(q));
-    });
-    
-    // Agregar preguntas sin lectura al final
-    sinLectura.forEach(q => resultado.push(q));
-    
-    return resultado;
+function guardarLotes(lotes) {
+    safeLocalSet(LOTES_STORAGE_KEY, JSON.stringify({ version: LOTES_VERSION, lotes, timestamp: Date.now() }));
 }
 
-// ===== SISTEMA DE SONIDO =====
+function cargarLotes() {
+    const saved = safeLocalGet(LOTES_STORAGE_KEY, null);
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.version === LOTES_VERSION && data.lotes && data.lotes.length === 4 &&
+                data.lotes.every(l => l.preguntas && l.totalPreguntas > 0)) {
+                const lotesConEstado = data.lotes.map(l => ({
+                    ...l,
+                    usado: safeLocalGet(`paes_lote_${l.id}_usado_v4`, 'false') === 'true'
+                }));
+                if (lotesConEstado.every(l => l.usado)) {
+                    const nuevosLotes = generarLotes();
+                    guardarLotes(nuevosLotes);
+                    for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
+                    return nuevosLotes.map(l => ({ ...l, usado: false }));
+                }
+                return lotesConEstado;
+            }
+        } catch (e) {}
+    }
+    const nuevosLotes = generarLotes();
+    guardarLotes(nuevosLotes);
+    for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
+    return nuevosLotes.map(l => ({ ...l, usado: false }));
+}
+
+function marcarLoteComoUsado(loteId) { safeLocalSet(`paes_lote_${loteId}_usado_v4`, 'true'); }
+
+function getPreguntasNivel(nivel) {
+    if (!state.loteData || !state.loteData.preguntas) return [];
+    const preguntas = state.loteData.preguntas;
+    const cantidad = questionsPerLevel[nivel] || 25;
+    switch (nivel) {
+        case 1: return [...preguntas.lectora].slice(0, cantidad);
+        case 2: return [...preguntas.matematica1].slice(0, cantidad);
+        case 3: return [...preguntas.matematica2].slice(0, cantidad);
+        case 4: return [...preguntas.ciencias].slice(0, cantidad);
+        default: return [...preguntas.lectora].slice(0, cantidad);
+    }
+}
+
+// ===== SONIDO =====
 function playSound(type) {
     const alwaysPlay = ['correct', 'incorrect', 'levelup', 'levelstart', 'achievement', 'powerup', 'next'];
     if (!alwaysPlay.includes(type) && state.mode === 'normal') return;
-    if (window.effectsManager) {
-        window.effectsManager.playSound(type);
-    }
+    if (window.effectsManager) window.effectsManager.playSound(type);
 }
 
 // ===== INICIALIZACIÓN =====
@@ -324,301 +307,157 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function cargarYMostrarLotes() {
-    const lotes = cargarLotes();
-    state.lotesDisponibles = lotes;
-    actualizarSelectorLotes(lotes);
+    state.lotesDisponibles = cargarLotes();
+    actualizarSelectorLotes(state.lotesDisponibles);
 }
 
 function actualizarSelectorLotes(lotes) {
     const container = document.getElementById('lote-selector');
     if (!container) return;
-
-    const lotesDisponibles = lotes.filter(l => !l.usado);
-    const todosUsados = lotesDisponibles.length === 0;
-
+    const disponibles = lotes.filter(l => !l.usado);
     container.innerHTML = '';
-
-    if (todosUsados) {
-        container.innerHTML = `
-            <div class="info-card" style="text-align:center; border-left-color: #F59E0B;">
-                🎯 <b>¡Completaste las 4 partidas!</b><br>
-                <small>Reinicia para generar nuevas preguntas</small>
-            </div>
-            <button class="main-btn pulse-ready" onclick="reiniciarLotes()">
-                🔄 Generar Nuevas Partidas
-            </button>
-        `;
+    if (disponibles.length === 0) {
+        container.innerHTML = `<div class="info-card" style="text-align:center;border-left-color:#F59E0B;"><b>¡Completaste las 4 partidas!</b><br><small>Reinicia para nuevas preguntas</small></div>
+        <button class="main-btn pulse-ready" onclick="reiniciarLotes()">🔄 Generar Nuevas Partidas</button>`;
         return;
     }
-
-    const loteInfo = document.createElement('div');
-    loteInfo.className = 'info-card';
-    loteInfo.style.borderLeftColor = '#8B5CF6';
-    loteInfo.innerHTML = `
-        <strong>🦉 Sabiondo dice:</strong> Elige una partida para comenzar<br>
-        <small>Cada partida tiene preguntas diferentes. Tienes ${lotesDisponibles.length} partida(s) disponible(s).</small>
-    `;
-    container.appendChild(loteInfo);
-
-    const loteGrid = document.createElement('div');
-    loteGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;';
-
-    const iconos = ['🎲', '🎯', '📚', '🎓'];
-    const colores = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B'];
-    
+    const info = document.createElement('div');
+    info.className = 'info-card';
+    info.style.borderLeftColor = '#8B5CF6';
+    info.innerHTML = `<strong>🦉 Sabiondo dice:</strong> Elige una partida<br><small>${disponibles.length} partida(s) disponible(s)</small>`;
+    container.appendChild(info);
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%';
+    const iconos = ['🎲','🎯','📚','🎓'];
+    const colores = ['#8B5CF6','#3B82F6','#10B981','#EF4444'];
     lotes.forEach(lote => {
         const card = document.createElement('div');
         card.className = 'mode-card';
         card.style.cursor = lote.usado ? 'not-allowed' : 'pointer';
         card.style.opacity = lote.usado ? '0.5' : '1';
-        if (!lote.usado) {
-            card.style.borderLeft = `4px solid ${colores[lote.id - 1]}`;
-        }
-        
-        card.innerHTML = `
-            <div class="mode-icon">${iconos[lote.id - 1]}</div>
+        if (!lote.usado) card.style.borderLeft = `4px solid ${colores[lote.id-1]}`;
+        card.innerHTML = `<div class="mode-icon">${iconos[lote.id-1]}</div>
             <div class="mode-title">Partida ${lote.id}</div>
             <div class="mode-desc">${lote.totalPreguntas} preguntas</div>
-            <div class="mode-desc" style="font-size:0.65rem;color:#64748B;">
-                📖 ${lote.preguntas.lectora.length} | 📐 ${lote.preguntas.matematica1.length} | 📊 ${lote.preguntas.matematica2.length}
-            </div>
-            ${lote.usado ? '<div style="font-size:0.7rem;color:#EF4444;">✅ Completada</div>' : ''}
-        `;
-
-        if (!lote.usado) {
-            card.addEventListener('click', () => seleccionarLote(lote));
-        }
-
-        loteGrid.appendChild(card);
+            <div class="mode-desc" style="font-size:0.65rem;color:#64748B">📖${lote.preguntas.lectora.length} 📐${lote.preguntas.matematica1.length} 📊${lote.preguntas.matematica2.length} 🔬${lote.preguntas.ciencias.length}</div>
+            ${lote.usado ? '<div style="font-size:0.7rem;color:#EF4444">✅ Completada</div>' : ''}`;
+        if (!lote.usado) card.addEventListener('click', () => seleccionarLote(lote));
+        grid.appendChild(card);
     });
-
-    container.appendChild(loteGrid);
+    container.appendChild(grid);
 }
 
 function seleccionarLote(lote) {
-    if (lote.usado) {
-        console.warn('Este lote ya fue usado.');
-        return;
-    }
-
+    if (lote.usado) return;
     state.currentLote = lote.id;
     state.loteData = lote;
-    
-    const selectorContainer = document.getElementById('lote-selector');
-    if (selectorContainer) {
-        selectorContainer.style.display = 'none';
-    }
-    
-    const btnStart = document.getElementById('btn-start');
-    if (btnStart) {
-        btnStart.style.display = 'block';
-        btnStart.textContent = `¡Comenzar Partida ${lote.id}! 🚀`;
-        btnStart.classList.add('pulse-ready');
-    }
-
-    const confirmacion = document.getElementById('lote-confirmacion');
-    if (confirmacion) {
-        confirmacion.style.display = 'block';
-        confirmacion.innerHTML = `
-            ✅ <b>Partida ${lote.id} seleccionada</b><br>
-            <small>📖 ${lote.preguntas.lectora.length} Lectura | 📐 ${lote.preguntas.matematica1.length} M1 | 📊 ${lote.preguntas.matematica2.length} M2</small>
-        `;
-    }
+    document.getElementById('lote-selector').style.display = 'none';
+    const btn = document.getElementById('btn-start');
+    if (btn) { btn.style.display = 'block'; btn.textContent = `¡Comenzar Partida ${lote.id}! 🚀`; btn.classList.add('pulse-ready'); }
+    const conf = document.getElementById('lote-confirmacion');
+    if (conf) { conf.style.display = 'block'; conf.innerHTML = `✅ <b>Partida ${lote.id} seleccionada</b><br><small>📖${lote.preguntas.lectora.length} 📐${lote.preguntas.matematica1.length} 📊${lote.preguntas.matematica2.length} 🔬${lote.preguntas.ciencias.length}</small>`; }
 }
 
 function reiniciarLotes() {
-    for (let i = 1; i <= 4; i++) {
-        safeLocalSet(`paes_lote_${i}_usado_v3`, 'false');
-    }
+    for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
     localStorage.removeItem(LOTES_STORAGE_KEY);
-    
-    const nuevosLotes = cargarLotes();
-    state.lotesDisponibles = nuevosLotes;
+    state.lotesDisponibles = cargarLotes();
     state.currentLote = null;
     state.loteData = null;
-    
-    actualizarSelectorLotes(nuevosLotes);
-    
-    const btnStart = document.getElementById('btn-start');
-    if (btnStart) btnStart.style.display = 'none';
-    const confirmacion = document.getElementById('lote-confirmacion');
-    if (confirmacion) confirmacion.style.display = 'none';
-    
-    if (window.effectsManager) {
-        window.effectsManager.triggerToastAcademico('¡4 nuevas partidas generadas! 🦉', {
-            icon: '🔄',
-            bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
-            duration: 2500
-        });
-    }
+    actualizarSelectorLotes(state.lotesDisponibles);
+    const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
+    const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
+    if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡4 nuevas partidas! 🦉', { icon:'🔄', bg:'linear-gradient(135deg,#8B5CF6,#6D28D9)', duration:2500 });
 }
 
 function createSpeedBonusToast() {
     if (document.getElementById('speed-bonus-toast')) return;
-    const toast = document.createElement('div');
-    toast.className = 'speed-bonus-toast';
-    toast.id = 'speed-bonus-toast';
-    document.body.appendChild(toast);
+    const t = document.createElement('div'); t.className = 'speed-bonus-toast'; t.id = 'speed-bonus-toast';
+    document.body.appendChild(t);
 }
 
-function showSpeedBonus(points) {
-    const toast = document.getElementById('speed-bonus-toast');
-    if (!toast) return;
-    toast.textContent = `⚡ ¡Velocidad bonus! +${points} pts`;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.add('hide'), 1500);
-    setTimeout(() => { toast.classList.remove('show', 'hide'); }, 2000);
+function showSpeedBonus(p) {
+    const t = document.getElementById('speed-bonus-toast'); if (!t) return;
+    t.textContent = `⚡ +${p} pts`; t.classList.add('show');
+    setTimeout(() => t.classList.add('hide'), 1500);
+    setTimeout(() => t.classList.remove('show','hide'), 2000);
 }
 
-function triggerVisualStarsFromElement(element, count = 15) {
-    if (window.effectsManager) {
-        window.effectsManager.triggerStarsFromElement(element, count);
-    }
-}
-
-function setupSplashScreen() {
-    const splashScreen = document.getElementById('splash-screen');
-    setTimeout(() => {
-        if (splashScreen && !splashScreen.classList.contains('hidden')) {
-            splashScreen.classList.add('hidden');
-        }
-    }, 60000);
-}
+function triggerVisualStarsFromElement(el, c) { if (window.effectsManager) window.effectsManager.triggerStarsFromElement(el, c); }
 
 function setupPowerups() {
-    document.getElementById('powerup-fifty')?.addEventListener('click', () => usePowerup('fifty'));
-    document.getElementById('powerup-time')?.addEventListener('click', () => usePowerup('time'));
-    document.getElementById('powerup-freeze')?.addEventListener('click', () => usePowerup('freeze'));
-    document.getElementById('powerup-hint')?.addEventListener('click', () => usePowerup('hint'));
+    ['fifty','time','freeze','hint'].forEach(t => {
+        document.getElementById(`powerup-${t}`)?.addEventListener('click', () => usePowerup(t));
+    });
 }
 
 // ===== NAVEGACIÓN =====
-function showScreen(screenId) {
+function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const screen = document.getElementById(screenId);
-    if (screen) {
-        screen.classList.add('active');
-        screen.classList.add('screen-expand');
-        setTimeout(() => screen.classList.remove('screen-expand'), 500);
-    }
-    if (screenId === 'screen-badges') loadBadges();
-    if (screenId === 'screen-leaderboard') loadLeaderboard();
-    if (screenId === 'screen-welcome') {
+    const screen = document.getElementById(id);
+    if (screen) { screen.classList.add('active'); screen.classList.add('screen-expand'); setTimeout(() => screen.classList.remove('screen-expand'), 500); }
+    if (id === 'screen-badges') loadBadges();
+    if (id === 'screen-leaderboard') loadLeaderboard();
+    if (id === 'screen-welcome') {
         cargarYMostrarLotes();
-        const btnStart = document.getElementById('btn-start');
-        if (btnStart) btnStart.style.display = 'none';
-        const confirmacion = document.getElementById('lote-confirmacion');
-        if (confirmacion) confirmacion.style.display = 'none';
-        const loteSelector = document.getElementById('lote-selector');
-        if (loteSelector) loteSelector.style.display = 'block';
+        const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
+        const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
+        const sel = document.getElementById('lote-selector'); if (sel) sel.style.display = 'block';
     }
     if (typeof injectBuhoSVGs === 'function') setTimeout(injectBuhoSVGs, 100);
 }
 
-function selectMode(mode) {
-    state.mode = mode;
-    document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('selected'));
-    document.getElementById(`mode-${mode}`)?.classList.add('selected');
-    const timerDisplay = document.getElementById('timer-display');
-    if (timerDisplay) timerDisplay.style.display = mode === 'timed' ? 'flex' : 'none';
+function selectMode(m) {
+    state.mode = m;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`mode-${m}`)?.classList.add('selected');
+    const td = document.getElementById('timer-display'); if (td) td.style.display = m === 'timed' ? 'flex' : 'none';
     updatePowerupButtons();
 }
 
-// ===== INICIO DEL JUEGO =====
+// ===== INICIO =====
 function startGame() {
     if (!state.currentLote || !state.loteData) {
-        if (window.effectsManager) {
-            window.effectsManager.triggerToastAcademico('¡Selecciona una partida primero! 🦉', {
-                icon: '⚠️',
-                bg: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                duration: 2500
-            });
-        }
+        if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Elige una partida! 🦉', { icon:'⚠️', bg:'linear-gradient(135deg,#F59E0B,#D97706)', duration:2500 });
         return;
     }
-
     if (window.effectsManager) window.effectsManager.ensureAudio();
-    
-    // Iniciar cronómetro de desempeño
     state.desafioStartTime = Date.now();
     state.desafioEndTime = null;
     state.tiempoTotalDesafio = 0;
     state.totalPreguntasRespondidas = 0;
-    
-    state.score = 0; 
-    state.levelScore = 0; 
-    state.streak = 0; 
-    state.maxStreak = 0;
-    state.currentQuestion = 0; 
-    state.currentLevel = 1; 
-    state.topicScores = {};
-    state.isFrozen = false; 
-    state.powerupsUsedThisLevel = false; 
-    state.levelPerfect = true;
-    state.levelStars = {};
-    state.ultimoEstadoBocadillo = null;
-    state.lecturaActiva = null;
-    
+    state.score = 0; state.levelScore = 0; state.streak = 0; state.maxStreak = 0;
+    state.currentQuestion = 0; state.currentLevel = 1; state.topicScores = {};
+    state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
+    state.levelStars = {}; state.ultimoEstadoBocadillo = null; state.lecturaActiva = null;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
-    
     document.body.className = 'level-1';
     startLevel(1);
 }
 
-function startLevel(levelNum) {
-    if (!state.loteData || !state.loteData.preguntas) {
-        console.error('No hay datos de lote cargados.');
-        return;
-    }
-
-    state.currentLevel = levelNum;
-    state.currentQuestion = 0;
-    state.streak = 0;
-    state.levelScore = 0;
-    state.isFrozen = false;
-    state.powerupsUsedThisLevel = false;
-    state.levelPerfect = true;
-    state.bonusQuestionActive = false;
-    state.correctInLevel = 0;
-    
+function startLevel(lv) {
+    if (!state.loteData?.preguntas) return;
+    state.currentLevel = lv; state.currentQuestion = 0; state.streak = 0;
+    state.levelScore = 0; state.isFrozen = false; state.powerupsUsedThisLevel = false;
+    state.levelPerfect = true; state.bonusQuestionActive = false; state.correctInLevel = 0;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
-
-    document.body.className = `level-${levelNum}`;
-
-    const rawQuestions = getPreguntasNivel(levelNum);
-    const cloned = deepCloneQuestions(rawQuestions);
-
-    // Nivel 1: agrupar preguntas por lectura (textKey)
-    // Niveles 2 y 3: mezclar aleatoriamente
-    if (levelNum === 1) {
-        state.questions = agruparPreguntasPorLectura(cloned);
-    } else {
-        state.questions = shuffleArray(cloned);
-    }
-
+    document.body.className = `level-${lv}`;
+    const raw = getPreguntasNivel(lv);
+    const cloned = deepCloneQuestions(raw);
+    state.questions = lv === 1 ? cloned : shuffleArray(cloned);
     state.totalQuestions = state.questions.length;
-    state.timer = levelTimerDefaults[levelNum] || 60;
-
-    updatePowerupButtons();
-    updateLevelDisplay();
-    updateScore();
-    updateStreak();
-    updateProgress();
-    showScreen('screen-question');
-    updateBuhoReaction('thinking');
-    playSound('levelstart');
+    state.timer = levelTimerDefaults[lv] || 60;
+    updatePowerupButtons(); updateLevelDisplay(); updateScore(); updateStreak(); updateProgress();
+    showScreen('screen-question'); updateBuhoReaction('thinking'); playSound('levelstart');
     loadQuestion();
 }
 
 function goToNextLevel() {
-    const nextLevel = state.currentLevel + 1;
-    if (nextLevel <= 3) {
-        startLevel(nextLevel);
-    } else {
-        showFinalResults();
-    }
+    const next = state.currentLevel + 1;
+    if (next <= 4) startLevel(next);
+    else showFinalResults();
 }
 
 function updateLevelDisplay() {
@@ -628,577 +467,305 @@ function updateLevelDisplay() {
     ld.style.background = levelColors[state.currentLevel] || '#8B5CF6';
 }
 
-// ===== REACCIONES DE SABIONDO EL BÚHO 🦉 =====
-function updateBuhoReaction(reaction) {
-    state.ultimoEstadoBocadillo = reaction;
-    
-    document.querySelectorAll('.buho-svg').forEach(buho => {
-        buho.className = 'buho-svg';
-        void buho.offsetWidth;
-        buho.className = 'buho-svg ' + reaction;
-    });
-    
-    const speech = document.getElementById('question-speech');
-    const messages = {
-        'thinking': [
-            '¡Analiza con sabiduría! 🦉', 'Tú puedes lograrlo 💪', 'Lee con atención 📖',
-            'Confío en tu razonamiento 🧠', 'Cada opción es una pista 👀',
-            '¿Cuál será la correcta? 🤓', 'Sin prisa, pero sin pausa ⏳', 'El conocimiento está en ti 📚'
-        ],
-        'nervous': [
-            '¡El tiempo vuela! ⏰', '¡Confía en tu instinto! 😰', '¡No te paralices! ❄️',
-            '¡Elige con convicción! ⚡', '¡Últimos segundos! 🚨', '¡Tú sabes la respuesta! 🏃'
-        ],
-        'bored': [
-            '¡Despierta esa mente! ☕', '¡Vamos, futuro universitario! 🎓', '¡No te duermas en clases! 💤',
-            '¡Activa tus neuronas! 🧃', '¿Necesitas un café? ☕✨'
-        ],
-        'preocupacion': [
-            '¡Uy, cuidado! Revisa bien 🤔', '¡No te precipites! 🦉',
-            '¡Analiza antes de responder! 📖', '¿Estás seguro de esa respuesta? 💭',
-            '¡Tómate un momento para pensar! ⏳', '¡La paciencia es sabiduría! 🧠'
-        ],
-        'alivio': [
-            '¡Uf, menos mal! 😮‍💨', '¡Qué alivio! Respira hondo 🌿',
-            '¡Buen trabajo recuperándote! 💚', '¡Así se superan los obstáculos! 🦉',
-            '¡La calma trae claridad! ✨', '¡Sigue con confianza! 🌟'
-        ],
-        'impressed': [
-            '¡Impresionante! 🤩', '¡Eres un genio! 🌟', '¡Qué mente brillante! 🧠',
-            '¡Nadie te detiene! 🔥', '¡Vas directo a la universidad! 🎓✨',
-            '¡La PAES tiembla contigo! ⚡'
-        ],
-        'celebrating': [
-            '¡Nivel superado con honores! 🥳', '¡Sabiondo está orgulloso! 🦉🎉',
-            '¡Cada vez más cerca! 🏆', '¡Así se hace! 🌟',
-            '¡La práctica hace al maestro! 🎓✨'
-        ],
-        'deep-think': [
-            '¡Activa tu modo genio! 🔬', '¡Piensa profundamente! 🧐',
-            '¡Confía en tus cálculos! 📐', 'Esto es para mentes brillantes 💡',
-            '¡Activa tu súper cerebro! 🧮', 'Los números no mienten 🔢'
-        ],
-        'confident': [
-            '¡Eliminamos dos, ahora es fácil! 😎', '¡El 50/50 te respalda! ✨',
-            '¡Tú tienes el control! 🕶️', '¡Camino despejado! 🛤️'
-        ],
-        'frozen': [
-            '¡Tiempo congelado! 🥶', '¡Respira y piensa! ❄️',
-            '¡Sin prisa, analiza bien! ⛄', '¡Aprovecha estos segundos! ⏸️'
-        ],
-        'determined': [
-            '¡Ahora sí, con todo! 😤', '¡Esta no la fallo! 💪🔥',
-            'Cada error es una lección 📚', '¡Los genios también se equivocan! 🧠💡'
-        ],
-        'graduate': [
-            '¡Lo lograste! 🎓', '¡La universidad te espera! 🦉✨',
-            '¡De estudiante a PROFESIONAL! 🧠👑', '¡Hoy celebras tu conocimiento! 🎉📚'
-        ],
-        'correct': [
-            '¡Respuesta correcta! ✨', '¡Bien hecho! 🌟', '¡Así se hace! 💪',
-            '¡Esa es la actitud! 🎯', '¡Vas por buen camino! 🛤️'
-        ],
-        'incorrect': [
-            '¡No era esa, pero aprendemos! 💪', '¡Cada error nos hace más fuertes! 📚',
-            '¡Revisa la explicación! 👀', '¡La próxima la tienes! 🎯',
-            '¡Error detectado, conocimiento ganado! 🧠'
-        ]
+// ===== SABIONDO =====
+function updateBuhoReaction(r) {
+    state.ultimoEstadoBocadillo = r;
+    document.querySelectorAll('.buho-svg').forEach(b => { b.className = 'buho-svg'; void b.offsetWidth; b.className = 'buho-svg ' + r; });
+    const sp = document.getElementById('question-speech');
+    const msgs = {
+        'thinking':['¡Analiza con sabiduría! 🦉','Tú puedes lograrlo 💪','Lee con atención 📖','Confío en tu razonamiento 🧠','¿Cuál será la correcta? 🤓','Sin prisa, pero sin pausa ⏳'],
+        'nervous':['¡El tiempo vuela! ⏰','¡Confía en tu instinto! 😰','¡Elige con convicción! ⚡','¡Últimos segundos! 🚨'],
+        'bored':['¡Despierta esa mente! ☕','¡Vamos, futuro universitario! 🎓','¡Activa tus neuronas! 🧃'],
+        'preocupacion':['¡Uy, cuidado! 🤔','¡Analiza antes de responder! 📖','¡Tómate un momento! ⏳'],
+        'alivio':['¡Uf, menos mal! 😮‍💨','¡Qué alivio! 🌿','¡Buen trabajo! 💚'],
+        'impressed':['¡Impresionante! 🤩','¡Eres un genio! 🌟','¡Vas directo a la universidad! 🎓✨'],
+        'celebrating':['¡Nivel superado! 🥳','¡Sabiondo está orgulloso! 🦉🎉','¡Así se hace! 🌟'],
+        'deep-think':['¡Activa tu modo genio! 🔬','¡Piensa profundamente! 🧐','¡Confía en tus cálculos! 📐'],
+        'confident':['¡Eliminamos dos! 😎','¡El 50/50 te respalda! ✨','¡Tú tienes el control! 🕶️'],
+        'frozen':['¡Tiempo congelado! 🥶','¡Respira y piensa! ❄️','¡Aprovecha estos segundos! ⏸️'],
+        'determined':['¡Ahora sí, con todo! 😤','Cada error es una lección 📚','¡Los geniales también se equivocan! 🧠'],
+        'graduate':['¡Lo lograste! 🎓','¡La universidad te espera! 🦉✨','¡De estudiante a PROFESIONAL! 🧠👑'],
+        'correct':['¡Correcto! ✨','¡Bien hecho! 🌟','¡Así se hace! 💪'],
+        'incorrect':['¡No era esa! 💪','¡Cada error nos hace más fuertes! 📚','¡Revisa la explicación! 👀']
     };
-    
-    const list = messages[reaction] || messages['thinking'];
-    if (speech) {
-        speech.textContent = list[Math.floor(Math.random() * list.length)];
-        speech.className = 'character-speech state-' + reaction;
-        speech.style.animation = 'none';
-        speech.offsetHeight;
-        speech.style.animation = 'speechBubbleIn 0.4s ease-out';
-    }
+    const list = msgs[r] || msgs['thinking'];
+    if (sp) { sp.textContent = list[Math.floor(Math.random()*list.length)]; sp.className = 'character-speech state-'+r; sp.style.animation='none'; void sp.offsetHeight; sp.style.animation='speechBubbleIn 0.4s ease-out'; }
 }
 
-// ===== VISUALIZACIÓN DE LECTURA =====
-function mostrarLectura(question) {
-    const lecturaContainer = document.getElementById('lectura-container');
-    if (!lecturaContainer) return;
-    
-    if (question.textKey && typeof paesTexts !== 'undefined' && paesTexts[question.textKey]) {
-        const texto = paesTexts[question.textKey];
-        state.lecturaActiva = question.textKey;
-        
-        lecturaContainer.style.display = 'block';
-        lecturaContainer.innerHTML = `
-            <div class="lectura-panel">
-                <div class="lectura-header">
-                    <strong>📖 ${texto.title}</strong>
-                    <span class="lectura-author">— ${texto.author}</span>
-                </div>
-                <div class="lectura-body">${texto.body.replace(/\n/g, '<br>')}</div>
-            </div>
-        `;
-    } else {
-        lecturaContainer.style.display = 'none';
-        state.lecturaActiva = null;
-    }
+// ===== LECTURA =====
+function mostrarLectura(q) {
+    const lc = document.getElementById('lectura-container');
+    if (!lc) return;
+    if (q.textKey && typeof paesTexts !== 'undefined' && paesTexts[q.textKey]) {
+        const t = paesTexts[q.textKey];
+        state.lecturaActiva = q.textKey;
+        lc.style.display = 'block';
+        lc.innerHTML = `<div class="lectura-panel"><div class="lectura-header"><strong>📖 ${t.title}</strong><span class="lectura-author">— ${t.author}</span></div><div class="lectura-body">${t.body.replace(/\n/g,'<br>')}</div></div>`;
+    } else { lc.style.display = 'none'; state.lecturaActiva = null; }
 }
 
 // ===== CARGA DE PREGUNTAS =====
 function loadQuestion() {
     if (state.currentQuestion >= state.totalQuestions) { endLevel(); return; }
-
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
+    clearInterval(state.timerInterval); state.timerInterval = null;
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
-    state._freezeTimeout = null;
-    state.isFrozen = false;
-
+    state._freezeTimeout = null; state.isFrozen = false;
     state.questionStartTime = Date.now();
-
-    const question = state.questions[state.currentQuestion];
-    const optionsGrid = document.getElementById('options-grid');
-    const matchingContainer = document.getElementById('matching-container');
-    const dragContainer = document.getElementById('drag-container');
-    const sliderContainer = document.getElementById('slider-container');
-    const feedbackBox = document.getElementById('feedback-box');
-    const btnNext = document.getElementById('btn-next');
-
-    if (optionsGrid) { optionsGrid.innerHTML = ''; optionsGrid.style.display = 'none'; }
-    if (matchingContainer) { matchingContainer.innerHTML = ''; matchingContainer.style.display = 'none'; }
-    if (dragContainer) { dragContainer.innerHTML = ''; dragContainer.style.display = 'none'; }
-    if (sliderContainer) { sliderContainer.innerHTML = ''; sliderContainer.style.display = 'none'; }
-    if (feedbackBox) { feedbackBox.className = 'feedback-box'; feedbackBox.innerHTML = ''; }
-    if (btnNext) btnNext.style.display = 'none';
-
-    const qImg = document.getElementById('question-image');
-    if (qImg) qImg.style.display = 'none';
-
-    // Mostrar lectura si la pregunta tiene textKey (Nivel 1)
-    if (state.currentLevel === 1) {
-        mostrarLectura(question);
-    } else {
-        const lecturaContainer = document.getElementById('lectura-container');
-        if (lecturaContainer) lecturaContainer.style.display = 'none';
+    const q = state.questions[state.currentQuestion];
+    ['options-grid','matching-container','drag-container','slider-container'].forEach(id => {
+        const el = document.getElementById(id); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+    });
+    const fb = document.getElementById('feedback-box'); if (fb) { fb.className = 'feedback-box'; fb.innerHTML = ''; }
+    const bn = document.getElementById('btn-next'); if (bn) bn.style.display = 'none';
+    const qi = document.getElementById('question-image'); if (qi) qi.style.display = 'none';
+    if (state.currentLevel === 1) mostrarLectura(q);
+    else { const lc = document.getElementById('lectura-container'); if (lc) lc.style.display = 'none'; }
+    const qt = document.getElementById('question-text'); if (qt) qt.textContent = q.question;
+    if (state.currentLevel >= 2) updateBuhoReaction('deep-think'); else updateBuhoReaction('thinking');
+    switch (q.type) {
+        case 'multiple': loadMultipleChoice(q); break;
+        case 'matching': loadMatching(q); break;
+        case 'slider': loadSlider(q); break;
+        case 'drag': loadDrag(q); break;
     }
-
-    const qText = document.getElementById('question-text');
-    if (qText) qText.textContent = question.question;
-
-    if (state.currentLevel >= 2) updateBuhoReaction('deep-think');
-    else updateBuhoReaction('thinking');
-
-    switch (question.type) {
-        case 'multiple': loadMultipleChoice(question); break;
-        case 'matching': loadMatching(question); break;
-        case 'slider': loadSlider(question); break;
-        case 'drag': loadDrag(question); break;
-    }
-
     if (state.mode === 'timed') startTimer();
     updateProgress();
-
-    if (question.isBonus && optionsGrid && optionsGrid.style.display === 'flex') {
-        document.querySelectorAll('.option-btn').forEach(btn => btn.classList.add('bonus-question'));
-    }
 }
 
-// ===== TIPOS DE PREGUNTAS =====
-function loadMultipleChoice(question) {
-    const optionsGrid = document.getElementById('options-grid');
-    if (!optionsGrid) return;
-    optionsGrid.style.display = 'flex';
-    const indices = question.options.map((_, i) => i);
-    const shuffledIndices = shuffleArray(indices);
-    question._shuffledIndices = shuffledIndices;
-
-    const optionLetters = ['A', 'B', 'C', 'D', 'E'];
-
-    shuffledIndices.forEach((originalIndex, displayIndex) => {
+function loadMultipleChoice(q) {
+    const grid = document.getElementById('options-grid'); if (!grid) return;
+    grid.style.display = 'flex';
+    const indices = q.options.map((_,i) => i);
+    const shuffled = shuffleArray(indices);
+    q._shuffledIndices = shuffled;
+    const letters = ['A','B','C','D','E'];
+    shuffled.forEach((orig, disp) => {
         const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        if (question.isBonus) btn.classList.add('bonus-question');
-        btn.textContent = question.options[originalIndex];
-        btn.dataset.originalIndex = originalIndex;
-        btn.setAttribute('aria-label', `Opción ${optionLetters[displayIndex]}: ${question.options[originalIndex]}`);
-        btn.setAttribute('role', 'radio');
-        btn.addEventListener('click', () => checkMultipleAnswer(originalIndex, question));
-        optionsGrid.appendChild(btn);
+        btn.className = 'option-btn'; if (q.isBonus) btn.classList.add('bonus-question');
+        btn.textContent = q.options[orig]; btn.dataset.originalIndex = orig;
+        btn.setAttribute('aria-label', `Opción ${letters[disp]}: ${q.options[orig]}`);
+        btn.setAttribute('role','radio');
+        btn.addEventListener('click', () => checkMultipleAnswer(orig, q));
+        grid.appendChild(btn);
     });
 }
 
-function loadMatching(question) {
-    const matchingContainer = document.getElementById('matching-container');
-    if (!matchingContainer) return;
-    matchingContainer.style.display = 'grid';
-    let selectedLeft = null;
-    const matches = {};
-    const leftItems = shuffleArray(question.pairs.map(p => ({ id: p.id, text: p.left })));
-    const rightItems = shuffleArray(question.pairs.map(p => ({ id: p.id, text: p.right })));
-
-    leftItems.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'matching-item';
-        div.textContent = item.text;
-        div.dataset.pairId = item.id;
-        div.dataset.side = 'left';
-        div.addEventListener('click', function() {
+function loadMatching(q) {
+    const mc = document.getElementById('matching-container'); if (!mc) return;
+    mc.style.display = 'grid'; let sel = null; const matches = {};
+    const left = shuffleArray(q.pairs.map(p => ({id:p.id, text:p.left})));
+    const right = shuffleArray(q.pairs.map(p => ({id:p.id, text:p.right})));
+    left.forEach(item => {
+        const d = document.createElement('div'); d.className = 'matching-item'; d.textContent = item.text;
+        d.dataset.pairId = item.id; d.dataset.side = 'left';
+        d.addEventListener('click', function(){
             if (this.classList.contains('matched')) return;
             if (window.effectsManager) window.effectsManager.ensureAudio();
-            document.querySelectorAll('.matching-item[data-side="left"]').forEach(el => {
-                if (!el.classList.contains('matched')) el.classList.remove('selected');
-            });
-            this.classList.add('selected');
-            selectedLeft = this;
+            mc.querySelectorAll('.matching-item[data-side="left"]').forEach(el => { if (!el.classList.contains('matched')) el.classList.remove('selected'); });
+            this.classList.add('selected'); sel = this;
         });
-        matchingContainer.appendChild(div);
+        mc.appendChild(d);
     });
-
-    rightItems.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'matching-item';
-        div.textContent = item.text;
-        div.dataset.pairId = item.id;
-        div.dataset.side = 'right';
-        div.addEventListener('click', function() {
+    right.forEach(item => {
+        const d = document.createElement('div'); d.className = 'matching-item'; d.textContent = item.text;
+        d.dataset.pairId = item.id; d.dataset.side = 'right';
+        d.addEventListener('click', function(){
             if (this.classList.contains('matched')) return;
             if (window.effectsManager) window.effectsManager.ensureAudio();
-            if (selectedLeft && !this.classList.contains('matched')) {
-                if (selectedLeft.dataset.pairId === this.dataset.pairId) {
-                    selectedLeft.classList.add('matched');
-                    this.classList.add('matched');
-                    matches[this.dataset.pairId] = true;
-                    selectedLeft = null;
-                    if (Object.keys(matches).length === question.pairs.length) {
-                        clearInterval(state.timerInterval);
-                        state.timerInterval = null;
-                        showFeedback(`¡Perfecto! ${question.explanation || ''}`, 'correct');
-                        triggerVisualStarsFromElement(matchingContainer, 16);
-                        handleCorrectAnswer(question.points);
+            if (sel && !this.classList.contains('matched')) {
+                if (sel.dataset.pairId === this.dataset.pairId) {
+                    sel.classList.add('matched'); this.classList.add('matched');
+                    matches[this.dataset.pairId] = true; sel = null;
+                    if (Object.keys(matches).length === q.pairs.length) {
+                        clearInterval(state.timerInterval); state.timerInterval = null;
+                        showFeedback(`¡Perfecto! ${q.explanation||''}`, 'correct');
+                        triggerVisualStarsFromElement(mc, 16);
+                        handleCorrectAnswer(q.points);
                     }
                 } else {
-                    const leftEl = selectedLeft;
-                    leftEl.style.borderColor = 'var(--rojo-alerta)';
-                    this.style.borderColor = 'var(--rojo-alerta)';
-                    setTimeout(() => {
-                        leftEl.style.borderColor = '#CBD5E1';
-                        this.style.borderColor = '#CBD5E1';
-                        leftEl.classList.remove('selected');
-                    }, 500);
-                    selectedLeft = null;
+                    const le = sel;
+                    le.style.borderColor = 'var(--rojo-alerta)'; this.style.borderColor = 'var(--rojo-alerta)';
+                    setTimeout(() => { le.style.borderColor = '#CBD5E1'; this.style.borderColor = '#CBD5E1'; le.classList.remove('selected'); }, 500);
+                    sel = null;
                 }
             }
         });
-        matchingContainer.appendChild(div);
+        mc.appendChild(d);
     });
 }
 
-function loadSlider(question) {
-    const sliderContainer = document.getElementById('slider-container');
-    if (!sliderContainer) return;
-    sliderContainer.style.display = 'block';
-    const valueDisplay = document.createElement('div');
-    valueDisplay.className = 'slider-value';
-    valueDisplay.textContent = question.min;
-    valueDisplay.id = 'slider-value-display';
-    const track = document.createElement('div');
-    track.className = 'slider-track';
-    const fill = document.createElement('div');
-    fill.className = 'slider-fill';
-    fill.style.width = '0%';
-    const input = document.createElement('input');
-    input.type = 'range';
-    input.className = 'slider-input';
-    input.min = question.min;
-    input.max = question.max;
-    input.step = '0.1';
-    input.value = question.min;
-    input.addEventListener('input', () => {
-        fill.style.width = `${((input.value - question.min) / (question.max - question.min)) * 100}%`;
-        valueDisplay.textContent = input.value;
-    });
-    track.appendChild(fill);
-    track.appendChild(input);
-    const submitBtn = document.createElement('button');
-    submitBtn.className = 'main-btn';
-    submitBtn.textContent = 'Confirmar Respuesta ✅';
-    submitBtn.addEventListener('click', () => {
+function loadSlider(q) {
+    const sc = document.getElementById('slider-container'); if (!sc) return;
+    sc.style.display = 'block';
+    const vd = document.createElement('div'); vd.className = 'slider-value'; vd.textContent = q.min; vd.id = 'slider-value-display';
+    const tr = document.createElement('div'); tr.className = 'slider-track';
+    const fl = document.createElement('div'); fl.className = 'slider-fill'; fl.style.width = '0%';
+    const inp = document.createElement('input'); inp.type = 'range'; inp.className = 'slider-input';
+    inp.min = q.min; inp.max = q.max; inp.step = '0.1'; inp.value = q.min;
+    inp.addEventListener('input', () => { fl.style.width = `${((inp.value-q.min)/(q.max-q.min))*100}%`; vd.textContent = inp.value; });
+    tr.appendChild(fl); tr.appendChild(inp);
+    const sb = document.createElement('button'); sb.className = 'main-btn'; sb.textContent = 'Confirmar ✅';
+    sb.addEventListener('click', () => {
         if (window.effectsManager) window.effectsManager.ensureAudio();
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-        const userAnswer = parseFloat(input.value);
-        if (Math.abs(userAnswer - question.correctAnswer) <= question.tolerance) {
-            showFeedback(`¡Correcto! ${question.explanation}`, 'correct');
-            triggerVisualStarsFromElement(submitBtn, 14);
-            handleCorrectAnswer(question.points);
-        } else {
-            showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
-            handleIncorrectAnswer(question);
-        }
+        clearInterval(state.timerInterval); state.timerInterval = null;
+        const ua = parseFloat(inp.value);
+        if (Math.abs(ua - q.correctAnswer) <= q.tolerance) { showFeedback(`¡Correcto! ${q.explanation}`, 'correct'); triggerVisualStarsFromElement(sb,14); handleCorrectAnswer(q.points); }
+        else { showFeedback(`Incorrecto. ${q.explanation}`, 'incorrect'); handleIncorrectAnswer(q); }
     });
-    sliderContainer.appendChild(valueDisplay);
-    sliderContainer.appendChild(track);
-    sliderContainer.appendChild(submitBtn);
+    sc.appendChild(vd); sc.appendChild(tr); sc.appendChild(sb);
 }
 
-function loadDrag(question) {
-    const dragContainer = document.getElementById('drag-container');
-    if (!dragContainer) return;
-    dragContainer.style.display = 'flex';
-    question.items.forEach((item, index) => {
-        const dropZone = document.createElement('div');
-        dropZone.className = 'drop-zone';
-        dropZone.textContent = `${index + 1}. Soltar aquí`;
-        dropZone.dataset.index = index;
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-        dropZone.addEventListener('drop', (e) => {
+function loadDrag(q) {
+    const dc = document.getElementById('drag-container'); if (!dc) return;
+    dc.style.display = 'flex';
+    q.items.forEach((item, idx) => {
+        const dz = document.createElement('div'); dz.className = 'drop-zone';
+        dz.textContent = `${idx+1}. Soltar aquí`; dz.dataset.index = idx;
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+        dz.addEventListener('drop', e => {
             if (window.effectsManager) window.effectsManager.ensureAudio();
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            const draggedIndex = e.dataTransfer.getData('text/plain');
-            dropZone.textContent = `${index + 1}. ${question.items[draggedIndex]}`;
-            dropZone.dataset.filled = draggedIndex;
-            checkDragComplete(question);
+            e.preventDefault(); dz.classList.remove('drag-over');
+            dz.textContent = `${idx+1}. ${q.items[e.dataTransfer.getData('text/plain')]}`;
+            dz.dataset.filled = e.dataTransfer.getData('text/plain');
+            checkDragComplete(q);
         });
-        dragContainer.appendChild(dropZone);
+        dc.appendChild(dz);
     });
-    const itemsContainer = document.createElement('div');
-    itemsContainer.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;';
-    shuffleArray(question.items).forEach((item) => {
-        const draggable = document.createElement('div');
-        draggable.className = 'draggable-item';
-        draggable.textContent = item;
-        draggable.draggable = true;
-        draggable.dataset.originalIndex = question.items.indexOf(item);
-        draggable.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', draggable.dataset.originalIndex); draggable.style.opacity = '0.5'; });
-        draggable.addEventListener('dragend', () => { draggable.style.opacity = '1'; });
-        itemsContainer.appendChild(draggable);
+    const ic = document.createElement('div'); ic.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px';
+    shuffleArray(q.items).forEach(item => {
+        const dg = document.createElement('div'); dg.className = 'draggable-item'; dg.textContent = item;
+        dg.draggable = true; dg.dataset.originalIndex = q.items.indexOf(item);
+        dg.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', dg.dataset.originalIndex); dg.style.opacity = '0.5'; });
+        dg.addEventListener('dragend', () => { dg.style.opacity = '1'; });
+        ic.appendChild(dg);
     });
-    dragContainer.appendChild(itemsContainer);
+    dc.appendChild(ic);
 }
 
-function checkDragComplete(question) {
-    const dragContainer = document.getElementById('drag-container');
-    const dropZones = document.querySelectorAll('.drop-zone');
-    let allFilled = true, allCorrect = true;
-    dropZones.forEach((zone, index) => {
-        if (!zone.dataset.filled) allFilled = false;
-        else if (parseInt(zone.dataset.filled, 10) !== index) allCorrect = false;
-    });
-    if (allFilled) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-        if (allCorrect) {
-            showFeedback(`¡Excelente orden! ${question.explanation || ''}`, 'correct');
-            triggerVisualStarsFromElement(dragContainer, 16);
-            handleCorrectAnswer(question.points);
-        } else {
-            showFeedback(`El orden no es correcto. ${question.explanation || 'Revisa la secuencia lógica.'}`, 'incorrect');
-            handleIncorrectAnswer(question);
-        }
+function checkDragComplete(q) {
+    const dzs = document.querySelectorAll('.drop-zone');
+    let af = true, ac = true;
+    dzs.forEach((z,i) => { if (!z.dataset.filled) af = false; else if (parseInt(z.dataset.filled,10) !== i) ac = false; });
+    if (af) {
+        clearInterval(state.timerInterval); state.timerInterval = null;
+        if (ac) { showFeedback(`¡Excelente! ${q.explanation||''}`, 'correct'); triggerVisualStarsFromElement(document.getElementById('drag-container'),16); handleCorrectAnswer(q.points); }
+        else { showFeedback(`Orden incorrecto. ${q.explanation||'Revisa la secuencia.'}`, 'incorrect'); handleIncorrectAnswer(q); }
     }
 }
 
-// ===== MANEJO DE RESPUESTAS =====
-function checkMultipleAnswer(originalIndex, question) {
+// ===== RESPUESTAS =====
+function checkMultipleAnswer(oi, q) {
     if (window.effectsManager) window.effectsManager.ensureAudio();
-    const options = document.querySelectorAll('.option-btn');
-    options.forEach(btn => btn.disabled = true);
-
-    const shuffledIndices = question._shuffledIndices;
-    const correctDisplayIndex = shuffledIndices.indexOf(question.correct);
-    let clickedDisplayIndex = -1;
-    options.forEach((btn, i) => {
-        if (parseInt(btn.dataset.originalIndex) === originalIndex) clickedDisplayIndex = i;
-    });
-
-    const responseTime = (Date.now() - state.questionStartTime) / 1000;
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
-
+    const opts = document.querySelectorAll('.option-btn');
+    opts.forEach(b => b.disabled = true);
+    const si = q._shuffledIndices;
+    const cdi = si.indexOf(q.correct);
+    let cdi2 = -1;
+    opts.forEach((b,i) => { if (parseInt(b.dataset.originalIndex) === oi) cdi2 = i; });
+    const rt = (Date.now() - state.questionStartTime) / 1000;
+    clearInterval(state.timerInterval); state.timerInterval = null;
     state.totalPreguntasRespondidas++;
-
-    if (originalIndex === question.correct) {
-        if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('correct');
-        let totalPoints = question.points;
-        let starCount = 15;
-        if (responseTime < 3) {
-            const speedBonus = Math.round(question.points * 0.5);
-            totalPoints += speedBonus;
-            starCount += 10;
-            showSpeedBonus(speedBonus);
-        }
-        if (options[clickedDisplayIndex]) {
-            triggerVisualStarsFromElement(options[clickedDisplayIndex], starCount);
-        }
-        const bonusMsg = question.isBonus ? ' 🎁 ¡PREGUNTA BONUS! Puntuación DOBLE.' : '';
-        showFeedback(`¡Correcto! ${question.explanation}${bonusMsg}`, question.isBonus ? 'bonus' : 'correct');
-        handleCorrectAnswer(totalPoints);
+    if (oi === q.correct) {
+        if (opts[cdi2]) opts[cdi2].classList.add('correct');
+        let tp = q.points; let sc = 15;
+        if (rt < 3) { const sb = Math.round(q.points * 0.5); tp += sb; sc += 10; showSpeedBonus(sb); }
+        if (opts[cdi2]) triggerVisualStarsFromElement(opts[cdi2], sc);
+        showFeedback(`¡Correcto! ${q.explanation}${q.isBonus?' 🎁 BONUS!':''}`, q.isBonus?'bonus':'correct');
+        handleCorrectAnswer(tp);
     } else {
-        if (options[clickedDisplayIndex]) options[clickedDisplayIndex].classList.add('incorrect');
-        if (options[correctDisplayIndex]) options[correctDisplayIndex].classList.add('correct');
-        showFeedback(`Incorrecto. ${question.explanation}`, 'incorrect');
-        handleIncorrectAnswer(question);
+        if (opts[cdi2]) opts[cdi2].classList.add('incorrect');
+        if (opts[cdi]) opts[cdi].classList.add('correct');
+        showFeedback(`Incorrecto. ${q.explanation}`, 'incorrect');
+        handleIncorrectAnswer(q);
     }
 }
 
-function handleCorrectAnswer(points) {
+function handleCorrectAnswer(pts) {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
-    state.score += points;
-    state.levelScore += points;
-    state.streak++;
-    state.correctInLevel++;
+    state.score += pts; state.levelScore += pts; state.streak++; state.correctInLevel++;
     if (state.streak > state.maxStreak) state.maxStreak = state.streak;
-
-    const question = state.questions[state.currentQuestion];
-    if (question && question.topic) {
-        if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
-        state.topicScores[question.topic].correct++;
-        state.topicScores[question.topic].total++;
+    const q = state.questions[state.currentQuestion];
+    if (q?.topic) {
+        if (!state.topicScores[q.topic]) state.topicScores[q.topic] = {correct:0, total:0};
+        state.topicScores[q.topic].correct++; state.topicScores[q.topic].total++;
     }
-
-    updateScore();
-    updateStreak();
-    playSound('correct');
+    updateScore(); updateStreak(); playSound('correct');
     if (window.effectsManager) window.effectsManager.triggerConfettiAcademico();
-
-    const responseTime = (Date.now() - state.questionStartTime) / 1000;
-    if (responseTime < 3 && window.effectsManager) {
-        window.effectsManager.triggerScreenFlash(180);
-    }
-
+    if ((Date.now()-state.questionStartTime)/1000 < 3 && window.effectsManager) window.effectsManager.triggerScreenFlash(180);
     updateBuhoReaction('correct');
-    if (state.streak === 1) {
-        setTimeout(() => updateBuhoReaction('alivio'), 400);
-    }
-    if (state.streak >= 5) {
-        document.getElementById('streak-display')?.classList.add('on-fire');
-        if (window.effectsManager) window.effectsManager.triggerStarRain();
-        setTimeout(() => updateBuhoReaction('impressed'), 400);
-    } else if (state.streak >= 3) {
-        if (window.effectsManager) window.effectsManager.triggerStarRain();
-        setTimeout(() => updateBuhoReaction('impressed'), 400);
-    }
-
-    const btnNext = document.getElementById('btn-next');
-    if (btnNext) btnNext.style.display = 'block';
+    if (state.streak >= 5) { document.getElementById('streak-display')?.classList.add('on-fire'); if (window.effectsManager) window.effectsManager.triggerStarRain(); setTimeout(() => updateBuhoReaction('impressed'),400); }
+    else if (state.streak >= 3) { if (window.effectsManager) window.effectsManager.triggerStarRain(); setTimeout(() => updateBuhoReaction('impressed'),400); }
+    const bn = document.getElementById('btn-next'); if (bn) bn.style.display = 'block';
     checkBadges();
 }
 
-function handleIncorrectAnswer(question) {
+function handleIncorrectAnswer(q) {
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
-    state.totalPreguntasRespondidas++;
-    state.streak = 0;
-    state.levelPerfect = false;
+    state.totalPreguntasRespondidas++; state.streak = 0; state.levelPerfect = false;
     document.getElementById('streak-display')?.classList.remove('on-fire');
-
-    if (question && question.topic) {
-        if (!state.topicScores[question.topic]) state.topicScores[question.topic] = { correct: 0, total: 0 };
-        state.topicScores[question.topic].total++;
+    if (q?.topic) {
+        if (!state.topicScores[q.topic]) state.topicScores[q.topic] = {correct:0, total:0};
+        state.topicScores[q.topic].total++;
     }
-
-    updateStreak();
-    playSound('incorrect');
-    updateBuhoReaction('incorrect');
+    updateStreak(); playSound('incorrect'); updateBuhoReaction('incorrect');
     setTimeout(() => updateBuhoReaction('determined'), 400);
-
-    const btnNext = document.getElementById('btn-next');
-    if (btnNext) btnNext.style.display = 'block';
+    const bn = document.getElementById('btn-next'); if (bn) bn.style.display = 'block';
 }
 
-function showFeedback(message, type) {
-    const fb = document.getElementById('feedback-box');
-    if (!fb) return;
-    fb.textContent = message;
-    fb.className = `feedback-box ${type}`;
+function showFeedback(msg, type) {
+    const fb = document.getElementById('feedback-box'); if (!fb) return;
+    fb.textContent = msg; fb.className = `feedback-box ${type}`;
 }
 
 function nextQuestion() {
-    if (window.effectsManager) {
-        window.effectsManager.playSound('next');
-    }
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
-    state.isFrozen = false;
+    if (window.effectsManager) window.effectsManager.playSound('next');
+    clearInterval(state.timerInterval); state.timerInterval = null; state.isFrozen = false;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
-    state._freezeTimeout = null;
-    state.currentQuestion++;
+    state._freezeTimeout = null; state.currentQuestion++;
     document.getElementById('streak-display')?.classList.remove('on-fire');
     loadQuestion();
 }
 
 // ===== FIN DE NIVEL =====
 function endLevel() {
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
+    clearInterval(state.timerInterval); state.timerInterval = null;
     if (state._boredTimeout) clearTimeout(state._boredTimeout);
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
-    state._freezeTimeout = null;
-    state.isFrozen = false;
-
-    const totalQ = state.totalQuestions || 10;
-    const starCount = state.levelPerfect ? 3 : (state.correctInLevel >= totalQ * 0.7 ? 2 : 1);
-    state.levelStars[state.currentLevel] = starCount;
-
+    state._freezeTimeout = null; state.isFrozen = false;
+    const tq = state.totalQuestions || 25;
+    const sc = state.levelPerfect ? 3 : (state.correctInLevel >= tq*0.7 ? 2 : 1);
+    state.levelStars[state.currentLevel] = sc;
     if (state.levelPerfect && !state.badges.perfectScore) {
-        state.badges.perfectScore = true;
-        playSound('achievement');
+        state.badges.perfectScore = true; playSound('achievement');
         if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Puntaje Perfecto!', {
-                icon: '💯', bg: 'linear-gradient(135deg, #FFD700, #FFA500)', duration: 3500
-            });
-        }, 300);
+        setTimeout(() => { if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Insignia: Puntaje Perfecto!', {icon:'💯',bg:'linear-gradient(135deg,#FFD700,#FFA500)',duration:3500}); }, 300);
         saveBadges();
     }
     if (!state.powerupsUsedThisLevel && !state.badges.noPowerups) {
-        state.badges.noPowerups = true;
-        playSound('achievement');
+        state.badges.noPowerups = true; playSound('achievement');
         if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Poder Natural!', {
-                icon: '💪', bg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', duration: 3500
-            });
-        }, 300);
+        setTimeout(() => { if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Insignia: Poder Natural!', {icon:'💪',bg:'linear-gradient(135deg,#8B5CF6,#6D28D9)',duration:3500}); }, 300);
         saveBadges();
     }
-
-    if (state.currentLevel < 3) {
-        const transTitle = document.getElementById('transition-title');
-        const transSpeech = document.getElementById('transition-speech');
-        const lvlScoreDisp = document.getElementById('level-score-display');
-        if (transTitle) transTitle.textContent = `${levelNames[state.currentLevel]} Completado`;
-        if (transSpeech) transSpeech.textContent = `¡Sabiondo está orgulloso! 🦉 ${levelNames[state.currentLevel]} superado 🎉`;
-        if (lvlScoreDisp) lvlScoreDisp.textContent = state.levelScore;
-
-        let starsHTML = '<div class="star-rating">';
-        for (let i = 1; i <= 3; i++) {
-            starsHTML += `<span class="star ${i <= starCount ? 'earned' : ''}">⭐</span>`;
-        }
-        starsHTML += '</div>';
-        const scoreCard = document.querySelector('#screen-level-transition .share-card');
-        if (scoreCard && !document.getElementById('level-stars')) {
-            const starsDiv = document.createElement('div');
-            starsDiv.id = 'level-stars';
-            starsDiv.innerHTML = starsHTML;
-            scoreCard.appendChild(starsDiv);
-        } else if (document.getElementById('level-stars')) {
-            document.getElementById('level-stars').innerHTML = starsHTML;
-        }
-
-        const btnNextLevel = document.getElementById('btn-next-level');
-        if (btnNextLevel) btnNextLevel.textContent = `Siguiente: ${levelNames[state.currentLevel + 1]} ➡️`;
-
-        updateBuhoReaction(state.levelPerfect ? 'celebrating' : 'thinking');
-        showScreen('screen-level-transition');
-        playSound('levelup');
-        if (window.effectsManager) {
-            window.effectsManager.triggerFuegosAcademicos();
-            window.effectsManager.triggerConfettiAcademico(2000, 2);
-            setTimeout(() => window.effectsManager.triggerConfettiAcademico(1500, 1.5), 800);
-        }
+    if (state.currentLevel < 4) {
+        document.getElementById('transition-title').textContent = `${levelNames[state.currentLevel]} Completado`;
+        document.getElementById('transition-speech').textContent = `¡Sabiondo está orgulloso! 🦉`;
+        document.getElementById('level-score-display').textContent = state.levelScore;
+        let sh = '<div class="star-rating">';
+        for (let i=1;i<=3;i++) sh += `<span class="star ${i<=sc?'earned':''}">⭐</span>`;
+        sh += '</div>';
+        const sCard = document.querySelector('#screen-level-transition .share-card');
+        const ls = document.getElementById('level-stars');
+        if (ls) ls.innerHTML = sh;
+        else if (sCard) { const d = document.createElement('div'); d.id = 'level-stars'; d.innerHTML = sh; sCard.appendChild(d); }
+        document.getElementById('btn-next-level').textContent = `Siguiente: ${levelNames[state.currentLevel+1]} ➡️`;
+        updateBuhoReaction(state.levelPerfect?'celebrating':'thinking');
+        showScreen('screen-level-transition'); playSound('levelup');
+        if (window.effectsManager) { window.effectsManager.triggerFuegosAcademicos(); window.effectsManager.triggerConfettiAcademico(2000,2); setTimeout(() => window.effectsManager.triggerConfettiAcademico(1500,1.5),800); }
     } else {
-        updateBuhoReaction('graduate');
-        showFinalResults();
-        playSound('levelup');
+        updateBuhoReaction('graduate'); showFinalResults(); playSound('levelup');
         if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
     }
 }
@@ -1206,405 +773,195 @@ function endLevel() {
 function showFinalResults() {
     state.desafioEndTime = Date.now();
     state.tiempoTotalDesafio = (state.desafioEndTime - state.desafioStartTime) / 1000;
-    
-    const finalScore = document.getElementById('final-score');
-    if (finalScore) finalScore.textContent = state.score;
-    
-    const tiempoDesempeno = document.getElementById('tiempo-desempeno');
-    if (tiempoDesempeno && state.totalPreguntasRespondidas > 0) {
-        const promedio = state.tiempoTotalDesafio / state.totalPreguntasRespondidas;
-        const minutos = Math.floor(state.tiempoTotalDesafio / 60);
-        const segundos = Math.floor(state.tiempoTotalDesafio % 60);
-        let emojiVelocidad = '🐢 Sin prisa, lo importante es aprender';
-        if (promedio < 15) emojiVelocidad = '🏆 ¡Excelente velocidad!';
-        else if (promedio < 30) emojiVelocidad = '👍 Buen ritmo';
-        else if (promedio < 60) emojiVelocidad = '📚 Tómate tu tiempo para leer';
-        
-        tiempoDesempeno.innerHTML = `
-            <div style="margin-top:12px; padding:14px; background:#F5F3FF; border-radius:12px; border-left:4px solid #8B5CF6; text-align:left;">
-                <strong>⏱️ Desempeño de tiempo:</strong><br>
-                <span style="font-size:0.9rem;">
-                • Tiempo total: <b>${minutos}m ${segundos}s</b><br>
-                • Preguntas respondidas: <b>${state.totalPreguntasRespondidas}</b><br>
-                • Promedio por pregunta: <b>${promedio.toFixed(1)} segundos</b><br>
-                • ${emojiVelocidad}
-                </span>
-            </div>
-        `;
+    document.getElementById('final-score').textContent = state.score;
+    const td = document.getElementById('tiempo-desempeno');
+    if (td && state.totalPreguntasRespondidas > 0) {
+        const prom = state.tiempoTotalDesafio / state.totalPreguntasRespondidas;
+        const min = Math.floor(state.tiempoTotalDesafio / 60);
+        const seg = Math.floor(state.tiempoTotalDesafio % 60);
+        let ev = '🐢 Sin prisa, lo importante es aprender';
+        if (prom < 15) ev = '🏆 ¡Excelente velocidad!';
+        else if (prom < 30) ev = '👍 Buen ritmo';
+        else if (prom < 60) ev = '📚 Tómate tu tiempo';
+        td.innerHTML = `<div style="margin-top:12px;padding:14px;background:#F5F3FF;border-radius:12px;border-left:4px solid #8B5CF6;text-align:left"><strong>⏱️ Desempeño:</strong><br><span style="font-size:0.9rem">• Tiempo total: <b>${min}m ${seg}s</b><br>• Preguntas: <b>${state.totalPreguntasRespondidas}</b><br>• Promedio: <b>${prom.toFixed(1)}s</b><br>• ${ev}</span></div>`;
     }
-
-    const topicAnalysis = document.getElementById('topic-analysis');
-    if (topicAnalysis) {
-        topicAnalysis.innerHTML = '';
-        const topicNames = {
-            'numeros': 'Números', 'algebra': 'Álgebra', 'geometria': 'Geometría',
-            'probabilidad': 'Probabilidad', 'estadistica': 'Estadística',
-            'localizar': 'Lectura: Localizar', 'interpretar': 'Lectura: Interpretar',
-            'evaluar': 'Lectura: Evaluar'
-        };
-        const topicColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316'];
-        let colorIndex = 0;
+    const ta = document.getElementById('topic-analysis');
+    if (ta) {
+        ta.innerHTML = '';
+        const tn = { numeros:'Números', algebra:'Álgebra', geometria:'Geometría', probabilidad:'Probabilidad', estadistica:'Estadística', localizar:'Lectura: Localizar', interpretar:'Lectura: Interpretar', evaluar:'Lectura: Evaluar', biologia:'Biología', fisica:'Física', quimica:'Química' };
+        const tc = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6366F1','#14B8A6','#F97316','#84CC16','#06B6D4'];
+        let ci = 0;
         for (const [topic, scores] of Object.entries(state.topicScores)) {
-            const percentage = scores.total > 0 ? Math.round((scores.correct / scores.total) * 100) : 0;
-            const bar = document.createElement('div');
-            bar.className = 'topic-bar';
-            bar.innerHTML = `<span class="topic-label">${topicNames[topic] || topic}</span>
-                <div class="topic-progress"><div class="topic-fill" style="width:${percentage}%;background:${topicColors[colorIndex]}"></div></div>
-                <span class="topic-score">${percentage}%</span>`;
-            topicAnalysis.appendChild(bar);
-            colorIndex = (colorIndex + 1) % topicColors.length;
+            const pct = scores.total > 0 ? Math.round((scores.correct/scores.total)*100) : 0;
+            const bar = document.createElement('div'); bar.className = 'topic-bar';
+            bar.innerHTML = `<span class="topic-label">${tn[topic]||topic}</span><div class="topic-progress"><div class="topic-fill" style="width:${pct}%;background:${tc[ci]}"></div></div><span class="topic-score">${pct}%</span>`;
+            ta.appendChild(bar); ci = (ci+1) % tc.length;
         }
     }
-
-    const shareBadges = document.getElementById('share-badges');
-    if (shareBadges) {
-        shareBadges.innerHTML = '';
-        for (const [badge, unlocked] of Object.entries(state.badges)) {
-            if (unlocked) {
-                const badgeEl = document.createElement('span');
-                badgeEl.className = 'share-badge';
-                badgeEl.textContent = getBadgeIcon(badge);
-                shareBadges.appendChild(badgeEl);
-            }
-        }
+    const sb = document.getElementById('share-badges');
+    if (sb) { sb.innerHTML = ''; for (const [b,u] of Object.entries(state.badges)) { if (u) { const be = document.createElement('span'); be.className = 'share-badge'; be.textContent = getBadgeIcon(b); sb.appendChild(be); } } }
+    const sp = document.getElementById('result-character-speech');
+    if (sp) {
+        if (state.score >= 7000) sp.textContent = '¡Rendimiento excepcional! ¡La universidad te espera! 🎓✨';
+        else if (state.score >= 5000) sp.textContent = '¡Excelente! Vas por muy buen camino. 👏🎓';
+        else if (state.score >= 3000) sp.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
+        else sp.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
-
-    const speech = document.getElementById('result-character-speech');
-    if (speech) {
-        if (state.score >= 5000) speech.textContent = '¡Rendimiento excepcional! ¡La universidad te espera! 🎓✨';
-        else if (state.score >= 3500) speech.textContent = '¡Excelente resultado! Vas por muy buen camino. 👏🎓';
-        else if (state.score >= 2000) speech.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
-        else speech.textContent = '¡El aprendizaje es un camino diario! 💡📖';
-    }
-
-    if (state.currentLote) {
-        marcarLoteComoUsado(state.currentLote);
-    }
-
+    if (state.currentLote) marcarLoteComoUsado(state.currentLote);
     showScreen('screen-results');
     if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
     saveToLeaderboard();
 }
 
 function restartGame() {
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
+    clearInterval(state.timerInterval); state.timerInterval = null;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
-    state._freezeTimeout = null;
-    state.isFrozen = false;
-    state.currentQuestion = 0;
-    state.score = 0;
-    state.levelScore = 0;
-    state.streak = 0;
-    state.currentLevel = 1;
-    state.powerupsUsedThisLevel = false;
-    state.levelPerfect = true;
-    state.levelStars = {};
-    state.bonusQuestionActive = false;
-    state.correctInLevel = 0;
-    state.currentLote = null;
-    state.loteData = null;
-    state.ultimoEstadoBocadillo = null;
-    state.desafioStartTime = null;
-    state.desafioEndTime = null;
-    state.tiempoTotalDesafio = 0;
-    state.totalPreguntasRespondidas = 0;
-    state.lecturaActiva = null;
-    
+    state._freezeTimeout = null; state.isFrozen = false;
+    state.currentQuestion = 0; state.score = 0; state.levelScore = 0; state.streak = 0;
+    state.currentLevel = 1; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
+    state.levelStars = {}; state.bonusQuestionActive = false; state.correctInLevel = 0;
+    state.currentLote = null; state.loteData = null; state.ultimoEstadoBocadillo = null;
+    state.desafioStartTime = null; state.desafioEndTime = null; state.tiempoTotalDesafio = 0;
+    state.totalPreguntasRespondidas = 0; state.lecturaActiva = null;
     document.body.className = 'level-1';
     document.getElementById('streak-display')?.classList.remove('on-fire');
-    updateScore();
-    updateStreak();
-    updateProgress();
-    updateLevelDisplay();
-    
+    updateScore(); updateStreak(); updateProgress(); updateLevelDisplay();
     cargarYMostrarLotes();
-    const btnStart = document.getElementById('btn-start');
-    if (btnStart) btnStart.style.display = 'none';
-    const confirmacion = document.getElementById('lote-confirmacion');
-    if (confirmacion) confirmacion.style.display = 'none';
-    const loteSelector = document.getElementById('lote-selector');
-    if (loteSelector) loteSelector.style.display = 'block';
-    
+    const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
+    const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
+    const sel = document.getElementById('lote-selector'); if (sel) sel.style.display = 'block';
     showScreen('screen-welcome');
 }
 
-function goToFinalScreen() {
-    updateBuhoReaction('graduate');
-    showScreen('screen-final');
-    if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-}
+function goToFinalScreen() { updateBuhoReaction('graduate'); showScreen('screen-final'); if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos(); }
 
 // ===== POWER-UPS =====
 function usePowerup(type) {
-    if (state.powerups[type] <= 0) return;
-    if (state.currentQuestion >= state.totalQuestions) return;
+    if (state.powerups[type] <= 0 || state.currentQuestion >= state.totalQuestions) return;
     if ((type === 'time' || type === 'freeze') && state.mode !== 'timed') return;
-
-    state.powerups[type]--;
-    state.powerupsUsedThisLevel = true;
-    updatePowerupButtons();
-    playSound('powerup');
-
-    const btn = document.getElementById(`powerup-${type}`);
-    if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 300); }
-
+    state.powerups[type]--; state.powerupsUsedThisLevel = true;
+    updatePowerupButtons(); playSound('powerup');
+    const btn = document.getElementById(`powerup-${type}`); if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 300); }
     switch (type) {
         case 'fifty': applyFiftyFifty(); updateBuhoReaction('confident'); break;
-        case 'time':
-            if (state.mode === 'timed') { state.timer += 15; updateTimerDisplay(); }
-            break;
+        case 'time': if (state.mode === 'timed') { state.timer += 15; updateTimerDisplay(); } break;
         case 'freeze':
             if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
-            state.isFrozen = true;
-            updateBuhoReaction('frozen');
-            const td = document.getElementById('timer-display');
-            if (td) td.style.backgroundColor = '#10B981';
-            state._freezeTimeout = setTimeout(() => {
-                state.isFrozen = false;
-                state._freezeTimeout = null;
-                updateBuhoReaction('thinking');
-                if (td) td.style.backgroundColor = 'var(--azul-oscuro)';
-            }, 10000);
+            state.isFrozen = true; updateBuhoReaction('frozen');
+            const td = document.getElementById('timer-display'); if (td) td.style.backgroundColor = '#10B981';
+            state._freezeTimeout = setTimeout(() => { state.isFrozen = false; state._freezeTimeout = null; updateBuhoReaction('thinking'); if (td) td.style.backgroundColor = 'var(--azul-oscuro)'; }, 10000);
             break;
         case 'hint': applyHint(); break;
     }
 }
 
 function applyFiftyFifty() {
-    const question = state.questions[state.currentQuestion];
-    if (!question || question.type !== 'multiple') return;
-    const options = document.querySelectorAll('.option-btn');
-    const shuffledIndices = question._shuffledIndices;
-    const correctDisplayIndex = shuffledIndices.indexOf(question.correct);
-    const incorrectIndexes = [];
-    options.forEach((btn, i) => { if (i !== correctDisplayIndex) incorrectIndexes.push(i); });
-    shuffleArray(incorrectIndexes).slice(0, 2).forEach(index => {
-        if (options[index]) {
-            options[index].style.opacity = '0.3';
-            options[index].style.pointerEvents = 'none';
-        }
-    });
+    const q = state.questions[state.currentQuestion]; if (!q || q.type !== 'multiple') return;
+    const opts = document.querySelectorAll('.option-btn');
+    const si = q._shuffledIndices; const cdi = si.indexOf(q.correct);
+    const ii = []; opts.forEach((b,i) => { if (i !== cdi) ii.push(i); });
+    shuffleArray(ii).slice(0,2).forEach(i => { if (opts[i]) { opts[i].style.opacity = '0.3'; opts[i].style.pointerEvents = 'none'; } });
 }
 
 function applyHint() {
-    const question = state.questions[state.currentQuestion];
-    if (!question) return;
-    const fb = document.getElementById('feedback-box');
-    if (!fb) return;
-    const hintText = question.hint || (question.explanation ? question.explanation.split('.')[0] + '.' : 'Analiza cada opción con calma.');
-    fb.textContent = `💡 Pista: ${hintText}`;
+    const q = state.questions[state.currentQuestion]; if (!q) return;
+    const fb = document.getElementById('feedback-box'); if (!fb) return;
+    fb.textContent = `💡 Pista: ${q.hint || (q.explanation?.split('.')[0]+'.') || 'Analiza con calma.'}`;
     fb.className = 'feedback-box correct';
 }
 
 // ===== TEMPORIZADOR =====
 function startTimer() {
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
+    clearInterval(state.timerInterval); state.timerInterval = null;
     state.timer = levelTimerDefaults[state.currentLevel] || 60;
     updateTimerDisplay();
-    const timerDisplay = document.getElementById('timer-display');
-    if (timerDisplay) timerDisplay.classList.remove('warning');
-
+    const td = document.getElementById('timer-display'); if (td) td.classList.remove('warning');
     state.timerInterval = setInterval(() => {
         if (state.isFrozen) return;
-        state.timer--;
-        updateTimerDisplay();
-        if (state.timer <= 10 && state.timer > 0) {
-            if (timerDisplay) timerDisplay.classList.add('warning');
-            updateBuhoReaction('nervous');
-            if (window.effectsManager) window.effectsManager.playTick();
-        }
-        if (state.timer <= 0) {
-            clearInterval(state.timerInterval);
-            state.timerInterval = null;
-            if (timerDisplay) timerDisplay.classList.remove('warning');
-            if (window.effectsManager) window.effectsManager.playIncorrectFallback();
-            showFeedback(`¡Tiempo agotado! ${state.questions[state.currentQuestion].explanation}`, 'incorrect');
-            handleIncorrectAnswer(state.questions[state.currentQuestion]);
-        }
+        state.timer--; updateTimerDisplay();
+        if (state.timer <= 10 && state.timer > 0) { if (td) td.classList.add('warning'); updateBuhoReaction('nervous'); if (window.effectsManager) window.effectsManager.playTick(); }
+        if (state.timer <= 0) { clearInterval(state.timerInterval); state.timerInterval = null; if (td) td.classList.remove('warning'); if (window.effectsManager) window.effectsManager.playIncorrectFallback(); showFeedback(`¡Tiempo agotado! ${state.questions[state.currentQuestion].explanation}`, 'incorrect'); handleIncorrectAnswer(state.questions[state.currentQuestion]); }
     }, 1000);
-
-    state._boredTimeout = setTimeout(() => {
-        const nextBtn = document.getElementById('btn-next');
-        if (state.currentQuestion < state.totalQuestions && (!nextBtn || nextBtn.style.display === 'none')) {
-            updateBuhoReaction('bored');
-        }
-    }, 20000);
+    state._boredTimeout = setTimeout(() => { const bn = document.getElementById('btn-next'); if (state.currentQuestion < state.totalQuestions && (!bn || bn.style.display === 'none')) updateBuhoReaction('bored'); }, 20000);
 }
 
-function updateTimerDisplay() {
-    const td = document.getElementById('timer-display');
-    if (td) td.textContent = `⏱️ ${state.timer}s`;
-}
+function updateTimerDisplay() { const td = document.getElementById('timer-display'); if (td) td.textContent = `⏱️ ${state.timer}s`; }
 
-// ===== UI UPDATES =====
-function updateScore() {
-    const badge = document.getElementById('score-badge');
-    if (!badge) return;
-    badge.textContent = `⭐ ${state.score} pts`;
-    badge.classList.add('pop');
-    setTimeout(() => badge.classList.remove('pop'), 300);
-    if (window.effectsManager?.triggerScoreBadgeFlash) {
-        window.effectsManager.triggerScoreBadgeFlash();
-    }
-}
-
-function updateStreak() {
-    const sd = document.getElementById('streak-display');
-    if (sd) sd.textContent = `🔥 ${state.streak}`;
-}
-
-function updateProgress() {
-    const pf = document.getElementById('progress-fill');
-    if (pf) pf.style.width = `${(state.currentQuestion / state.totalQuestions) * 100}%`;
-}
-
+// ===== UI =====
+function updateScore() { const b = document.getElementById('score-badge'); if (!b) return; b.textContent = `⭐ ${state.score} pts`; b.classList.add('pop'); setTimeout(() => b.classList.remove('pop'), 300); if (window.effectsManager?.triggerScoreBadgeFlash) window.effectsManager.triggerScoreBadgeFlash(); }
+function updateStreak() { const s = document.getElementById('streak-display'); if (s) s.textContent = `🔥 ${state.streak}`; }
+function updateProgress() { const p = document.getElementById('progress-fill'); if (p) p.style.width = `${(state.currentQuestion/state.totalQuestions)*100}%`; }
 function updatePowerupButtons() {
-    ['fifty', 'time', 'freeze', 'hint'].forEach(type => {
-        const btn = document.getElementById(`powerup-${type}`);
-        if (!btn) return;
-        const small = btn.querySelector('small');
-        if (small) small.textContent = `(${state.powerups[type]})`;
-        const isTimePowerupInNormalMode = (type === 'time' || type === 'freeze') && state.mode !== 'timed';
-        btn.disabled = state.powerups[type] <= 0 || isTimePowerupInNormalMode;
+    ['fifty','time','freeze','hint'].forEach(t => {
+        const b = document.getElementById(`powerup-${t}`); if (!b) return;
+        const s = b.querySelector('small'); if (s) s.textContent = `(${state.powerups[t]})`;
+        b.disabled = state.powerups[t] <= 0 || ((t === 'time' || t === 'freeze') && state.mode !== 'timed');
     });
 }
 
 // ===== INSIGNIAS =====
 function checkBadges() {
-    if (state.score >= 2000 && !state.badges.paesPro) {
-        state.badges.paesPro = true;
-        playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: PAES Pro!', {
-                icon: '🏆', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', duration: 3500
-            });
-        }, 300);
-        saveBadges();
-    }
-    if (state.streak >= 5 && !state.badges.streaker) {
-        state.badges.streaker = true;
-        playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Rachador!', {
-                icon: '🔥', bg: 'linear-gradient(135deg, #EF4444, #DC2626)', duration: 3500
-            });
-        }, 300);
-        saveBadges();
-    }
-    if (state.mode === 'timed' && (Date.now() - state.questionStartTime) < 3000 && !state.badges.speedDemon) {
-        state.badges.speedDemon = true;
-        playSound('achievement');
-        if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
-        setTimeout(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Nueva insignia: Velocista!', {
-                icon: '⚡', bg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', duration: 3500
-            });
-        }, 300);
-        saveBadges();
-    }
+    if (state.score >= 3000 && !state.badges.paesPro) { state.badges.paesPro = true; playSound('achievement'); if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos(); setTimeout(() => { if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡PAES Pro!', {icon:'🏆',bg:'linear-gradient(135deg,#F59E0B,#D97706)',duration:3500}); },300); saveBadges(); }
+    if (state.streak >= 5 && !state.badges.streaker) { state.badges.streaker = true; playSound('achievement'); if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos(); setTimeout(() => { if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Rachador!', {icon:'🔥',bg:'linear-gradient(135deg,#EF4444,#DC2626)',duration:3500}); },300); saveBadges(); }
+    if (state.mode === 'timed' && (Date.now()-state.questionStartTime) < 3000 && !state.badges.speedDemon) { state.badges.speedDemon = true; playSound('achievement'); if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos(); setTimeout(() => { if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Velocista!', {icon:'⚡',bg:'linear-gradient(135deg,#3B82F6,#1D4ED8)',duration:3500}); },300); saveBadges(); }
 }
-
-function getBadgeIcon(badge) {
-    const icons = { perfectScore: '💯', speedDemon: '⚡', streaker: '🔥', paesPro: '🏆', noPowerups: '💪' };
-    return icons[badge] || '🏅';
-}
-
-function getBadgeName(badge) {
-    const names = { perfectScore: 'Puntaje Perfecto', speedDemon: 'Velocista', streaker: 'Rachador', paesPro: 'PAES Pro', noPowerups: 'Poder Natural' };
-    return names[badge] || badge;
-}
-
+function getBadgeIcon(b) { const i = { perfectScore:'💯', speedDemon:'⚡', streaker:'🔥', paesPro:'🏆', noPowerups:'💪' }; return i[b]||'🏅'; }
+function getBadgeName(b) { const n = { perfectScore:'Puntaje Perfecto', speedDemon:'Velocista', streaker:'Rachador', paesPro:'PAES Pro', noPowerups:'Poder Natural' }; return n[b]||b; }
 function loadBadges() {
-    const saved = safeLocalGet('paes_badges_v3', null);
-    if (saved) {
-        try { state.badges = { ...state.badges, ...JSON.parse(saved) }; } catch (e) {}
-    }
-    const grid = document.getElementById('badges-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    for (const [badge, unlocked] of Object.entries(state.badges)) {
-        const el = document.createElement('div');
-        el.className = `badge-item ${unlocked ? 'unlocked' : ''}`;
-        el.innerHTML = `<div class="badge-icon">${getBadgeIcon(badge)}</div><div class="badge-name">${getBadgeName(badge)}</div>`;
-        grid.appendChild(el);
+    const saved = safeLocalGet('paes_badges_v4', null);
+    if (saved) { try { state.badges = { ...state.badges, ...JSON.parse(saved) }; } catch(e) {} }
+    const g = document.getElementById('badges-grid'); if (!g) return;
+    g.innerHTML = '';
+    for (const [b,u] of Object.entries(state.badges)) {
+        const e = document.createElement('div'); e.className = `badge-item ${u?'unlocked':''}`;
+        e.innerHTML = `<div class="badge-icon">${getBadgeIcon(b)}</div><div class="badge-name">${getBadgeName(b)}</div>`;
+        g.appendChild(e);
     }
 }
-
-function saveBadges() {
-    safeLocalSet('paes_badges_v3', JSON.stringify(state.badges));
-}
+function saveBadges() { safeLocalSet('paes_badges_v4', JSON.stringify(state.badges)); }
 
 // ===== LEADERBOARD =====
-function showNamePromptModal(onSubmit) {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;padding:20px;';
-    const box = document.createElement('div');
-    box.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32);';
-    box.innerHTML = `
-        <div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B;">¡Buen trabajo! 🦉</div>
-        <div style="margin-bottom:16px;color:#64748B;font-size:0.9rem;">Ingresa tu nombre para el ranking</div>
-        <input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;margin-bottom:16px;font-family:inherit;font-size:1rem;">
-        <div style="display:flex;gap:10px;justify-content:center;">
-            <button id="paes-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer;">Omitir</button>
-            <button id="paes-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:white;font-weight:700;cursor:pointer;">Guardar</button>
-        </div>`;
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-    const input = box.querySelector('#paes-name-input');
-    input.focus();
-    const close = (value) => { overlay.remove(); onSubmit(value); };
-    box.querySelector('#paes-name-ok').addEventListener('click', () => close(input.value.trim() || 'Jugador'));
-    box.querySelector('#paes-name-skip').addEventListener('click', () => close(null));
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') close(input.value.trim() || 'Jugador'); });
-    document.addEventListener('keydown', function escH(e) { if (e.key === 'Escape') { close(null); document.removeEventListener('keydown', escH); } });
+function showNamePromptModal(cb) {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;padding:20px';
+    const bx = document.createElement('div');
+    bx.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32)';
+    bx.innerHTML = `<div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B">¡Buen trabajo! 🦉</div><div style="margin-bottom:16px;color:#64748B;font-size:0.9rem">Ingresa tu nombre</div><input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;margin-bottom:16px;font-family:inherit;font-size:1rem"><div style="display:flex;gap:10px;justify-content:center"><button id="paes-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer">Omitir</button><button id="paes-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:white;font-weight:700;cursor:pointer">Guardar</button></div>`;
+    ov.appendChild(bx); document.body.appendChild(ov);
+    const inp = bx.querySelector('#paes-name-input'); inp.focus();
+    const close = (v) => { ov.remove(); cb(v); };
+    bx.querySelector('#paes-name-ok').addEventListener('click', () => close(inp.value.trim()||'Jugador'));
+    bx.querySelector('#paes-name-skip').addEventListener('click', () => close(null));
+    inp.addEventListener('keydown', (e) => { if (e.key==='Enter') close(inp.value.trim()||'Jugador'); });
+    document.addEventListener('keydown', function esc(e) { if (e.key==='Escape') { close(null); document.removeEventListener('keydown',esc); } });
 }
 
 function saveToLeaderboard() {
-    showNamePromptModal((playerName) => {
-        if (!playerName) return;
-        const leaderboard = JSON.parse(safeLocalGet('paes_leaderboard_v3', '[]'));
-        leaderboard.push({
-            name: playerName,
-            score: state.score,
-            badges: Object.values(state.badges).filter(Boolean).length,
-            tiempo: state.tiempoTotalDesafio,
-            promedio: state.totalPreguntasRespondidas > 0 ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) : 0,
-            date: new Date().toLocaleDateString()
-        });
-        leaderboard.sort((a, b) => b.score - a.score);
-        safeLocalSet('paes_leaderboard_v3', JSON.stringify(leaderboard.slice(0, 20)));
+    showNamePromptModal((name) => {
+        if (!name) return;
+        const lb = JSON.parse(safeLocalGet('paes_leaderboard_v4','[]'));
+        lb.push({ name, score:state.score, badges:Object.values(state.badges).filter(Boolean).length, tiempo:state.tiempoTotalDesafio, promedio:state.totalPreguntasRespondidas>0?(state.tiempoTotalDesafio/state.totalPreguntasRespondidas).toFixed(1):0, date:new Date().toLocaleDateString() });
+        lb.sort((a,b) => b.score - a.score);
+        safeLocalSet('paes_leaderboard_v4', JSON.stringify(lb.slice(0,20)));
         loadLeaderboard();
     });
 }
 
 function loadLeaderboard() {
-    let leaderboard = [];
-    try { leaderboard = JSON.parse(safeLocalGet('paes_leaderboard_v3', '[]')); } catch (e) {}
-    const tbody = document.getElementById('leaderboard-body');
-    if (!tbody) return;
+    let lb = [];
+    try { lb = JSON.parse(safeLocalGet('paes_leaderboard_v4','[]')); } catch(e) {}
+    const tbody = document.getElementById('leaderboard-body'); if (!tbody) return;
     tbody.innerHTML = '';
-    leaderboard.forEach((entry, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td class="${index < 3 ? 'rank-'+(index+1) : ''}">${index+1}</td><td>${entry.name}</td><td>${entry.score} pts</td><td>${'🏅'.repeat(entry.badges)}</td>`;
-        tbody.appendChild(row);
+    lb.forEach((e,i) => {
+        const r = document.createElement('tr');
+        r.innerHTML = `<td class="${i<3?'rank-'+(i+1):''}">${i+1}</td><td>${e.name}</td><td>${e.score} pts</td><td>${'🏅'.repeat(e.badges)}</td>`;
+        tbody.appendChild(r);
     });
 }
 
-// ===== COMPARTIR =====
 function shareResults() {
-    const promedio = state.totalPreguntasRespondidas > 0 ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) : '---';
-    const text = `🎓 ¡Acabo de conseguir ${state.score} puntos en PAES Challenge! ⏱️ Promedio: ${promedio}s por pregunta. ¿Puedes superarme? 🦉`;
-    if (navigator.share) {
-        navigator.share({ title: 'PAES Challenge', text, url: window.location.href }).catch(() => {});
-    } else {
-        navigator.clipboard.writeText(text).then(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Copiado! Compártelo donde quieras.', { icon: '📋', duration: 2500 });
-        }).catch(() => {
-            if (window.effectsManager) window.effectsManager.triggerToastAcademico('No se pudo copiar automáticamente.', { icon: '⚠️', duration: 2500 });
-        });
-    }
+    const prom = state.totalPreguntasRespondidas>0?(state.tiempoTotalDesafio/state.totalPreguntasRespondidas).toFixed(1):'---';
+    const text = `🎓 ¡${state.score} puntos en PAES Challenge! ⏱️ ${prom}s/pregunta. ¿Puedes superarme? 🦉`;
+    if (navigator.share) navigator.share({title:'PAES Challenge',text,url:window.location.href}).catch(()=>{});
+    else navigator.clipboard.writeText(text).then(()=>{ if(window.effectsManager) window.effectsManager.triggerToastAcademico('¡Copiado!',{icon:'📋',duration:2500}); }).catch(()=>{ if(window.effectsManager) window.effectsManager.triggerToastAcademico('No se pudo copiar',{icon:'⚠️',duration:2500}); });
 }
