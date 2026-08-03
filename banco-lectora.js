@@ -10,7 +10,7 @@ const paesTexts = {
   discurso_nobel: {
     title: "Discurso de recepción del Premio Nobel de Literatura",
     author: "Wisława Szymborska (1996)",
-    body: "Se dice que en un discurso lo más difícil es siempre la primera frase... Pues ya la dije... Pero presiento que las que siguen van a ser igualmente difíciles, la tercera, la sexta, la décica, hasta la última, ya que debo hablar sobre poesía. Muy raras veces me he expresado acerca de este tema, casi nunca, y siempre con la convicción de que no lo hago muy bien. Por eso mi discurso no va a ser demasiado largo. Toda imperfección resulta más fácil de aguantar si se sirve en pequeñas dosis.\n\nEl poeta contemporáneo es escéptico y desconfía incluso —o más bien principalmente— de sí mismo. Con desgano confiesa públicamente que es poeta —como si se tratara de algo vergonzoso—. En estos tiempos bulliciosos es más fácil que admitamos los vicios propios, con tal de causar efectos fuertes; mucho más difícil es reconocer las virtutes, ya que están escondidas más profundamente, y hasta uno mismo no cree tanto en ellas. En las encuestas o en los encuentros con amigos ocasionales, cuando el poeta se ve forzado a definir su profesión, acude al término genérico 'escritor' o al de alguna otra profesión que adicionalmente ejerza. El empleado público o los eventuales compañeros de viaje reciben con cierta perplejidad e inquietud la noticia de que están tratando con un poeta.\n\nNo existen profesores de poesía, lo que haría suponer que esta actividad requiere de estudios especializados, exámenes presentados en fechas precisas, disertaciones teóricas rematadas con bibliografía y notas y, finalmente, los diplomas recibidos con solemnidad. Recordemos que justamente esta fue la razón por la que condenaron al destierro a Josef Brodsky, orgullo de la poesía rusa, quien más tarde fue galardonado con el Premio Nobel. A Brodsky se le clasificó como 'parásito', por no contar con un certificado oficial que le permitiera ser poeta.\n\nHay algo que resulta muy característico. Continuamente se filman películas biográficas sobre grandes científicos y artistas. La tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo que condujo a importantes descubrimientos científicos o a la creación de grandes obras de arte. Se puede, con aceptables resultados, mostrar el trabajo de algunos científicos: laboratorios, instrumentos diversos y aparatos puestos en marcha logran por unos momentos mantener la atención de los espectadores. Las películas sobre los compositores se llenan con su música. Todo sigue siendo muy ingenuo y no dice nada sobre el extraño estado de ánimo que se conoce comúnmente como inspiración, pero por lo menos hay algo para ver y oír. El peor de los casos es el de los poetas. Su trabajo resulta irremediablemente poco fotogénico.\n\nHe mencionado la inspiración. A la pregunta de qué cosa es, suponiendo que sea algo, los poetas contemporáneos responden de modo evasivo. Y no porque nunca hayan sentido los beneficios de este impulso interior, más bien se debe a otra causa: no es fácil explicar a los demás algo que ni siquiera se comprende bien. Yo misma he evadido el asunto cuando me lo han preguntado. Y contesto lo siguiente: la inspiración no es privilegio exclusivo de los poetas ni de los artistas en general. Hay, hubo, habrá siempre un número de personas en quienes de vez en cuando se despierta la inspiración. A este grupo pertenecen los que escogen su trabajo y lo cumplen con amor e imaginación. Hay médicos así, hay maestros, hay también jardineros y centenares de oficios más. Su trabajo puede ser una aventura sin fin, a condición de que sepan encontrar en él nuevos desafíos cada vez. Sin importar los esfuerzos y fracasos, su inquietud no desfallece. De cada problema resuelto surge un enjambre de nuevas preguntas. La inspiración, cualquier cosa que sea, nace de un perpetuo 'no lo sé'.\n\nSi Isaac Newton no se hubiera dicho 'no sé', las manzanas en su jardín podrían seguir cayendo como granizo, y él, en el mejor de los casos, solamente se inclinaría para recogerlas y comérselas. Si mi compatriota Marie Sklodowska-Curie no se hubiera dicho 'no sé', probablemente se habría quedado como maestra de química en un colegio para señoritas de buena familia y en este trabajo, por otra parte muy decente, se le hubiera ido la vida. Pero siguió repitiéndose 'no sé' y justo estas palabras la trajeron dos veces a Estocolmo, donde se otorgan los premios Nobel a personas de espíritu inquieto y en búsqueda constante.\n\nTambién el poeta, si es un verdadero poeta, tiene que repetirse perpetuamente 'no sé'. Con cada verso intenta responder, pero en el momento en que pone el punto final, le asaltan las dudas y empieza a advertir que su respuesta es temporal y en ningún caso satisfactoria. Entonces prueba otra vez y otra vez, para que a las sucesivas muestras de su insatisfacción consigo mismo los historiadores de la literatura las sujeten con un clip enorme para denominarlas 'La Obra'."
+    body: "Se dice que en un discurso lo más difícil es siempre la primera frase... Pues ya la dije... Pero presiento que las que siguen van a ser igualmente difíciles, la tercera, la sexta, la décica, hasta la última, ya que debo hablar sobre poesía. Muy raras veces me he expresado acerca de este tema, casi nunca, y siempre con la convicción de que no lo hago muy bien. Por eso mi discurso no va a ser demasiado largo. Toda imperfección resulta más fácil de aguantar si se sirve en pequeñas dosis.\n\nEl poeta contemporáneo es escéptico y desconfía incluso —o más bien principalmente— de sí mismo. Con desgano confiesa públicamente que es poeta —como si se tratara de algo vergonzoso—. En estos tiempos bulliciosos es más fácil que admitamos los vicios propios, con tal de causar efectos fuertes; mucho más difícil es reconocer las virtutes, ya que están escondidas más profundamente, y hasta uno mismo no cree tanto en ellas. En las encuestas o en los encuentros con amigos ocasionales, cuando el poeta se ve forzado a definir su profesión, acude al término genérico 'escritor' o al de alguna otra profesión que adicionalmente ejerza. El empleado público o los eventuales compañeros de viaje reciben con cierta perplejidad e inquietud la noticia de que están tratando con un poeta.\n\nNo existen profesores de poesía, lo que haría suponer que esta actividad requiere de estudios especializados, exámenes presentados en fechas precisas, disertaciones teóricas rematadas con bibliografía y notas y, finalmente, los diplomas recibidos con solemnidad. Recordemos que justamente esta fue la razón por la que condenaron al destierro a Josef Brodsky, orgullo de la poesía rusa, quien más tarde fue galardonado con el Premio Nobel. A Brodsky se le clasificó como 'parásito', por no contar con un certificado oficial que le permitiera ser poeta.\n\nHay algo que resulta muy característico. Continuamente se filman películas biográficas sobre grandes científicos y artists. La tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo que condujo a importantes descubrimientos científicos o a la creación de grandes obras de arte. Se puede, con aceptables resultados, mostrar el trabajo de algunos científicos: laboratorios, instrumentos diversos y aparatos puestos en marcha logran por unos momentos mantener la atención de los espectadores. Las películas sobre los compositores se llenan con su música. Todo sigue siendo muy ingenuo y no dice nada sobre el extraño estado de ánimo que se conoce comúnmente como inspiración, pero por lo menos hay algo para ver y oír. El peor de los casos es el de los poetas. Su trabajo resulta irremediablemente poco fotogénico.\n\nHe mencionado la inspiración. A la pregunta de qué cosa es, suponiendo que sea algo, los poetas contemporáneos responden de modo evasivo. Y no porque nunca hayan sentido los beneficios de este impulso interior, más bien se debe a otra causa: no es fácil explicar a los demás algo que ni siquiera se comprende bien. Yo misma he evadido el asunto cuando me lo han preguntado. Y contesto lo siguiente: la inspiración no es privilegio exclusivo de los poetas ni de los artistas en general. Hay, hubo, habrá siempre un número de personas en quienes de vez en cuando se despierta la inspiración. A este grupo pertenecen los que escogen su trabajo y lo cumplen con amor e imaginación. Hay médicos así, hay maestros, hay también jardineros y centenares de oficios más. Su trabajo puede ser una aventura sin fin, a condición de que sepan encontrar en él nuevos desafíos cada vez. Sin importar los esfuerzos y fracasos, su inquietud no desfallece. De cada problema resuelto surge un enjambre de nuevas preguntas. La inspiración, cualquier cosa que sea, nace de un perpetuo 'no lo sé'.\n\nSi Isaac Newton no se hubiera dicho 'no sé', las manzanas en su jardín podrían seguir cayendo como granizo, y él, en el mejor de los casos, solamente se inclinaría para recogerlas y comérselas. Si mi compatriota Marie Sklodowska-Curie no se hubiera dicho 'no sé', probablemente se habría quedado como maestra de química en un colegio para señoritas de buena familia y en este trabajo, por otra parte muy decente, se le hubiera ido la vida. Pero siguió repitiéndose 'no sé' y justo estas palabras la trajeron dos veces a Estocolmo, donde se otorgan los premios Nobel a personas de espíritu inquieto y en búsqueda constante.\n\nTambién el poeta, si es un verdadero poeta, tiene que repetirse perpetuamente 'no sé'. Con cada verso intenta responder, pero en el momento en que pone el punto final, le asaltan las dudas y empieza a advertir que su respuesta es temporal y en ningún caso satisfactoria. Entonces prueba otra vez y otra vez, para que a las sucesivas muestras de su insatisfacción consigo mismo los historiadores de la literatura las sujeten con un clip enorme para denominarlas 'La Obra'."
   },
   oasis_dicha: {
     title: "Un oasis de dicha",
@@ -35,7 +35,7 @@ const paesTexts = {
   formacion_civica: {
     title: "Guía de Formación Cívica: La Persona y los Derechos Humanos",
     author: "Ministerio de Educación",
-    body: "La idea de persona designa genéricamente a los individuos de la especie humana (Homo sapiens, que significa literalmente 'hombre sabio', variedad de homínidos, que existe hace aproximadamente 190.000 años en nuestro planeta).\n\nLos seres humanos poseen una naturaleza muy particular. Por un lado, integran el medio natural o ecológico y, aun cuando existen muchas semejanzas con otros animales, los seres humanos también pueden trascender del mundo natural, siendo entonces capaces de crear cultura y de actuar haciendo uso de su libertad.\n\nEn el mismo sentido, los seres humanos son constitutivamente más frágiles que otras especies. A diferencia de los cachorros de otros mamíferos, un bebé no puede valerse por sí mismo y requiere del cuidado de sus padres. Estas características o dimensiones social, política y otras, explican que el ser humano sea asociativo y viva en comunidades. En la tradición aristotélica, esto trae aparejado que solo puede alcanzar su felicidad y realización a través de sus relaciones con los demás.\n\nEl ser humano posee también una capacidad de apertura al mundo, pudiendo aprender y modificar su entorno. El lenguaje le proporciona los medios, faculta su comunicación y posibilita la transferencia cultural. De este modo, lo que somos como personas lo debemos en gran medida a nuestra herencia biológica, así como también al lenguaje y a otras tradiciones culturales e instituciones como la moral, la costumbre y el derecho.\n\nEs así como, producto de la herencia natural y la historia cultural, los seres humanos se han podido adaptar a la mayor parte de los entornos de la Tierra, desarrollando grandes logros en los ámbitos artístico, cultural, moral, espiritual y científico, incluyendo la capacidad de salir del planeta a explorar el universo; pero también somos capaces del mal. En efecto, el potencial humano ha visto su peor cara en las tragedias del siglo XX que significaron la muerte de millones de seres humanos. Lo anterior nos obliga a ser responsables y conscientes respecto de nuestra inteligencia y capacidades.\n\nNo estando, entonces, determinados enteramente por instintos, en distintas épocas la humanidad ha generado instituciones para poder ordenar la vida. El contenido de estas instituciones en una sociedad democrática debe asegurar el respeto, promoción y protección de los derechos humanos.\n\nSe dice tradicionalmente, al menos autores como Tomás de Aquino, que la naturaleza humana se constituye a partir de dos ámbitos: el físico-biológico y el psíquico-espiritual. El primero guarda relación con las necesidades básicas de sobrevivencia de todos los seres vivos: respirar, alimentarse, beber, tener abrigo y dormir. La otra esfera responde a la esencia misma de ser persona. En general, se entiende que hombres y mujeres, sin distinción, están provistos de una parte psíquica-espiritual que les permite tener razón e inteligencia, capacidad de conocer y aprender, pensar, discernir entre lo bueno y lo malo, lo justo y lo injusto, amar, ser amados y tener la conciencia de 'existir'. Estos atributos constituirían la base del concepto filosófico que se conoce como 'dignidad humana'.\n\nLa dignidad humana: Esta noción hace referencia al valor inherente al ser humano. Este concepto tiene sus orígenes en la doctrina judeocristiana, en que el ser humano encuentra su lugar en el mundo al haber sido creado a imagen y semejanza de Dios. Filosóficamente, se dice que los seres humanos, a diferencia de los otros seres vivos, tenemos particularidades únicas: razón, inteligencia, sentimientos y voluntad de decidir.\n\nDesde una perspectiva secular (laica, sin rasgos religiosos), podemos decir que alude a la cualidad esencial del ser humano, específica y exclusiva, en virtud de la cual se distingue lo humano de lo no humano. La dignidad aparece, pues, como una seña de identidad del ser humano, como ser dotado de inteligencia y libertad, como ser moral.\n\nEl concepto de 'dignidad humana' es de la misma naturaleza que el desarrollo de los Derechos Humanos durante el siglo XX, al ser un atributo que no distingue edad, sexo, etnia, género, creencia religiosa, opinión política, situación civil ni económica. La idea de dignidad aparece así en los textos jurídicos indisolublemente ligada al concepto de Derechos Humanos. Los seres humanos tienen derechos que han de ser reconocidos por el poder político porque tienen dignidad. La dignidad humana es la causa de que se reconozcan derechos. En una palabra: es su justificación."
+    body: "La idea de persona designa genéricamente a los individuos de la especie humana (Homo sapiens, que significa literalmente 'hombre sabio', variedad de homínidos, que existe hace aproximadamente 190.000 años en nuestro planeta).\n\nLos seres humanos poseen una naturaleza muy particular. Por un lado, integran el medio natural o ecológico y, aun cuando existen muchas semejanzas con otros animales, los seres humanos también pueden trascender del mundo natural, siendo entonces capaces de crear cultura y de actuar haciendo uso de su libertad.\n\nEn el mismo sentido, los seres humanos son constitutivamente más frágiles que otras especies. A diferencia de los cachorros de otros mamíferos, un bebé no puede valerse por sí mismo y requiere del cuidado de sus padres. Estas características o dimensiones social, política y otras, explican que el ser humano sea asociativo y viva en comunidades. En la tradición aristotélica, esto trae aparejado que solo puede alcanzar su felicidad y realización a través de sus relaciones con los demás.\n\nEl ser humano posee también una capacidad de apertura al mundo, pudiendo aprender y modificar su entorno. El lenguaje le proporciona los medios, faculta su comunicación y posibilita la transferencia cultural. De este modo, lo que somos como personas lo debemos en gran medida a nuestra herencia biológica, así como también al lenguaje y a otras tradiciones culturales e instituciones como la moral, la costumbre y el derecho.\n\nEs así como, producto de la herencia natural y la historia cultural, los seres humanos se han podido adaptar a la mayor parte de los entornos de la Tierra, desarrollando grandes logros en los ámbitos artístico, cultural, moral, espiritual y científico, incluyendo la capacidad de salir del planeta a explorar el universo; pero también somos capaces del mal. En efecto, el potencial humano ha visto su peor cara en las tragedias del siglo XX que significaron la muerte de millones de seres humanos. Lo anterior nos obliga a ser responsables y conscientes respecto de nuestra inteligencia y capacidades.\n\nNo estando, entonces, determinados enteramente por instintos, en distintas épocas la humanidad ha generado instituciones para poder ordenar la vida. El contenido de estas instituciones en una sociedad democrática debe asegurar el respeto, promoción y protección de los derechos humanos.\n\nSe dice tradicionalmente, al menos autores como Tomás de Aquino, que la naturaleza humana se constituye a partir de dos ámbitos: el físico-biológico y el psíquico-espiritual. El primero guarda relación con las necesidades básicas de sobrevivencia de todos los seres vivos: respirar, alimentarse, beber, tener abrigo y dormir. La otra esfera responde a la esencia misma de ser persona. En general, se entiende que hombres y mujeres, sin distinción, están provistos de una parte psíquica-espiritual que les permite tener razón e inteligencia, capacidad de conocer y aprender, pensar, discernir entre lo bueno y lo malo, lo justo y lo injusto, amar, ser amados y tener la conciencia de 'existir'. Estos atributos constituirían la base del concepto filosófico que se conoce como 'dignidad humana'.\n\nLa dignidad humana: Esta noción hace referencia al valor inherente al ser humano. Este concepto tiene sus orígenes en la doctrina judeocristiana, en que el ser humano encuentra su lugar en el mundo al haber sido creado a imagen y semejanza de Dios. Filosóficamente, se dice que los seres humanos, a diferencia de los otros seres vivos, tenemos particularidades únicas: razón, inteligencia, sentimientos y voluntad de decidir.\n\nDesde una perspectiva secular (laica, sin rasgos religiosos), podemos decir que alude a la cualidad esencia del ser humano, específica y exclusiva, en virtud de la cual se distingue lo humano de lo no humano. La dignidad aparece, pues, como una seña de identidad del ser humano, como ser dotado de inteligencia y libertad, como ser moral.\n\nEl concepto de 'dignidad humana' es de la misma naturaleza que el desarrollo de los Derechos Humanos durante el siglo XX, al ser un atributo que no distingue edad, sexo, etnia, género, creencia religiosa, opinión política, situación civil ni económica. La idea de dignidad aparece así en los textos jurídicos indisolublemente ligada al concepto de Derechos Humanos. Los seres humanos tienen derechos que han de ser reconocidos por el poder político porque tienen dignidad. La dignidad humana es la causa de que se reconozcan derechos. En una palabra: es su justificación."
   },
   globalizacion_lenguas: {
     title: "Español Actual: Globalización e Interculturalidad",
@@ -75,6 +75,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La autora justifica de forma humorística y humilde por qué su discurso será breve.',
     hint: 'Observa la relación directa entre la frase y la declaración de brevedad que realiza la autora.',
+    evidenceText: 'Por eso mi discurso no va a ser demasiado largo. Toda imperfección resulta más fácil de aguantar si se sirve en pequeñas dosis.',
     points: 100
   },
   {
@@ -89,6 +90,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El párrafo explica que el poeta contemporáneo es escéptico y desconfía de sí mismo, y que reconocer las virtudes de su oficio es mucho más difícil que admitir vicios.',
     hint: 'Busca la afirmación que sintetice la actitud autocrítica y desconfiada del poeta.',
+    evidenceText: 'El poeta contemporáneo es escéptico y desconfía incluso —o más bien principalmente— de sí mismo. Con desgano confiesa públicamente que es poeta —como si se tratara de algo vergonzoso—. En estos tiempos bulliciosos es más fácil que admitamos los vicios propios, con tal de causar efectos fuertes; mucho más difícil es reconocer las virtutes, ya que están escondidas más profundamente, y hasta uno mismo no cree tanto en ellas.',
     points: 100
   },
   {
@@ -103,6 +105,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'La anécdota demuestra de manera irónica la absurdidad de requerir diplomas oficiales para validar la poesía.',
     hint: 'Analiza la ironía tras el juicio legal a Brodsky por no poseer un documento que acreditara su condición de artista.',
+    evidenceText: 'No existen profesores de poesía, lo que haría suponer que esta actividad requiere de estudios especializados, exámenes presentados en fechas precisas, disertaciones teóricas rematadas con bibliografía y notas y, finalmente, los diplomas recibidos con solemnidad. Recordemos que justamente esta fue la razón por la que condenaron al destierro a Josef Brodsky, orgullo de la poesía rusa, quien más tarde fue galardonado con el Premio Nobel. A Brodsky se le clasificó como \'parásito\', por no contar con un certificado oficial que le permitiera ser poeta.',
     points: 100
   },
   {
@@ -110,13 +113,14 @@ const paesLenguajeQuestions = [
     question: '¿Cuál es la crítica de la emisora a las películas biográficas sobre artistas y científicos?',
     options: [
       'Que excluyen los momentos clave de sus trayectorias vitales.',
-      'Que omiten el origen de sus procesoc creativos e intelectuales.',
+      'Que omiten el origen de sus procesos creativos e intelectuales.',
       'Que desestiman sus méritos en la búsqueda del reconocimiento.',
       'Que banalizan sus experiencias mediante la música y el dramatismo.'
     ],
     correct: 1,
     explanation: 'La autora señala que estas películas omiten el extraño estado de ánimo conocido como inspiración, dejando fuera el verdadero origen del proceso creativo.',
     hint: 'Fíjate en lo que la emisora argumenta sobre la incapacidad de las películas para retratar fielmente la inspiración.',
+    evidenceText: 'Todo sigue siendo muy ingenuo y no dice nada sobre el extraño estado de ánimo que se conoce comúnmente como inspiración, pero por lo menos hay algo para ver y oír. El peor de los casos es el de los poetas. Su trabajo resulta irremediablemente poco fotogénico.',
     points: 150
   },
   {
@@ -131,6 +135,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'La emisora concluye explícitamente: "La inspiración, cualquier cosa que sea, nace de un perpetuo \'no lo sé\'".',
     hint: 'Identifica el concepto abstracto que la autora vincula con la expresión constante de no poseer certezas absolutas.',
+    evidenceText: 'La inspiración, cualquier cosa que sea, nace de un perpetuo \'no lo sé\'.',
     points: 100
   },
   {
@@ -145,6 +150,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Ambos personajes ejemplifican cómo el espíritu inquieto y de búsqueda constante los llevó a realizar descubrimientos trascendentales.',
     hint: 'Vincula los nombres de estos científicos célebres con la idea del perpetuo cuestionamiento.',
+    evidenceText: 'Pero siguió repitiéndose \'no sé\' y justo estas palabras la trajeron dos veces a Estocolmo, donde se otorgan los premios Nobel a personas de espíritu inquieto y en búsqueda constante.',
     points: 100
   },
   {
@@ -159,6 +165,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'La emisora confiesa que las frases le resultan difíciles ya que debe hablar sobre poesía, tema sobre el cual muy raras veces se ha expresado en público.',
     hint: 'Evalúa la razón por la cual la emisora declara que le cuesta estructurar sus primeras palabras.',
+    evidenceText: 'Pero presiento que las que siguen van a ser igualmente difíciles, la tercera, la sexta, la décica, hasta la última, ya que debo hablar sobre poesía. Muy raras veces me he expresado acerca de este tema, casi nunca, y siempre con la convicción de que no lo hago muy bien.',
     points: 100
   },
   {
@@ -173,6 +180,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto explicita que la tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo.',
     hint: 'Busca en el texto la mención explícita sobre la meta de los directores de cine más ambiciosos.',
+    evidenceText: 'La tarea de los directores más ambiciosos es mostrar en forma verosímil el proceso creativo que condujo a importantes descubrimientos científicos o a la creación de grandes obras de arte.',
     points: 100
   },
   {
@@ -187,11 +195,12 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La autora señala que el poeta experimenta una insatisfacción constante y que las respuestas en sus versos son temporales; "La Obra" es la acumulación de estas muestras sujetas por un clip.',
     hint: 'Revisa la irónica metáfora final sobre el clip enorme y la insatisfacción del autor.',
+    evidenceText: 'Con cada verso intenta responder, pero en el momento en que pone el punto final, le asaltan las dudas y empieza a advertir que su respuesta es temporal y en ningún caso satisfactoria. Entonces prueba otra vez y otra vez, para que a las sucesivas muestras de su insatisfacción consigo mismo los historiadores de la literatura las sujeten con un clip enorme para denominarlas \'La Obra\'.',
     points: 100
   },
   {
     id: 10082, textKey: 'discurso_nobel', topic: 'interpretar', type: 'multiple',
-    question: '¿Qué tienen en común un médico, un maestro y un jardinero según el planteamiento de la emisora?',
+    question: 'Qué tienen en común un médico, un maestro y un jardinero según el planteamiento de la emisora?',
     options: [
       'Que pertenecen a profesiones subestimadas por la sociedad contemporánea.',
       'Que pueden experimentar la inspiración si abordan su oficio con amor e imaginación.',
@@ -201,6 +210,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La autora enfatiza que la inspiración no es exclusiva de artistas, sino de cualquiera que escoja su trabajo y lo cumpla con amor, imaginación y nuevos desafíos.',
     hint: 'Rastrea los ejemplos de oficios que menciona el quinto párrafo y la definición extendida de la inspiración.',
+    evidenceText: 'A este grupo pertenecen los que escogen su trabajo y lo cumplen con amor e imaginación. Hay médicos así, hay maestros, hay también jardineros y centenares de oficios más. Su trabajo puede ser una aventura sin fin, a condición de que sepan encontrar en él nuevos desafíos cada vez.',
     points: 100
   },
 
@@ -219,6 +229,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'La autora compara el desempeño en un laberinto de una rata que ha jugado previamente frente a otra sin esa experiencia.',
     hint: 'Determina qué tipo de recurso discursivo utiliza el contraste conductual entre ambos especímenes.',
+    evidenceText: 'Por ello, si se la introduce en ayunas en el mismo laberinto tras haber puesto en él comida, la rata descubre en seguida el camino que conduce al alimento, mucho antes que otra rata que no haya estado allí antes jugando y no haya podido averiguar cuál es su configuración.',
     points: 100
   },
   {
@@ -233,6 +244,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El párrafo concluye que las especies aptas para el juego en la edad adulta son las más cosmopolitas y con mayor capacidad de supervivencia.',
     hint: 'Presta atención al cierre del párrafo, donde se vincula la lúdica con la supervivencia y adaptabilidad.',
+    evidenceText: 'Hay que señalar que las especies realmente aptas para el juego son también las más \'cosmopolitas\', las que han sabido adaptarse a climas muy variados, aumentando así sus posibilidades de supervivencia.',
     points: 100
   },
   {
@@ -247,6 +259,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Se recurre a estos términos para demostrar una deficiencia semántica en español, donde una sola palabra engloba dos realidades distintas.',
     hint: 'Compara las dos definiciones en inglés para notar la dualidad que el castellano unifica bajo un solo término.',
+    evidenceText: 'El problema es, en buena medida, semántico: para aludir al juego existen en inglés dos vocablos \'game\' y \'play\'. En español, al igual que en alemán, en francés y en otras muchas lenguas, solo hay una palabra, deficiencia que origina confusiones sin cuento. Por ello, antes de cualquier afirmación o debate sobre el juego, hay que dejar sentado que \'juegos\' en plural (más o menos equivalente a \'game\' en inglés) y \'juego\' en singular (que sería más bien la traducción de \'play\') designan dos realidades totalmente distintas.',
     points: 100
   },
   {
@@ -261,6 +274,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Se argumenta que participar en un juego formalizado no garantiza la actitud lúdica; esta depende de la actitud existencial con que se experimente.',
     hint: 'Piensa en el rol del estado interno y la disposición del sujeto frente a los reglamentos rígidos.',
+    evidenceText: 'El juego es una actitud existencial, una manera concreta de abordar la vida, que se puede aplicar a todo sin corresponder específicamente a nada.',
     points: 100
   },
   {
@@ -275,6 +289,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'La autora menciona explícitamente al bridge junto con el fútbol como ejemplos de "juegos instituidos".',
     hint: 'Identifica la categoría exacta en la cual el fragmento agrupa al bridge y al fútbol.',
+    evidenceText: 'El bridge, el fútbol, el escondite, los dados o el baile son juegos; [...] Ningún juego instituido garantiza el juego.',
     points: 100
   },
   {
@@ -289,6 +304,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'La metáfora alude a la obsesión del turista convencional por "coleccionar recuerdos" estáticos y planificados.',
     hint: 'Analiza el efecto estático de inmovilizar un elemento vivo y su relación con atesorar recuerdos inertes.',
+    evidenceText: 'No tratará de coleccionar los recuerdos cual si fueran mariposas clavadas con alfileres en una caja de cristal, sino que buscará una ocasión de renovar su persona y su vida.',
     points: 100
   },
   {
@@ -301,8 +317,9 @@ const paesLenguajeQuestions = [
       'La activación del recuerdo.'
     ],
     correct: 0,
-    explanation: 'El texto vincula el "oasis de dicha" con la pureza del juego: cuanto más auténtico es el juego, más liberado se siente el jugador.',
+    explanation: 'El texto brinda esta relación directa: a mayor autenticidad del juego, mayor libertad respecto a las contingencias cotidianas de la vida seria.',
     hint: 'Busca la propiedad de la acción lúdica que condiciona el sentimiento de liberación y pureza.',
+    evidenceText: 'Cuanto más auténtico es el juego —por ejemplo, el juego exaltado del niño— más liberado de toda contingencia se siente el jugador. El juego es gratuidad absoluta y, en términos del filósofo alemán Eugen Fink, un \'oasis de dicha\' en el desierto de la vida considerada \'seria\'.',
     points: 100
   },
   {
@@ -317,6 +334,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Al decir "citar al azar", implica que la lista de grandes científicos que han validado la importancia del juego es sumamente amplia.',
     hint: 'Determina qué connota el hecho de que una lista de nombres sea elegida de forma aleatoria.',
+    evidenceText: 'Algunos de los sabios más eminentes, entre los que cabe citar al azar a Kepler, Ampère, Darwin, Gauss, Pasteur, Maxwell, Planck, Poincaré y Einstein, han explicado que, en pleno descubrimiento, eran presa de la misma excitación y el mismo placer que siente un niño cuando juega.',
     points: 100
   },
   {
@@ -331,6 +349,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto aclara que cualidades ligadas a la seriedad sirven para subsistir en un territorio, pero los factores de invención que sustentan la ciencia y los mitos provienen del juego y la curiosidad.',
     hint: 'Busca la distinción explícita que hace la autora entre las herramientas de preservación social y las de avance evolutivo.',
+    evidenceText: 'Para poder subsistir en un determinado territorio, una sociedad necesita grandes dosis de obstinación, de esfuerzos, de orden, de formidable egoísmo... de seriedad, en definitiva. Pero estas cualidades (o defectos) no bastan para progresar. No es la seriedad sino el juego, la curiosidad y la exploración —factores de creación e invención— los que sustentan los mitos, los ritos de la vida en sociedad y la ciencia misma.',
     points: 100
   },
   {
@@ -345,6 +364,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El viajero jugador evita planificarlo todo, se mueve según su deseo del instante y busca una oportunidad para renovarse a sí mismo, a diferencia del turista serio.',
     hint: 'Contrapón la idea de "coleccionar recuerdos cual mariposas" con la noción de cambio y aventura libre.',
+    evidenceText: 'Sin embargo, el viajero que parte a la aventura, el viajero jugador, se guardará bien de planificar todo e irá donde su deseo lo lleve. No tratará de coleccionar los recuerdos cual si fueran mariposas clavadas con alfileres en una caja de cristal, sino que buscará una ocasión de renovar su persona y su vida.',
     points: 150
   },
 
@@ -363,6 +383,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La pregunta inicial plantea un mito popular y seguidamente aclara que definir la psicología va mucho más allá de la terapia personal.',
     hint: 'Analiza cómo los autores contrastan la percepción popular con la realidad multifacética de la carrera.',
+    evidenceText: '\'La mayoría de los psicólogos estudian los problemas mentales y emocionales y trabajan como psicoterapeutas. ¿Es esta afirmación verdadera o falsa?\' Responder la pregunta \'¿Qué es la psicología?\' no es tan simple como podría pensarse. La mayoría de los psicólogos contemporáneos estaría de acuerdo en que la psicología es la ciencia de la conducta y los procesos mentales. Pero esta definición general no refleja la amplitud, profundidad o lo apasionante del campo.',
     points: 100
   },
   {
@@ -377,6 +398,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Se introduce la APA y sus 53 divisiones para respaldar con datos institucionales la afirmación de que la psicología es una confederación de subdisciplinas.',
     hint: 'Pregúntate qué efecto probatorio tiene incorporar una cifra oficial de especialidades.',
+    evidenceText: 'La psicología contemporánea es menos un campo unificado único que \'un paraguas para una confederación amplia de subdisciplinas\' (Evans, 1999). La Asociación Americana de Psicología (APA) está integrada por 53 divisiones que representan los principales campos de indagación psicológica, de investigación especializada e intereses profesionales.',
     points: 100
   },
   {
@@ -391,11 +413,12 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'La primera oración de ese apartado resume de manera exhaustiva el núcleo temático del subcampo.',
     hint: 'Busca el postulado más amplio y abarcador que contenga a los elementos particulares.',
+    evidenceText: 'Neurociencia y psicología fisiológica: Los psicofisiólogos y los neurocientíficos investigan las bases biológicas de la conducta, los pensamientos y las emociones humanas.',
     points: 100
   },
   {
     id: 1020, textKey: 'psicologia', topic: 'evaluar', type: 'multiple',
-    question: '¿Qué estrategia utilizan los emisores para organizar la información sobre los subcampos?',
+    question: '¿Qué strategy utilizan los emisores para organizar la información sobre los subcampos?',
     options: [
       'Definición de los conceptos clave y discusión a través de interrogantes.',
       'Delimitación del quehacer de la especialidad y profundización a través de preguntas.',
@@ -405,6 +428,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'En cada apartado, los autores delimitan el quehacer de la especialidad y luego insertan preguntas de investigación.',
     hint: 'Observa la estructura formal y repetitiva de cada subsección.',
+    evidenceText: 'Neurociencia y psicología fisiológica: Los psicofisiólogos y los neurocientíficos investigan las bases biológicas [...] ¿Por qué late más rápido el corazón cuando nos sentimos amenazados? [...] Psicología experimental: Los psicólogos experimentales realizan investigación sobre procesos psicológicos básicos [...] Se interesan en responder preguntas como: ¿De qué manera recuerda la gente y qué la hace olvidar?',
     points: 150
   },
   {
@@ -419,6 +443,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'Ambos campos formulan interrogantes vinculadas a la cultura: emociones en distintas culturas y diferencias entre grupos culturales.',
     hint: 'Rastrea en las preguntas de muestra de ambas especialidades qué factor contextual se repite como variable.',
+    evidenceText: 'Psicología experimental: [...] ¿Son universales las emociones? Psicología de la personalidad: [...] También estudian si existen diferencias consistentes entre los hombres y las mujeres, o entre los miembros de diferentes grupos raciales y culturales.',
     points: 100
   },
   {
@@ -433,6 +458,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Los psicólogos consejeros se interesan principalmente en los problemas "normales" de ajuste que la mayoría enfrenta en algún momento.',
     hint: 'Distingue entre el tratamiento de psicopatologías severas y la asesoría ante desajustes cotidianos.',
+    evidenceText: 'Los psicólogos consejeros se interesan principalmente en los problemas \'normales\' de ajuste que la mayoría de nosotros enfrenta en algún momento, como la elección de una carrera o los problemas conyugales.',
     points: 100
   },
   {
@@ -447,6 +473,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Los autores buscan expandir el entendimiento colectivo de la disciplina, demostrando su enorme diversidad científica.',
     hint: 'Identifica el propósito valorativo subyacente de desmitificar la reducción de una ciencia a una sola de sus facetas.',
+    evidenceText: 'Responder la pregunta \'¿Qué es la psicología?\' no es tan simple como podría pensarse. La mayoría de los psicólogos contemporáneos estaría de acuerdo en que la psicología es la ciencia de la conducta y los procesos mental. Pero esta definición general no refleja la amplitud, profundidad o lo apasionante del campo.',
     points: 150
   },
   {
@@ -461,6 +488,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El segundo párrafo estipula que los avances tecnológicos, los nuevos campos y enfoques dieron lugar a una mayor especialización y colaboración, gatillando dicha redefinición.',
     hint: 'Revisa las primeras líneas del segundo párrafo del texto.',
+    evidenceText: 'Al final del siglo XX, la psicología se expandió considerablemente. Surgieron nuevas tecnologías de investigación, nuevos campos de indagación y nuevos enfoques del estudio de la conducta y los procesos mentales. Esos avances dieron lugar a una mayor especialización dentro de la psicología, a una creciente colaboración con otras ciencias y al equivalente académico de una crisis de identidad.',
     points: 100
   },
   {
@@ -475,6 +503,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto detalla explícitamente que los psicólogos del desarrollo estudian el crecimiento humano mental y físico a lo largo de todo el ciclo vital.',
     hint: 'Busca la subdisciplina que hace alusión explícita a las fases del desarrollo cronológico humano.',
+    evidenceText: 'Psicología del desarrollo: Los psicólogos del desarrollo estudian el crecimiento humano mental y físico desde el periodo prenatal hasta la niñez, adolescencia, adultez y vejez. Se interesan tanto en los patrones universales de desarrollo como en las variaciones culturales e individuales.',
     points: 100
   },
   {
@@ -489,6 +518,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Al final de la sección de Neurociencia se especifica que "Los genetistas conductuales investigan el impacto de la herencia en los rasgos y conductas normales y anormales".',
     hint: 'Busca la última frase del párrafo asignado a la neurociencia y fisiología.',
+    evidenceText: 'Los genetistas conductuales investigan el impacto de la herencia en los rasgos y conductas normales y anormales.',
     points: 100
   },
 
@@ -507,6 +537,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto señala que el concepto de "bellas artes" fue propuesto originalmente por Charles Batteux en 1746.',
     hint: 'Busca el dato concreto asociado al año 1746.',
+    evidenceText: 'El concepto de \'bellas artes\', propuesto por Charles Batteux el año 1746, se aplicó originariamente a la danza, la música, la escultura, la pintura, la poesía y también a la floricultura.',
     points: 100
   },
   {
@@ -516,6 +547,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto indica que el concepto original de bellas artes se amplió, integrando formalmente al cine a partir del siglo XX.',
     hint: 'Rastrea en el segundo párrafo cuál es la manifestación del siglo XX que obtuvo la inclusión oficial.',
+    evidenceText: 'Más adelante se amplió a la arquitectura, a la retórica y a otros géneros literarios. A partir del siglo XX también al cine, a la fotografía y a la historieta.',
     points: 100
   },
   {
@@ -530,6 +562,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto explicita que la música no forma parte de las artes escénicas porque su expresión no está supeditada a la escena ni a ninguna materialidad rígida.',
     hint: 'Analiza la razón de autonomía espacial que diferencia el fenómeno musical de la actuación.',
+    evidenceText: 'La música, en nuestro contexto, no forma parte de las artes escénicas porque su expresión no está supeditada a la escena ni a ninguna materialidad, aunque, como lenguaje, puede formar parte de un espectáculo escénico (el teatro musical por ejemplo).',
     points: 100
   },
   {
@@ -544,6 +577,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Se destaca que el espectador contesta con su mirada, respiración y gestos, haciendo que cada representación sea única.',
     hint: 'Busca el impacto inmediato de la presencia del público sobre la ejecución en vivo.',
+    evidenceText: 'El espectador no es receptor pasivo, sino sujeto activo en un proceso de comunicación donde el intérprete toma la iniciativa. El intérprete es un creador [...] crea una expresión y la transmite, con su técnica, a un espectador que le contesta con su mirada, su respiración, sus gestos, su complicidad. La interacción con los espectadores hace que cada representación se configure de una manera singular y que sea una experiencia única e irrepetible.',
     points: 100
   },
   {
@@ -558,6 +592,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'El texto señala textualmente: "El centro vital del edificio es donde se encuentran ambos espacios y conforma el espacio de representación".',
     hint: 'Localiza el término exacto utilizado para denominar la zona de acoplamiento entre la sala y el escenario.',
+    evidenceText: 'El centro vital del edificio es donde se encuentran ambos espacios, donde se acopla el escenario con la sala y conforma el espacio de representación.',
     points: 100
   },
   {
@@ -572,6 +607,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'La mención de la raíz etimológica griega "theatron" (lugar para contemplar) se utiliza para dar inicio a la explicación del espacio.',
     hint: 'Identifica la función de la raíz lingüística clásica como introducción al análisis estructural.',
+    evidenceText: 'El teatro, del griego theatron, es \'el lugar para contemplar\'. El espacio del teatro se divide en \'espacio del público\' (la sala y los espacios sociales adjuntos) y el \'espacio de los actores\' (los camerinos y el escenario).',
     points: 100
   },
   {
@@ -586,6 +622,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto indica que el espacio vacío se va llenando con elementos y construcciones mentales que surgen de la interacción con el público.',
     hint: 'Deduce qué ocurre en la mente del asistente cuando procesa la ficción.',
+    evidenceText: 'Su carencia de contenido se va llenando con elementos escenográficos y con las construcciones mentales que surgen de la interacción entre intérpretes y espectadores.',
     points: 100
   },
   {
@@ -600,6 +637,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El autor expone de manera académica y analítica las delimitaciones teóricas sin imponer juicios de valor sesgados.',
     hint: 'Evalúa el grado de objetividad y distancia académica que mantiene la voz del texto.',
+    evidenceText: 'Podemos considerar el arte como la expresión de percepciones [...] Las artes escénicas forman parte del universo de las artes y, parcialmente, del subconjunto de las artes de lo bello. Agrupan a un conjunto muy diverso de lenguajes [...] Podemos considerar el hecho escénico como \'aquello que ocurre cuando intérpretes y espectadores se encuentran\'',
     points: 150
   },
   {
@@ -614,6 +652,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El párrafo concluye que el arte es el resultado de una acción creativa a partir de un lenguaje o técnica expresiva determinada.',
     hint: 'Identifica la definición genérica e integradora con la que cierra la argumentación.',
+    evidenceText: 'Se considera el arte como el resultado de una acción creativa a partir de un lenguaje o técnica expresiva determinada.',
     points: 100
   },
   {
@@ -628,6 +667,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto detalla que los lenguajes artísticos se derivaron originalmente de acciones rituales de carácter mágico en religiones primitivas, perdiendo luego su cariz puramente religioso.',
     hint: 'Busca la explicación genética del arte en las primeras líneas del texto.',
+    evidenceText: 'Podemos considerar el arte como la expresión de percepciones, sentimientos y emociones sobre la realidad, a través de una gran diversidad de lenguajes que se derivaron de las acciones rituales de carácter mágico de muchas religiones primitivas y, con el tiempo, fueron perdiendo su dimensión religiosa para adquirir una nueva dimensión cultural.',
     points: 100
   },
 
@@ -646,6 +686,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Las cotizaciones previsionales son porcentajes calculados sobre la remuneración imponible destinados a financiar la seguridad social.',
     hint: 'Busca la definición textual que vincula la retención salarial con la cobertura integral.',
+    evidenceText: '¿Qué es la Previsión Social? Es la encargada de garantizar los derechos sociales a las personas que desarrollan su vida laboral en Chile, en caso que esta se viera interrumpida por algún tipo de contingencia [...] Se deben considerar las siguientes cotizaciones: [AFP, Salud, Seguro de Cesantía, Accidentes]',
     points: 100
   },
   {
@@ -660,6 +701,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'En el Seguro de Cesantía la mayor parte de esta cotización la financia el empleador, implicando un diseño mixto.',
     hint: 'Rastrea cuál de las asignaciones cuenta con una redacción que explicita un aporte compartido.',
+    evidenceText: '• Cotización para el Seguro de Cesantía en la Administradora del Fondo de Cesantía (AFC): el 3% de tu remuneración imponible está destinado a tu cuenta individual de ahorro para cesantía y al Fondo de Cesantía Solidario, la mayor parte de esta cotización la financia tu organismo empleador.',
     points: 100
   },
   {
@@ -674,6 +716,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto indica que el Subsidio al Empleo Joven apoya además a quienes los contratan (los empleadores).',
     hint: 'Identifica el incentivo económico estatal que detalla un beneficio explícito para la parte contratante.',
+    evidenceText: 'También existen beneficios como el Subsidio al Empleo Joven, que apoya tanto al trabajador como a quien lo contrata.',
     points: 100
   },
   {
@@ -688,6 +731,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El último bloque se enfoca en las protecciones y casos especiales donde la causal está limitada o prohibida.',
     hint: 'Determina el núcleo común de las situaciones descritas al cierre.',
+    evidenceText: 'Frente a contingencias extremas como despidos bajo la causal de \'necesidades de la empresa\', la ley establece protecciones estrictas y excepciones irrenunciables, prohibiendo su aplicación en trabajadores que se encuentren con licencia médica vigente o que gocen de fuero laboral.',
     points: 100
   },
   {
@@ -702,6 +746,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Al prohibir el despido por esta causal en contextos vulnerables, el marco regulatorio erige barreras de protección legal.',
     hint: 'Deduce cuál es el espíritu de la ley al invalidar un despido cuando el trabajador está enfermo.',
+    evidenceText: 'Frente a contingencias extremas como despidos bajo la causal de \'necesidades de la empresa\', la ley establece protecciones estrictas y excepciones irrenunciables, prohibiendo su aplicación en trabajadores que se encuentren con licencia médica vigente o que gocen de fuero laboral.',
     points: 100
   },
   {
@@ -714,8 +759,9 @@ const paesLenguajeQuestions = [
       'Ofrece una explicación para aclarar la información.'
     ],
     correct: 0,
-    explanation: 'Al final de cada sección se incluyen canales institucionales para que el lector profundice.',
-    hint: 'Analiza la función utilitaria de colocar direcciones web institucionales al pie de un texto informativo.',
+    explanation: 'Al final de cada sección se incluyen canales institucionales o especificaciones de subsidios para que el lector profundice y extienda sus ahorros.',
+    hint: 'Analiza la función utilitaria de colocar elementos complementarios al pie de un texto informativo.',
+    evidenceText: 'Es importante que sepas que puedes acceder al Subsidio Previsional a trabajadores y trabajadoras jóvenes que te ayudará a aumentar tus ahorros. También existen beneficios como el Subsidio al Empleo Joven...',
     points: 100
   },
   {
@@ -730,6 +776,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'La guía está estructurada como una ruta cronológica dirigida al ciudadano para explicar sus derechos.',
     hint: 'Identifica cuál es el objetivo central de comunicación de un folleto que educa al trabajador.',
+    evidenceText: 'Ruta de la Seguridad Social [...] Estación 1. Mi Primer Contrato de Trabajo [...] Existe si ambas partes están de acuerdo en las obligaciones y los derechos que dan origen a la relación laboral. [...] Estación 2. Cotizaciones previsionales ¿Qué es la Previsión Social? Es la encargada de garantizar los derechos sociales...',
     points: 150
   },
   {
@@ -742,8 +789,9 @@ const paesLenguajeQuestions = [
       'Elegir las instituciones según la conveniencia del porcentaje.'
     ],
     correct: 2,
-    explanation: 'Se insta al trabajador a auditar que el empleador cumpla con registrar sus cotizaciones al día.',
-    hint: 'Determina qué acción proactiva debe ejecutar el empleado para evitar perder sus coberturas.',
+    explanation: 'Se insta al trabajador a auditar que el empleador cumpla con registrar sus cotizaciones al día y saber a qué fondos van destinadas.',
+    hint: 'Determina qué acción proactiva debe ejecutar el empleado para conocer la distribución de sus coberturas.',
+    evidenceText: 'Será tu organismo empleador el encargado de pagar, cuando y donde corresponda, las cotizaciones señaladas. Es importante que sepas que puedes acceder al Subsidio Previsional...',
     points: 100
   },
   {
@@ -753,6 +801,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto indica taxativamente que el contrato debe estar escrito y tramitado dentro de los primeros 15 días de iniciada la relación.',
     hint: 'Busca el número de días exacto estipulado para contratos de carácter general en la Estación 1.',
+    evidenceText: 'Es importante tener presente que dicho contrato debe estar escrito y tramitado dentro de los primeros 15 días de iniciada la relación contractual, o cinco días si se trata de contratos por obra, trabajo o servicio determinado o de duración inferior a 30 días.',
     points: 100
   },
   {
@@ -767,6 +816,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La ley prohíbe explícitamente la aplicación de esta causal en trabajadores con licencia médica vigente o fuero laboral.',
     hint: 'Revisa la última frase del documento técnico.',
+    evidenceText: 'prohibiendo su aplicación en trabajadores que se encuentren con licencia médica vigente o que gocen de fuero laboral.',
     points: 100
   },
 
@@ -785,6 +835,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Se usa para fundamentar que el individuo solo alcanza la felicidad en relación con los demás, dentro de una comunidad organizada.',
     hint: 'Analiza por qué el emisor recurre a Aristóteles para fundamentar la naturaleza comunitaria.',
+    evidenceText: 'Estas características o dimensiones social, política y otras, explican que el ser humano sea asociativo y viva en comunidades. En la tradición aristotélica, esto trae aparejado que solo puede alcanzar su felicidad y realización a través de sus relaciones con los demás.',
     points: 100
   },
   {
@@ -799,6 +850,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto afirma que el potencial humano mostró su peor cara en estas tragedias, lo cual nos obliga a ser responsables.',
     hint: 'Fíjate en la moraleja ética que el emisor extrae del recuento de los desastres del siglo pasado.',
+    evidenceText: 'En efecto, el potencial humano ha visto su peor cara en las tragedias del siglo XX que significaron la muerte de millones de seres humanos. Lo anterior nos obliga a ser responsables y conscientes respecto de nuestra inteligencia y capacidades.',
     points: 100
   },
   {
@@ -813,6 +865,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto señala que la humanidad ha generado instituciones para ordenar la vida, superando las respuestas instintivas.',
     hint: 'Busca el conector textual que asocia la superación de las respuestas instintivas con la edificación de estructuras sociales.',
+    evidenceText: 'No estando, entonces, determinados enteramente por instintos, en distintas épocas la humanidad ha generado instituciones para poder ordenar la vida.',
     points: 100
   },
   {
@@ -827,6 +880,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'El ámbito físico-biológico guarda relación con las necesidades básicas de sobrevivencia de todos los seres vivos.',
     hint: 'Ubica la mención al pensamiento tomista y asócialo con las funciones orgánicas elementales.',
+    evidenceText: 'Se dice tradicionalmente, al menos autores como Tomás de Aquino, que la naturaleza humana se constituye a partir de dos ámbitos: el físico-biológico y el psíquico-espiritual. El primero guarda relación con las necesidades básicas de sobrevivencia de todos los seres vivos: respirar, alimentarse, beber, tener abrigo y dormir.',
     points: 100
   },
   {
@@ -839,8 +893,9 @@ const paesLenguajeQuestions = [
       'Independiente, pues la visión religiosa es distinta a la moralidad social.'
     ],
     correct: 0,
-    explanation: 'Ambas perspectivas se complementan: la religiosa destaca la semejanza divina y la secular refuerza la inteligencia, libertad y moral.',
+    explanation: 'Ambas perspectivas se complementan en el texto: la filosófica religiosa destaca el lugar en el mundo dado por Dios, y la secular refuerza los atributos de razón, inteligencia y discernimiento moral propios de lo humano.',
     hint: 'Identifica si ambas visiones se contradicen o confluyen para robustecer el valor intrínseco de la persona.',
+    evidenceText: 'La dignidad humana: Esta noción hace referencia al valor inherente al ser humano. Este concepto tiene sus orígenes en la doctrina judeocristiana, en que el ser humano encuentra su lugar en el mundo al haber sido creado a imagen y semejanza de Dios. Filosóficamente, se dice que los seres humanos, a diferencia de los otros seres vivos, tenemos particularidades únicas: razón, inteligencia, sentimientos y voluntad de decidir. Desde una perspectiva secular (laica, sin rasgos religiosos), podemos decir que alude a la cualidad esencial del ser humano...',
     points: 100
   },
   {
@@ -855,6 +910,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto afirma: "Desde una perspectiva secular, alude a la cualidad esencial en virtud de la cual se distingue lo humano de lo no humano".',
     hint: 'Rastrea el fragmento exacto que utiliza los vocablos opuestos "humano" y "no humano".',
+    evidenceText: 'Desde una perspectiva secular (laica, sin rasgos religiosos), podemos decir que alude a la cualidad esencial del ser humano, específica y exclusiva, en virtud de la cual se distingue lo humano de lo no humano.',
     points: 100
   },
   {
@@ -862,13 +918,14 @@ const paesLenguajeQuestions = [
     question: '¿Cuál de las siguientes preguntas se responde de forma insuficiente en la lectura?',
     options: [
       '¿Qué son los Derechos Humanos?',
-      '¿En qué se basa el concepto de "persona"?',
+      '¿En qué se basa el concept de "persona"?',
       '¿Cuál es la esencia de la naturaleza humana?',
       '¿Cuáles son las particularidades del ser humano?'
     ],
     correct: 0,
     explanation: 'El texto vincula la dignidad humana con los Derechos Humanos pero no define concretamente qué son o en qué consisten.',
     hint: 'Detecta qué concepto capital se enuncia de forma repetida pero carece de una definición explícita.',
+    evidenceText: 'El contenido de estas instituciones en una sociedad democrática debe asegurar el respeto, promoción y protección de los derechos humanos. [...] La idea de dignidad aparece así en los textos jurídicos indisolublemente ligada al concepto de Derechos Humanos. Los seres humanos tienen derechos que han de ser reconocidos por el poder político porque tienen dignidad.',
     points: 100
   },
   {
@@ -883,6 +940,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El último párrafo se centra en demostrar que la dignidad aparece "indisolublemente ligada al concepto de Derechos Humanos".',
     hint: 'Sintetiza el remate del escrito, prestando atención al adverbio "indisolublemente".',
+    evidenceText: 'La idea de dignidad aparece así en los textos jurídicos indisolublemente ligada al concepto de Derechos Humanos. Los seres humanos tienen derechos que han de ser reconocidos por el poder político porque tienen dignidad. La dignidad humana es la causa de que se reconozcan derechos.',
     points: 100
   },
   {
@@ -897,13 +955,14 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto transita desde la definición del ser humano hasta establecer que su racionalidad, moralidad y dignidad justifican sus derechos.',
     hint: 'Evalúa el hilo conductor total: inicia desglosando la anatomía del individuo y concluye legitimando su resguardo legal.',
+    evidenceText: 'En general, se entiende que hombres y mujeres, sin distinción, están provistos de una parte psíquica-espiritual que les permite tener razón e inteligencia [...] Estos atributos constituirían la base del concepto filosófico que se conoce como \'dignidad humana\'. [...] Los seres humanos tienen derechos que han de ser reconocidos por el poder político porque tienen dignidad.',
     points: 100
   },
   {
     id: 1050, textKey: 'formacion_civica', topic: 'localizar', type: 'multiple',
     question: 'Según el texto, ¿cuál es el fundamento de los Derechos Humanos?',
     options: [
-      'El recognition del Estado.',
+      'El reconocimiento del Estado.',
       'El desarrollo integral del individuo.',
       'La dignidad intrínseca de la persona.',
       'La adquisición del lenguaje.'
@@ -911,6 +970,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto afirma que la dignidad es intrínseca por el solo hecho de ser persona y constituye la justificación de los derechos.',
     hint: 'Revisa la sección sobre la dignidad humana.',
+    evidenceText: 'La dignidad humana es la causa de que se reconozcan derechos. En una palabra: es su justificación.',
     points: 100
   },
 
@@ -924,6 +984,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El segundo párrafo indica que la globalización conlleva la posibilidad de una homogenización cultural que provoca la desaparición de lenguas minoritarias.',
     hint: 'Localiza la fuerza socioeconómica global a la cual el emisor imputa el efecto de licuar las diferencias dialectales.',
+    evidenceText: 'En este sentido, la tendencia a la globalización —secular por demás en la historia de Occidente— conlleva la posibilidad de una homogenización cultural que, necesariamente, provoca la desaparición de culturas y lenguas minoritarias como muchas de las pertenecientes a los grupos autóctonos americanos.',
     points: 100
   },
   {
@@ -938,6 +999,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Los párrafos iniciales plantean cómo la globalización afecta los ámbitos de relación que garantizan la cohesión de cada comunidad lingüística.',
     hint: 'Observa la escala macro del análisis inicial.',
+    evidenceText: 'La globalización, es decir, el proceso de mundialización de la economía y, en consecuencia, del mercado de la información, la comunicación y la cultura, afecta los ámbitos de relación y las formas de interacción que garantizan la cohesión interna de cada comunidad lingüística.',
     points: 100
   },
   {
@@ -952,6 +1014,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'Se afirma que está por teorizar y hacer, construyéndose todos los días a partir de las relaciones reales entre culturas.',
     hint: 'Asocia la expresión temporal con un proceso activo, dinámico e inacabado.',
+    evidenceText: 'Además, tiene el añadido de que es algo por hacer, por teorizar, aunque existan actitudes que están en la base del concepto como las críticas al etnocentrismo, el elogio de la tolerancia y la creencia en la diversidad que, necesariamente, se construye todos los días.',
     points: 100
   },
   {
@@ -966,6 +1029,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'La sección detalla las causas tangibles de su dominio: presencia masiva en internet, imposición corporativa y políticas lingüísticas.',
     hint: 'Determina si el bloque informativo se aboca a justificar beneficios o a enumerar razones materiales.',
+    evidenceText: 'El inglés, lengua global: Independientemente de nuestra postura a favor o en contra de la globalización en la que vivimos, es un hecho que dicha globalización tiene una manifestation lingüística que se evidencia en el predominio mundial del inglés, moderna lengua franca, tanto por su número de hablantes —lengua materna (LM) y lengua adicional (LA)—, como por su presencia incuestionable en internet.',
     points: 100
   },
   {
@@ -980,6 +1044,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto indica que estas multinacionales imponen el uso del inglés al comprador, al proveedor y al cliente.',
     hint: 'Rastrea el verbo de acción imperativa que vincula a estas empresas con la conducta idiomática forzada.',
+    evidenceText: 'Las multinacionales —motores de la economía global como Coca-Cola, Microsoft y Apple— imponen el uso del inglés, no solo en el interior de sus filiales, sino también al comprador, al proveedor, al cliente.',
     points: 100
   },
   {
@@ -994,6 +1059,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Se señala críticamente que los dirigentes aspiran a que los niños hablen inglés en vez de las otras lenguas oficiales reconocidas.',
     hint: 'Detecta el tono crítico tras la denuncia de preferir una lengua extranjera global.',
+    evidenceText: 'Los dirigentes españoles, por ejemplo, parecen negarse a escuchar a sus propias voces disidentes y aspiran a que, en diez años, todos los niños españoles hablen inglés como segunda lengua (L2), en vez de cualesquiera de las otras seis lenguas oficiales que, junto al castellano, están reconocidas constitucionalmente.',
     points: 100
   },
   {
@@ -1008,6 +1074,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El hindi es supercentral. El bilingüismo vertical implica adquirir una lengua de nivel superior: la hipercentral (inglés).',
     hint: 'Aplica la regla de escalamiento jerárquico del modelo de Calvet.',
+    evidenceText: 'En torno a una lengua hipercentral (el inglés), gravitan una decena de lenguas supercentrales (el chino, el español, el hindi, el árabe) [...] el bilingüismo vertical (la adquisición de una lengua de un nivel superior al de la LM)',
     points: 100
   },
   {
@@ -1022,6 +1089,7 @@ const paesLenguajeQuestions = [
     correct: 3,
     explanation: 'El texto lo explicita: "en torno a una lengua hipercentral gravitan una decena de lenguas supercentrales (el chino, el español, el hindi, el árabe)".',
     hint: 'Encuentra el pasaje exacto que agrupa al español junto al mandarín y al árabe.',
+    evidenceText: 'En torno a una lengua hipercentral (el inglés), gravitan una decena de lenguas supercentrales (el chino, el español, el hindi, el árabe)',
     points: 100
   },
   {
@@ -1034,8 +1102,9 @@ const paesLenguajeQuestions = [
       'Que adopte una postura intercultural frente a los desafíos de la economía globalizada.'
     ],
     correct: 1,
-    explanation: 'A través de datos y teorías, busca alertar sobre la asimetría de fuerzas y la pérdida de diversidad cultural.',
+    explanation: 'A través de datos y teorías, busca alertar sobre la asimetría de fuerzas y la pérdida de diversidad cultural debida a las tendencias homogenizadoras del mercado.',
     hint: 'Determina el efecto de concientización y alarma cultural que persigue el texto.',
+    evidenceText: 'Además, el modelo economicista de crecimiento [...] genera graves y crecientes desigualdades económicas, sociales, culturales y lingüísticas. En este sentido, la tendencia a la globalización [...] conlleva la posibilidad de una homogenización cultural que, necesariamente, provoca la desaparición de culturas y lenguas minoritarias...',
     points: 150
   },
   {
@@ -1048,8 +1117,9 @@ const paesLenguajeQuestions = [
       'La imposición de un modelo de desarraigo cultural.'
     ],
     correct: 0,
-    explanation: 'El bilingüismo horizontal se da entre lenguas del mismo nivel, representando un diálogo más equitativo y libre de dominación.',
+    explanation: 'El bilingüismo horizontal se da entre lenguas del mismo nivel jerárquico, constituyendo una vía libre de dominaciones verticales o de asimetrías extremas.',
     hint: 'Contrapón la noción de horizontalidad a la subordinación del bilingüismo vertical.',
+    evidenceText: 'el bilingüismo se manifiesta en dos tendencias básicas: el bilingüismo horizontal (adquisición de una lengua del mismo nivel que la propia) y el bilingüismo vertical (la adquisición de una lengua de un nivel superior al de la LM) y lo que une esta organización gravitacional es, con mucho, las relaciones de fuerza entre las lenguas.',
     points: 100
   },
 
@@ -1066,8 +1136,9 @@ const paesLenguajeQuestions = [
       'Restringiendo la distribución física de productos.'
     ],
     correct: 2,
-    explanation: 'La prohibición de publicidad busca reducir el consumo de productos dañinos en menores.',
+    explanation: 'La prohibición de publicidad busca reducir la visibilidad y el consumo de productos dañinos en menores.',
     hint: 'Piensa en el efecto de prohibir la promoción de un producto.',
+    evidenceText: 'Una de estas normativas es la Ley N° 20.606 [...] que consiste, entre otras medidas, en mejorar la oferta de alimentos disponibles en los kioscos escolares disminuyendo la oferta de alimentos no saludables por medio de la prohibición de la venta o entrega gratuita de alimentos \'ALTOS EN\' nutrientes críticos [...] y prohíbe la publicidad de estos alimentos dirigida a menores de 14 años.',
     points: 100
   },
   {
@@ -1082,6 +1153,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto indica explícitamente: "Este documento es un material de apoyo para las comunidades educativas".',
     hint: 'Busca en las líneas iniciales el público objetivo definido.',
+    evidenceText: 'Este documento es un material de apoyo para las comunidades educativas, que describe los elementos básicos para la adecuada implementación y funcionamiento del kiosco escolar en los establecimientos educacionales.',
     points: 100
   },
   {
@@ -1096,6 +1168,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto indica que deben "contar con la autorización sanitaria para su funcionamiento".',
     hint: 'Rastrea el requisito legal indispensable que emite la autoridad de salud.',
+    evidenceText: 'Estas instalaciones deben cumplir con el Reglamento Sanitario de los Alimentos (RSA) y contar con la autorización sanitaria para su funcionamiento.',
     points: 100
   },
   {
@@ -1110,6 +1183,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La Ley N° 20.606 implementó los sellos de advertencia para explicitar visualmente si un alimento supera los límites saludables de sodio, azúcares, grasas y calorías.',
     hint: 'Analiza la función utilitaria del rótulo "ALTO EN" descrito en el tercer párrafo.',
+    evidenceText: 'Además, estableció un etiquetado frontal de advertencia, consistente en sellos \'ALTO EN\' nutrientes críticos y prohíbe la publicidad de estos alimentos dirigida a menores de 14 años.',
     points: 100
   },
   {
@@ -1119,6 +1193,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El primer párrafo cita explícitamente el 50,3% de niños y niñas con exceso de peso en primer año básico.',
     hint: 'Dato numérico en el inicio del texto.',
+    evidenceText: 'Desde la infancia es posible observar altos índices de obesidad y sobrepeso, una muestra de esto es que ya en primer año de enseñanza básica la mitad (50,3%) de los niños y niñas presenta exceso de peso (JUNAEB, 2018).',
     points: 100
   },
   {
@@ -1131,8 +1206,9 @@ const paesLenguajeQuestions = [
       'Las inexistentes acciones para fiscalizar la venta de alimentos.'
     ],
     correct: 2,
-    explanation: 'La introducción plantea alarmantes cifras de sobrepeso infantil, lo que gatilla la necesidad de intervenir.',
+    explanation: 'La introducción plantea alarmantes cifras de sobrepeso infantil, lo que gatilla la necesidad de intervenir los entornos alimentarios.',
     hint: 'Examina el diagnóstico de salud inicial: las altas tasas de malnutrición por exceso.',
+    evidenceText: 'En Chile el sobrepeso y obesidad se han ido estableciendo como uno de los grandes problemas de salud de la población a lo largo del ciclo vital. Desde la infancia es posible observar altos índices de obesidad y sobrepeso... Frente a esta situación, el Ministerio de Salud (MINSAL) en conjunto con otros sectores, ha desarrollado estrategias para intervenir en los entornos alimentarios...',
     points: 100
   },
   {
@@ -1147,6 +1223,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El cuarto párrafo señala explícitamente que la Ley N° 20.869 prohibió la publicidad de estos alimentos en televisión y cine entre las 06:00 y las 22:00 h.',
     hint: 'Busca los parámetros horarios explícitos vinculados al año 2015 en el texto.',
+    evidenceText: 'Complementariamente, por medio de la Ley N° 20.869 sobre Publicidad de los Alimentos (MINSAL, 2015) se prohibió la publicidad de alimentos \'ALTOS EN\' durante las 06:00 y 22:00 h en televisión y cine.',
     points: 100
   },
   {
@@ -1161,6 +1238,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto detalla que los kioscos se clasifican en A, B y C. Los de tipo A y B pueden no tener agua potable, mientras que el C tiene una completa infraestructura que le permite expender todos los alimentos permitidos.',
     hint: 'Compara la descripción del Tipo C con las dos clasificaciones anteriores en las subsecciones informativas.',
+    evidenceText: '¿Qué tipos de kioscos escolares existen? Los kioscos escolares se clasifican según su infraestructura en tres tipos: A, B y C. Los del tipo A y B pueden contar o no con conexión a la red de agua potable y/o alcantarillado. El tipo C, dada su completa infraestructura, en general puede vender todos los alimentos permitidos.',
     points: 100
   },
   {
@@ -1175,6 +1253,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El texto señala que aquellos alimentos que superen los límites no pueden ser publicitados ni promocionados mediante afiches o el pintado de la infraestructura del kiosco.',
     hint: 'Revisa las especificaciones técnicas sobre publicidad permitida y prohibida en el penúltimo párrafo.',
+    evidenceText: 'Aquellos alimentos que superen los límites establecidos NO podrán ser publicitados, regalados, ni promocionados en los kioscos escolares, ni en ningún lugar dentro de las escuelas. Por ejemplo, no estaría permitido pintar el kiosco, usar afiches, o infraestructura que publicite alimentos que superen los límites (con sellos \'ALTOS EN\').',
     points: 100
   },
   {
@@ -1189,6 +1268,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto adopta un tono institucional, formal y educativo con el fin de guiar a las comunidades en la correcta implementación de las leyes de nutrición.',
     hint: 'Considera la naturaleza de una guía oficial ministerial dirigida a comunidades educativas.',
+    evidenceText: 'Este documento es un material de apoyo para las comunidades educativas, que describe los elementos básicos para la adecuada implementación y funcionamiento del kiosco escolar [...] Se recomienda que el kiosco sea un espacio saludable y que promueva hábitos de alimentación saludable a través de mensajes educativos...',
     points: 150
   },
 
@@ -1207,6 +1287,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Wöhler descubrió que al calentar cianato amónico (inorgánico) se formaban cristales de urea (compuesto orgánico).',
     hint: 'Busca los dos compuestos químicos exactos involucrados en el experimento de 1828.',
+    evidenceText: 'Wöhler calentó cianato amónico (considerado inorgánico) y descubrió que se estaban formando cristales de urea, un compuesto claramente orgánico. Wöhler repitió el experimento y halló que se podía convertir una sustancia inorgánica en una sustancia orgánica a voluntad.',
     points: 100
   },
   {
@@ -1221,6 +1302,7 @@ const paesLenguajeQuestions = [
     correct: 0,
     explanation: 'El vitalismo colapsó al lograr convertir sustancias inorgánicas en orgánicas, invalidando la necesidad de una "fuerza vital".',
     hint: 'Determina cuál fue el hecho empírico que invalidó la necesidad de un soplo espiritual para crear materia orgánica.',
+    evidenceText: 'Si bien era un hecho menor en sí mismo, sirvió para romper la influencia del vitalismo sobre el pensamiento de aquella época, y para animar a los químicos a intentar la síntesis de sustancias orgánicas.',
     points: 100
   },
   {
@@ -1235,6 +1317,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Kolbe logró la síntesis total del ácido acético desde carbono, hidrógeno y oxígeno, cerrando definitivamente el debate sobre la fuerza vital.',
     hint: 'Busca qué logro se considera "lo máximo que puede pedírsele a la química".',
+    evidenceText: 'En 1845, Adolf Wilhelm Hermann Kolbe, un alumno de Wöhler, sintetizó ácido acético, una sustancia indudablemente orgánica. Más adelante lo sintetizó por un método que mostró que puede trazarse una línea definida de transformación química desde los elementos constituyentes, carbono, hidrógeno y oxígeno, hasta el producto final. Esta síntesis a partir de los elementos o síntesis total es lo máximo que puede pedírsele a la química. Si la síntesis de la urea por Wöhler no dejó resuelta la cuestión de la fuerza vital, la síntesis de Kolbe sí.',
     points: 150
   },
   {
@@ -1249,6 +1332,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Asimov señala que "era un hecho menor en sí mismo, pero sirvió para romper la influencia del vitalismo".',
     hint: 'Presta atención a la valoración matizada que hace el autor.',
+    evidenceText: 'La importancia del trabajo de Wöhler no debe ser sobreestimada. En sí mismo no era muy significativo. Pero tampoco puede despreciarse. Si bien era un hecho menor en sí mismo, sirvió para romper la influencia del vitalismo sobre el pensamiento de aquella época...',
     points: 150
   },
   {
@@ -1263,6 +1347,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'El texto plantea desde el primer párrafo que "el hombre estuvo inevitablemente sujeto a dividir las sustancias en dos clases, según ardiesen o no".',
     hint: 'Ubica la primera frase histórica con la que abre el fragmento de Asimov.',
+    evidenceText: 'Desde el descubrimiento del fuego, el hombre estuvo inevitablemente sujeto a dividir las sustancias en dos clases, según ardiesen o no.',
     points: 100
   },
   {
@@ -1272,6 +1357,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El cuarto párrafo detalla de manera explícita: "Las diferencias parecían fundamentales y, en 1807, Berzelius sugirió que las sustancias... se llamasen orgánicas".',
     hint: 'Rastrea el nombre propio vinculado al año 1807 en el desarrollo cronológico del texto.',
+    evidenceText: 'Las diferencias parecían fundamentales y, en 1807, Berzelius sugirió que las sustancias como el aceite de oliva o el azúcar, productos característicos de los organismos, se llamasen orgánicas. Las sustancias como el agua o la sal, características del medio no-viviente, eran inorgánicas.',
     points: 100
   },
   {
@@ -1286,6 +1372,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto señala que sustancias como el agua o la sal podían fundirse o hervirse sin cambiar, mientras que compuestos orgánicos como el azúcar humeaban y se carbonizaban bajo el calor.',
     hint: 'Compara el experimento de calentamiento del aceite y el azúcar frente al agua descritos en el tercer párrafo.',
+    evidenceText: 'Las sustancias características del medio no-vivo pueden soportar tratamientos enérgicos, mientras que las sustancias provenientes de la materia viva —o que estuvo viva— no pueden. El agua podía hervirse y recondensarse de nuevo; el hierro o la sal podían fundirse y resolidificarse sin cambiar. El aceite de oliva o el azúcar, sin embargo, si se calentaban (incluso bajo condiciones que evitasen la combustión), procedían a humear y carbonizarse.',
     points: 100
   },
   {
@@ -1300,6 +1387,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El quinto párrafo explica que la conversión de orgánico a inorgánico era sencilla mediante calor, pero el cambio inverso (de inorgánico a orgánico) se consideraba imposible sin una fuerza vital.',
     hint: 'Identifica el postulado de unidireccionalidad que justificaba la existencia de la "fuerza vital".',
+    evidenceText: 'Un punto que no dejó de impresionar a los químicos fue que las sustancias orgánicas eran fácilmente convertibles, por calentamiento u otro tratamiento enérgico, en sustancias inorgánicas. El cambio inverso, de inorgánico a orgánico, era sin embargo desconocido, al menos a comienzos del siglo XIX.',
     points: 100
   },
   {
@@ -1314,6 +1402,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto menciona en el noveno párrafo que Adolf Wilhelm Hermann Kolbe era "un alumno de Wöhler", quien a su vez había sido discípulo de Berzelius.',
     hint: 'Rastrea los lazos académicos declarados entre Wöhler y Kolbe a la mitad del escrito.',
+    evidenceText: 'En 1845, Adolf Wilhelm Hermann Kolbe, un alumno de Wöhler, sintetizó ácido acético, una sustancia indudablemente orgánica.',
     points: 100
   },
   {
@@ -1328,6 +1417,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El último párrafo estipula que Berthelot llevó las cosas más lejos al sintetizar sistemáticamente metanol, etanol, metano, benceno y acetileno, volviendo rutinario el cruce de líneas.',
     hint: 'Revisa las actividades experimentales detalladas en el cierre del escrito de Asimov.',
+    evidenceText: 'Quien llevó las cosas aún más lejos fue el químico francés Pierre Eugène Marcelin Berthelot. Durante la década de 1850 efectuó sistemáticamente la síntesis de compuestos orgánicos, incluyendo metanol, etanol, metano, benceno y acetileno.',
     points: 100
   },
 
@@ -1346,6 +1436,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Parménides mandó hacer una investigación de la que surgieron dos nombres, uno de ellos el de Perinola.',
     hint: 'Busca cómo llegó el nombre de Perinola a oídos de Parménides.',
+    evidenceText: 'Este personaje, que se llamaba Parménides, debió de confiar en su informante, porque lo mandó llamar y le ofreció sin más el trabajo [...] Lo primero que le dijo fue que él no entendía nada de poesía, ni estaba al tanto de quienes la practicaban en la actualidad, motivo por el cual había mandado hacer una somera investigación de la que surgieron dos nombres...',
     points: 100
   },
   {
@@ -1360,6 +1451,7 @@ const paesLenguajeQuestions = [
     correct: 2,
     explanation: 'Perinola siente que ponerlo "de igual a igual, con un pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén".',
     hint: 'Analiza la reacción emocional del protagonista ante la comparación.',
+    evidenceText: 'De pronto la ignorancia de Parménides, y la de los informantes en los que confiaba, le mostraba su cara difamatoria. Ponerlo a él en la misma lista, de igual a igual, con un pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén.',
     points: 100
   },
   {
@@ -1374,6 +1466,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'El texto señala que "lo que encontró al entrar lo decepcionó... Había mucho mármol, mucho bronce, mucho espacio, pero todo de mal gusto y hasta mezquino".',
     hint: 'Busca las palabras que describen la reacción de Perinola al entrar.',
+    evidenceText: 'Sin embargo, alguna elucubración subliminal debía de haber hecho, pues lo que encontró al entrar lo decepcionó, y la decepción no podía obedecer más que a una expectativa previa. Había mucho mármol, mucho bronce, mucho espacio, pero todo de mal gusto y hasta mezquino.',
     points: 100
   },
   {
@@ -1388,6 +1481,7 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'Parménides admite abiertamente que "no entendía nada de poesía" y que los nombres de los poetas le eran desconocidos, mostrando una honestidad sincera.',
     hint: 'Identifica el rasgo de carácter que el narrador expone abiertamente durante el diálogo inicial.',
+    evidenceText: 'Acto visto hubo un pequeño exceso suplementario de honestidad. Sin que se lo preguntara, Parménides le dijo que el otro nombre que le habían dado era el de Zenón. Y había mandado a llamar primero a Zenón. Aclaró que lo había hecho solo porque era el primero en la lista...',
     points: 150
   },
   {
@@ -1402,81 +1496,17 @@ const paesLenguajeQuestions = [
     correct: 1,
     explanation: 'La primera línea del relato sitúa temporal y espacialmente al escritor Perinola a comienzos del siglo quinto A.C. en una colonia del sur de Italia.',
     hint: 'Identifica los datos cronológicos y geográficos precisos del inicio de la lectura.',
+    evidenceText: 'Esta es la historia triste y fatal del escritor Perinola, que vivió a comienzos del siglo quinto antes de Cristo en una colonia griega de la costa italiana del sur.',
     points: 100
   },
   {
     id: 10742, textKey: 'parmenides', topic: 'localizar', type: 'multiple',
-    question: '¿Qué edad exacta tenía el escritor Perinola al momento de concretar su primer encuentro con Parménides?',
-    options: ['Veintinueve años.', 'Treinta y cinco años.', 'Cuarenta años.', 'Veintiún años.'],
-    correct: 0,
-    explanation: 'El cuarto párrafo menciona de forma explícita entre paréntesis la edad exacta del protagonista: "(Perinola tenía veintinueve)".',
-    hint: 'Busca el valor numérico encerrado entre paréntesis que detalla la edad de Perinola.',
-    points: 100
-  },
-  {
-    id: 10743, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
-    question: '¿Por qué la consideración del "puñado de entendidos" hacia Perinola no carecía de fundamento a pesar de que casi no había escrito nada?',
-    options: [
-      'Porque poseía un diploma oficial validado por la Judicatura.',
-      'Porque la poesía funciona como una promesa artística que inicialmente puede ser inverificable.',
-      'Porque había derrotado a Zenón en un certamen público de oratoria clásica.',
-      'Porque era el hijo menor de un prominente jerarca militar de la costa italiana.'
-    ],
+    question: '¿Qué edad exacta tenía el escritor Perinola al momento de concretar su encuentro con Parménides en la Judicatura?',
+    options: ['19 años.', '29 años.', '39 años.', '49 años.'],
     correct: 1,
-    explanation: 'El narrador reflexiona que con poco alcanza para basar una promesa si se trata de algo tan inverificable en sus inicios como la poesía.',
-    hint: 'Analiza el primer párrafo y la definición de una "promesa" literaria joven.',
+    explanation: 'El texto indica explícitamente dentro del cuarto párrafo que Perinola tenía veintinueve años mientras Parménides bordeaba los cuarenta.',
+    hint: 'Ubica los datos numéricos de edad dispuestos entre paréntesis en la descripción de los personajes.',
+    evidenceText: 'Era un hombre joven, no debía de llegar a los cuarenta años (Perinola tenía veintinueve), alto y bastante majestuoso, apuesto, con una gran nariz.',
     points: 100
-  },
-  {
-    id: 10744, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
-    question: '¿Por qué Parménides terminó convocando a Perinola en primer lugar en vez de a Zenón?',
-    options: [
-      'Porque descartó a Zenón al enterarse de su falta de talento.',
-      'Porque Zenón se encontraba ausente por motivos de viaje y no pudieron localizarlo.',
-      'Porque consideraba que el nombre de Perinola denotaba un estatus social superior.',
-      'Porque los informantes judiciales tacharon a Zenón de parásito.'
-    ],
-    correct: 1,
-    explanation: 'Parménides confiesa que llamó a Zenón primero por azar al encabezar la lista, pero al estar de viaje y no hallarse en la ciudad, procedió a mandar a buscar a Perinola.',
-    hint: 'Busca la explicación logística sobre la ausencia de Zenón al final del texto.',
-    points: 100
-  },
-  {
-    id: 10745, textKey: 'parmenides', topic: 'interpretar', type: 'multiple',
-    question: '¿Qué connotación tiene para Perinola el hecho de figurar "de igual a igual" con Zenón en la lista de Parménides?',
-    options: [
-      'Una validación de su hermandad intelectual con los artistas locales.',
-      'Una muestra difamatoria de indiferencia o desdén por parte de la Judicatura.',
-      'Un alivio económico, ya que compartirían la remuneración del puesto.',
-      'Una prueba irrefutable del profundo gusto literario de los informantes.'
-    ],
-    correct: 1,
-    explanation: 'El texto explicita que para Perinola, ser igualado con un "pseudopoeta como Zenón transformaba la ignorancia en indiferencia, o directamente en desdén".',
-    hint: 'Examina los pensamientos de orgullo y resentimiento del protagonista en el último párrafo.',
-    points: 100
-  },
-  {
-    id: 10746, textKey: 'parmenides', topic: 'evaluar', type: 'multiple',
-    question: '¿Qué tipo de narrador articula la perspectiva de los hechos en este fragmento de Parménides?',
-    options: [
-      'Un narrador protagonista que relata en primera persona sus memorias en la Judicatura.',
-      'Un narrador heterodiegético (tercera persona) que se focaliza en el mundo interno y los juicios de Perinola.',
-      'Un narrador testigo encarnado por el esclavo de Parménides.',
-      'Un narrador omnisciente de carácter neutro que no emite valoraciones psicológicas.'
-    ],
-    correct: 1,
-    explanation: 'El relato se desenvuelve en tercera persona, pero adopta íntimamente la perspectiva emocional, decepciones y juicios críticos del escritor Perinola.',
-    hint: 'Evalúa si quien cuenta la historia está dentro de la escena como protagonista o la relata conociendo la mente de Perinola.',
-    points: 150
   }
 ];
-
-const paesBancoLectora = {
-  version: "2.0.0",
-  totalLecturas: Object.keys(paesTexts).length,
-  totalQuestions: paesLenguajeQuestions.length,
-  texts: paesTexts,
-  questions: paesLenguajeQuestions
-};
-
-console.log('📖 Banco de Competencia Lectora v2.0.0 ampliado: ' + paesLenguajeQuestions.length + ' preguntas cargadas con éxito.');
