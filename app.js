@@ -1,12 +1,12 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v4.2.1 — Producción
+ * PAES Challenge Engine v4.3.0 — Producción
  * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
  * + Pantalla completa de lectura + Resaltado de texto
- * + Evidencia en lectura al responder
+ * + Evidencia en lectura al responder (usa evidenceText)
  * + Envío de resultados a Google Sheets (con cola offline)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
@@ -90,7 +90,7 @@ const questionsPerLevel = {
 
 // ===== SISTEMA DE 4 LOTES =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v4';
-const LOTES_VERSION = '4.2.1';
+const LOTES_VERSION = '4.3.0';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -591,17 +591,25 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// ===== EVIDENCIA EN LECTURA AL RESPONDER =====
-function resaltarEvidenciaEnLectura(textKey, fragmento, tipo) {
-    if (!textKey || !fragmento) return;
+// ===== EVIDENCIA EN LECTURA AL RESPONDER (USA evidenceText) =====
+function resaltarEvidenciaEnLectura(textKey, evidenceText, tipo) {
+    if (!textKey || !evidenceText) return;
     const bodyEl = document.getElementById(`lectura-body-${textKey}`);
     if (!bodyEl) return;
-    const textoLimpio = fragmento.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').substring(0, 80);
+    
+    bodyEl.querySelectorAll('.evidencia-correcta, .evidencia-incorrecta').forEach(el => {
+        const parent = el.parentNode;
+        parent.replaceChild(document.createTextNode(el.textContent), el);
+    });
+    bodyEl.normalize();
+    
+    const fragmento = evidenceText.substring(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
     try {
-        const regex = new RegExp(`(${textoLimpio})`, 'i');
+        const regex = new RegExp(`(${fragmento})`, 'i');
         const html = bodyEl.innerHTML;
-        if (html.includes('evidencia-correcta') || html.includes('evidencia-incorrecta')) return;
         let encontrado = false;
+        
         bodyEl.innerHTML = html.replace(regex, (match) => {
             if (!encontrado) {
                 encontrado = true;
@@ -610,27 +618,14 @@ function resaltarEvidenciaEnLectura(textKey, fragmento, tipo) {
             }
             return match;
         });
+        
         if (encontrado) {
             const evidencia = bodyEl.querySelector('.evidencia-correcta, .evidencia-incorrecta');
             if (evidencia) setTimeout(() => evidencia.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
         }
-    } catch (e) { console.warn('No se pudo resaltar la evidencia:', e); }
-}
-
-function limpiarEvidenciasLectura() {
-    document.querySelectorAll('.evidencia-correcta, .evidencia-incorrecta').forEach(el => {
-        const parent = el.parentNode;
-        parent.replaceChild(document.createTextNode(el.textContent), el);
-        parent.normalize();
-    });
-}
-
-function extraerFragmentoTexto(explicacion) {
-    const match = explicacion.match(/"([^"]+)"/);
-    if (match) return match[1];
-    const palabras = explicacion.split(' ');
-    const fragmento = palabras.slice(0, 8).join(' ');
-    return fragmento.length > 30 ? fragmento.substring(0, 80) : fragmento;
+    } catch (e) {
+        console.warn('No se pudo resaltar la evidencia:', e);
+    }
 }
 
 // ===== PANTALLA COMPLETA DE LECTURA =====
@@ -722,7 +717,6 @@ function loadQuestion() {
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null; state.isFrozen = false;
     state.questionStartTime = Date.now();
-    if (state.currentLevel === 1) limpiarEvidenciasLectura();
     const q = state.questions[state.currentQuestion];
     ['options-grid','matching-container','drag-container','slider-container'].forEach(id => {
         const el = document.getElementById(id); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
@@ -884,18 +878,16 @@ function checkMultipleAnswer(oi, q) {
         if (rt < 3) { const sb = Math.round(q.points * 0.5); tp += sb; sc += 10; showSpeedBonus(sb); }
         if (opts[cdi2]) triggerVisualStarsFromElement(opts[cdi2], sc);
         showFeedback(`¡Correcto! ${q.explanation}${q.isBonus?' 🎁 BONUS!':''}`, q.isBonus?'bonus':'correct');
-        if (state.currentLevel === 1 && q.textKey) {
-            const fragmento = extraerFragmentoTexto(q.explanation);
-            resaltarEvidenciaEnLectura(q.textKey, fragmento, 'correct');
+        if (state.currentLevel === 1 && q.textKey && q.evidenceText) {
+            resaltarEvidenciaEnLectura(q.textKey, q.evidenceText, 'correct');
         }
         handleCorrectAnswer(tp);
     } else {
         if (opts[cdi2]) opts[cdi2].classList.add('incorrect');
         if (opts[cdi]) opts[cdi].classList.add('correct');
         showFeedback(`Incorrecto. ${q.explanation}`, 'incorrect');
-        if (state.currentLevel === 1 && q.textKey) {
-            const fragmento = extraerFragmentoTexto(q.explanation);
-            resaltarEvidenciaEnLectura(q.textKey, fragmento, 'incorrect');
+        if (state.currentLevel === 1 && q.textKey && q.evidenceText) {
+            resaltarEvidenciaEnLectura(q.textKey, q.evidenceText, 'incorrect');
         }
         handleIncorrectAnswer(q);
     }
