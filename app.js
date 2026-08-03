@@ -1,12 +1,13 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v4.3.0 — Producción
+ * PAES Challenge Engine v4.3.1 — Producción
  * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
  * + Pantalla completa de lectura + Resaltado de texto
  * + Evidencia en lectura al responder (usa evidenceText)
+ * + Limpieza automática de resaltados antiguos (>30 días)
  * + Envío de resultados a Google Sheets (con cola offline)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
@@ -90,7 +91,7 @@ const questionsPerLevel = {
 
 // ===== SISTEMA DE 4 LOTES =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v4';
-const LOTES_VERSION = '4.3.0';
+const LOTES_VERSION = '4.3.1';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -284,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     createSpeedBonusToast();
     if (typeof injectBuhoSVGs === 'function') injectBuhoSVGs();
     flushPendingGoogleSheets();
+    limpiarResaltadosAntiguos();
 });
 
 window.addEventListener('online', () => {
@@ -345,6 +347,10 @@ function seleccionarLote(lote) {
 function reiniciarLotes() {
     for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
     localStorage.removeItem(LOTES_STORAGE_KEY);
+    
+    // Limpiar resaltados antiguos al regenerar lotes
+    limpiarTodosResaltados();
+    
     state.lotesDisponibles = cargarLotes();
     state.currentLote = null; state.loteData = null;
     actualizarSelectorLotes(state.lotesDisponibles);
@@ -553,7 +559,13 @@ function guardarResaltados(textKey) {
     spans.forEach((span, index) => {
         resaltados.push({ texto: span.textContent, posicion: index, timestamp: span.dataset.timestamp || Date.now() });
     });
-    safeLocalSet(`paes_resaltados_${textKey}`, JSON.stringify(resaltados));
+    
+    // Limpiar resaltados antiguos (más de 30 días)
+    const ahora = Date.now();
+    const treintaDias = 30 * 24 * 60 * 60 * 1000;
+    const filtrados = resaltados.filter(r => (ahora - r.timestamp) < treintaDias);
+    
+    safeLocalSet(`paes_resaltados_${textKey}`, JSON.stringify(filtrados));
 }
 
 function aplicarResaltadosGuardados(textKey, resaltados) {
@@ -585,6 +597,43 @@ function limpiarResaltados(textKey) {
     bodyEl.normalize();
     safeLocalSet(`paes_resaltados_${textKey}`, '[]');
     if (window.effectsManager) window.effectsManager.triggerToastAcademico('Resaltados eliminados', { icon: '🗑️', duration: 1500 });
+}
+
+function limpiarTodosResaltados() {
+    if (typeof paesTexts === 'undefined') return;
+    const textKeys = Object.keys(paesTexts);
+    let totalEliminados = 0;
+    textKeys.forEach(key => {
+        const guardados = safeLocalGet(`paes_resaltados_${key}`, null);
+        if (guardados) {
+            totalEliminados++;
+            safeLocalSet(`paes_resaltados_${key}`, '[]');
+        }
+    });
+    if (totalEliminados > 0) {
+        console.log(`🧹 ${totalEliminados} lecturas con resaltados eliminados.`);
+    }
+}
+
+function limpiarResaltadosAntiguos() {
+    if (typeof paesTexts === 'undefined') return;
+    const ahora = Date.now();
+    const treintaDias = 30 * 24 * 60 * 60 * 1000;
+    const textKeys = Object.keys(paesTexts);
+    let totalLimpio = 0;
+    textKeys.forEach(key => {
+        const guardados = JSON.parse(safeLocalGet(`paes_resaltados_${key}`, '[]'));
+        if (guardados.length > 0) {
+            const filtrados = guardados.filter(r => (ahora - r.timestamp) < treintaDias);
+            if (filtrados.length < guardados.length) {
+                totalLimpio++;
+                safeLocalSet(`paes_resaltados_${key}`, JSON.stringify(filtrados));
+            }
+        }
+    });
+    if (totalLimpio > 0) {
+        console.log(`🧹 ${totalLimpio} lecturas con resaltados antiguos eliminados.`);
+    }
 }
 
 function escapeRegExp(string) {
