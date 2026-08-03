@@ -1,12 +1,12 @@
 
 /**
  * ============================================================
- * PAES Challenge — Service Worker v4.0.0
+ * PAES Challenge — Service Worker v4.1.0
  * Cache y funcionalidad offline para PWA
  * ============================================================
  */
 
-const CACHE_NAME = 'paes-challenge-v4.0.0';
+const CACHE_NAME = 'paes-challenge-v4.1.0';
 
 const ASSETS = [
     './',
@@ -35,7 +35,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-    console.log('🦉 PAES Challenge v4.0.0 - Instalando...');
+    console.log('🦉 PAES Challenge v4.1.0 - Instalando...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -53,7 +53,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-    console.log('🦉 PAES Challenge v4.0.0 - Activando...');
+    console.log('🦉 PAES Challenge v4.1.0 - Activando...');
     event.waitUntil(
         caches.keys()
             .then((keys) => {
