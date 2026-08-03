@@ -1,13 +1,13 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v4.2.0 — Producción
+ * PAES Challenge Engine v4.2.1 — Producción
  * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
  * + Pantalla completa de lectura + Resaltado de texto
  * + Evidencia en lectura al responder
- * + Envío de resultados a Google Sheets
+ * + Envío de resultados a Google Sheets (con cola offline)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
  */
@@ -90,7 +90,7 @@ const questionsPerLevel = {
 
 // ===== SISTEMA DE 4 LOTES =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v4';
-const LOTES_VERSION = '4.2.0';
+const LOTES_VERSION = '4.2.1';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -283,6 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPowerups();
     createSpeedBonusToast();
     if (typeof injectBuhoSVGs === 'function') injectBuhoSVGs();
+    flushPendingGoogleSheets();
+});
+
+window.addEventListener('online', () => {
+    flushPendingGoogleSheets();
 });
 
 function cargarYMostrarLotes() {
@@ -1021,7 +1026,6 @@ function showFinalResults() {
         else if (state.score >= 3000) sp.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
         else sp.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
-    enviarResultadosGoogleSheets();
     if (state.currentLote) marcarLoteComoUsado(state.currentLote);
     showScreen('screen-results');
     if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
@@ -1153,12 +1157,16 @@ function showNamePromptModal(cb) {
 
 function saveToLeaderboard() {
     showNamePromptModal((name) => {
-        if (!name) return;
-        const lb = JSON.parse(safeLocalGet('paes_leaderboard_v4','[]'));
-        lb.push({ name, score:state.score, badges:Object.values(state.badges).filter(Boolean).length, tiempo:state.tiempoTotalDesafio, promedio:state.totalPreguntasRespondidas>0?(state.tiempoTotalDesafio/state.totalPreguntasRespondidas).toFixed(1):0, date:new Date().toLocaleDateString() });
-        lb.sort((a,b) => b.score - a.score);
-        safeLocalSet('paes_leaderboard_v4', JSON.stringify(lb.slice(0,20)));
-        loadLeaderboard();
+        const nombreFinal = name || 'Anónimo';
+        safeLocalSet('paes_jugador_nombre', nombreFinal);
+        if (name) {
+            const lb = JSON.parse(safeLocalGet('paes_leaderboard_v4','[]'));
+            lb.push({ name, score:state.score, badges:Object.values(state.badges).filter(Boolean).length, tiempo:state.tiempoTotalDesafio, promedio:state.totalPreguntasRespondidas>0?(state.tiempoTotalDesafio/state.totalPreguntasRespondidas).toFixed(1):0, date:new Date().toLocaleDateString() });
+            lb.sort((a,b) => b.score - a.score);
+            safeLocalSet('paes_leaderboard_v4', JSON.stringify(lb.slice(0,20)));
+            loadLeaderboard();
+        }
+        enviarResultadosGoogleSheets(nombreFinal);
     });
 }
 
@@ -1183,16 +1191,16 @@ function shareResults() {
 
 // ===== ENVÍO DE RESULTADOS A GOOGLE SHEETS =====
 const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxvTEZlpd12ZLp0Z6krQw4iFsx6mcbBsTVucJxO4W-e-HR_VSKwUTusAi4U6VTgQx7X/exec';
+const SHEETS_PENDING_KEY = 'paes_sheets_pending_v1';
 
-function enviarResultadosGoogleSheets() {
+function construirPayloadResultados(nombreJugador) {
     const minutos = Math.floor(state.tiempoTotalDesafio / 60);
     const segundos = Math.floor(state.tiempoTotalDesafio % 60);
-    const promedio = state.totalPreguntasRespondidas > 0 
-        ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) 
+    const promedio = state.totalPreguntasRespondidas > 0
+        ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1)
         : 0;
-    
-    const data = {
-        jugador: localStorage.getItem('paes_jugador_nombre') || 'Anónimo',
+    return {
+        jugador: nombreJugador || 'Anónimo',
         partida: state.currentLote || 1,
         puntaje: state.score,
         promedio: parseFloat(promedio),
@@ -1200,15 +1208,56 @@ function enviarResultadosGoogleSheets() {
         total: state.totalPreguntasRespondidas,
         insignias: Object.values(state.badges).filter(Boolean).length,
         tiempoTotal: `${minutos}m ${segundos}s`,
-        nivel: state.currentLevel
+        fecha: new Date().toISOString()
     };
-    
-    fetch(GOOGLE_SHEETS_URL, {
+}
+
+function enviarResultadosGoogleSheets(nombreJugador) {
+    const payload = construirPayloadResultados(nombreJugador);
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        encolarEnvioPendiente(payload);
+        return;
+    }
+    intentarEnviarGoogleSheets(payload).catch(() => {
+        encolarEnvioPendiente(payload);
+    });
+}
+
+function intentarEnviarGoogleSheets(payload) {
+    return fetch(GOOGLE_SHEETS_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    })
-    .then(() => console.log('📊 Resultados enviados a Google Sheets'))
-    .catch(err => console.warn('⚠️ No se pudieron enviar los resultados:', err));
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        console.log('📊 Resultados enviados a Google Sheets:', payload.jugador);
+    });
+}
+
+function encolarEnvioPendiente(payload) {
+    let pendientes = [];
+    try { pendientes = JSON.parse(safeLocalGet(SHEETS_PENDING_KEY, '[]')); } catch (e) { pendientes = []; }
+    pendientes.push(payload);
+    safeLocalSet(SHEETS_PENDING_KEY, JSON.stringify(pendientes.slice(-20)));
+    console.warn('⚠️ Sin conexión: resultado guardado para reintentar más tarde.');
+}
+
+function flushPendingGoogleSheets() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    let pendientes = [];
+    try { pendientes = JSON.parse(safeLocalGet(SHEETS_PENDING_KEY, '[]')); } catch (e) { pendientes = []; }
+    if (!pendientes.length) return;
+    const restantes = [];
+    let cadena = Promise.resolve();
+    pendientes.forEach((payload) => {
+        cadena = cadena.then(() =>
+            intentarEnviarGoogleSheets(payload).catch(() => { restantes.push(payload); })
+        );
+    });
+    cadena.then(() => {
+        safeLocalSet(SHEETS_PENDING_KEY, JSON.stringify(restantes));
+        if (restantes.length === 0 && pendientes.length > 0) {
+            console.log(`📊 ${pendientes.length} resultado(s) pendiente(s) enviados a Google Sheets.`);
+        }
+    });
 }
