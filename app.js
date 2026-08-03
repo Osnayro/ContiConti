@@ -508,7 +508,6 @@ function mostrarLectura(question) {
 }
 
 // ===== FUNCIONES DE RESALTADO =====
-
 function resaltarSeleccion(textKey) {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
@@ -525,9 +524,8 @@ function resaltarSeleccion(textKey) {
     span.dataset.textKey = textKey;
     span.dataset.timestamp = Date.now();
     
-    try {
-        range.surroundContents(span);
-    } catch (e) {
+    try { range.surroundContents(span); }
+    catch (e) {
         const fragment = range.extractContents();
         const newSpan = document.createElement('span');
         newSpan.className = 'lectura-resaltado';
@@ -589,21 +587,15 @@ function escapeRegExp(string) {
 }
 
 // ===== EVIDENCIA EN LECTURA AL RESPONDER =====
-
 function resaltarEvidenciaEnLectura(textKey, fragmento, tipo) {
     if (!textKey || !fragmento) return;
-    
     const bodyEl = document.getElementById(`lectura-body-${textKey}`);
     if (!bodyEl) return;
-    
     const textoLimpio = fragmento.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').substring(0, 80);
-    
     try {
         const regex = new RegExp(`(${textoLimpio})`, 'i');
         const html = bodyEl.innerHTML;
-        
         if (html.includes('evidencia-correcta') || html.includes('evidencia-incorrecta')) return;
-        
         let encontrado = false;
         bodyEl.innerHTML = html.replace(regex, (match) => {
             if (!encontrado) {
@@ -613,18 +605,11 @@ function resaltarEvidenciaEnLectura(textKey, fragmento, tipo) {
             }
             return match;
         });
-        
         if (encontrado) {
             const evidencia = bodyEl.querySelector('.evidencia-correcta, .evidencia-incorrecta');
-            if (evidencia) {
-                setTimeout(() => {
-                    evidencia.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
-            }
+            if (evidencia) setTimeout(() => evidencia.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
         }
-    } catch (e) {
-        console.warn('No se pudo resaltar la evidencia:', e);
-    }
+    } catch (e) { console.warn('No se pudo resaltar la evidencia:', e); }
 }
 
 function limpiarEvidenciasLectura() {
@@ -644,37 +629,26 @@ function extraerFragmentoTexto(explicacion) {
 }
 
 // ===== PANTALLA COMPLETA DE LECTURA =====
-
 function abrirLecturaFullscreen(textKey) {
     if (typeof paesTexts === 'undefined' || !paesTexts[textKey]) return;
     const texto = paesTexts[textKey];
-    
     const overlay = document.createElement('div');
     overlay.className = 'lectura-fullscreen-overlay';
     overlay.id = 'lectura-fullscreen-overlay';
-    
     const bodyEl = document.getElementById(`lectura-body-${textKey}`);
     let bodyHTML = texto.body.replace(/\n/g, '<br>');
     if (bodyEl) bodyHTML = bodyEl.innerHTML;
-    
     overlay.innerHTML = `
         <div class="lectura-fullscreen-header">
-            <div>
-                <div class="lectura-fullscreen-title">📖 ${texto.title}</div>
-                <div class="lectura-fullscreen-author">${texto.author}</div>
-            </div>
+            <div><div class="lectura-fullscreen-title">📖 ${texto.title}</div><div class="lectura-fullscreen-author">${texto.author}</div></div>
             <button class="btn-lectura-cerrar" onclick="cerrarLecturaFullscreen()">✕ Cerrar</button>
         </div>
-        <div class="lectura-fullscreen-content lectura-selectable" id="lectura-fullscreen-body">
-            ${bodyHTML}
-        </div>
+        <div class="lectura-fullscreen-content lectura-selectable" id="lectura-fullscreen-body">${bodyHTML}</div>
         <div style="max-width:900px;width:100%;margin:10px auto 0;display:flex;gap:8px;">
             <button class="btn-lectura-cerrar" onclick="resaltarDesdeFullscreen('${textKey}')" style="background:#F59E0B;border-color:#F59E0B;">🖍️ Resaltar</button>
             <button class="btn-lectura-cerrar" onclick="limpiarResaltadosFullscreen('${textKey}')" style="background:#EF4444;border-color:#EF4444;">🗑️ Limpiar</button>
             <button class="btn-lectura-cerrar" onclick="cerrarLecturaFullscreen()">✕ Cerrar</button>
-        </div>
-    `;
-    
+        </div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     const content = document.getElementById('lectura-fullscreen-body');
@@ -697,18 +671,13 @@ function resaltarDesdeFullscreen(textKey) {
     const bodyEl = document.getElementById('lectura-fullscreen-body');
     if (!bodyEl || !bodyEl.contains(range.commonAncestorContainer)) return;
     const span = document.createElement('span');
-    span.className = 'lectura-resaltado';
-    span.dataset.textKey = textKey;
-    span.dataset.timestamp = Date.now();
+    span.className = 'lectura-resaltado'; span.dataset.textKey = textKey; span.dataset.timestamp = Date.now();
     try { range.surroundContents(span); }
     catch (e) {
         const fragment = range.extractContents();
         const newSpan = document.createElement('span');
-        newSpan.className = 'lectura-resaltado';
-        newSpan.dataset.textKey = textKey;
-        newSpan.dataset.timestamp = Date.now();
-        newSpan.appendChild(fragment);
-        range.insertNode(newSpan);
+        newSpan.className = 'lectura-resaltado'; newSpan.dataset.textKey = textKey; newSpan.dataset.timestamp = Date.now();
+        newSpan.appendChild(fragment); range.insertNode(newSpan);
     }
     selection.removeAllRanges();
     if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Texto resaltado!', { icon: '🖍️', duration: 1500 });
@@ -717,8 +686,10 @@ function resaltarDesdeFullscreen(textKey) {
 function limpiarResaltadosFullscreen(textKey) {
     const bodyEl = document.getElementById('lectura-fullscreen-body');
     if (!bodyEl) return;
-    const spans = bodyEl.querySelectorAll('.lectura-resaltado');
-    spans.forEach(span => { const parent = span.parentNode; parent.replaceChild(document.createTextNode(span.textContent), span); });
+    bodyEl.querySelectorAll('.lectura-resaltado').forEach(span => {
+        const parent = span.parentNode;
+        parent.replaceChild(document.createTextNode(span.textContent), span);
+    });
     bodyEl.normalize();
     if (window.effectsManager) window.effectsManager.triggerToastAcademico('Resaltados eliminados', { icon: '🗑️', duration: 1500 });
 }
@@ -746,10 +717,7 @@ function loadQuestion() {
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null; state.isFrozen = false;
     state.questionStartTime = Date.now();
-    
-    // Limpiar evidencias de la pregunta anterior
     if (state.currentLevel === 1) limpiarEvidenciasLectura();
-    
     const q = state.questions[state.currentQuestion];
     ['options-grid','matching-container','drag-container','slider-container'].forEach(id => {
         const el = document.getElementById(id); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
@@ -911,25 +879,19 @@ function checkMultipleAnswer(oi, q) {
         if (rt < 3) { const sb = Math.round(q.points * 0.5); tp += sb; sc += 10; showSpeedBonus(sb); }
         if (opts[cdi2]) triggerVisualStarsFromElement(opts[cdi2], sc);
         showFeedback(`¡Correcto! ${q.explanation}${q.isBonus?' 🎁 BONUS!':''}`, q.isBonus?'bonus':'correct');
-        
-        // Resaltar evidencia en la lectura (Nivel 1)
         if (state.currentLevel === 1 && q.textKey) {
             const fragmento = extraerFragmentoTexto(q.explanation);
             resaltarEvidenciaEnLectura(q.textKey, fragmento, 'correct');
         }
-        
         handleCorrectAnswer(tp);
     } else {
         if (opts[cdi2]) opts[cdi2].classList.add('incorrect');
         if (opts[cdi]) opts[cdi].classList.add('correct');
         showFeedback(`Incorrecto. ${q.explanation}`, 'incorrect');
-        
-        // Resaltar evidencia en la lectura (Nivel 1)
         if (state.currentLevel === 1 && q.textKey) {
             const fragmento = extraerFragmentoTexto(q.explanation);
             resaltarEvidenciaEnLectura(q.textKey, fragmento, 'incorrect');
         }
-        
         handleIncorrectAnswer(q);
     }
 }
@@ -1059,10 +1021,7 @@ function showFinalResults() {
         else if (state.score >= 3000) sp.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
         else sp.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
-    
-    // Enviar resultados a Google Sheets
     enviarResultadosGoogleSheets();
-    
     if (state.currentLote) marcarLoteComoUsado(state.currentLote);
     showScreen('screen-results');
     if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
@@ -1223,7 +1182,7 @@ function shareResults() {
 }
 
 // ===== ENVÍO DE RESULTADOS A GOOGLE SHEETS =====
-const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/TU_URL_AQUI/exec';
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxvTEZlpd12ZLp0Z6krQw4iFsx6mcbBsTVucJxO4W-e-HR_VSKwUTusAi4U6VTgQx7X/exec';
 
 function enviarResultadosGoogleSheets() {
     const minutos = Math.floor(state.tiempoTotalDesafio / 60);
