@@ -1,21 +1,14 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v4.0.0 — Producción
+ * PAES Challenge Engine v4.1.0 — Producción
  * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
- * + Nivel 4: Ciencias (Biología, Física, Química)
+ * + Pantalla completa de lectura + Resaltado de texto
+ * + Envío de resultados a Google Sheets
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
- *
- * Niveles:
- *   1. Competencia Lectora (60s) — 25 preguntas
- *   2. Matemática 1 - M1 (45s) — 25 preguntas
- *   3. Matemática 2 - M2 (35s) — 25 preguntas
- *   4. Ciencias (40s) — 25 preguntas
- *
- * Lotes Nivel 1: 2 lecturas completas (10+10) + 1 parcial (5) = 25
  */
 
 // ===== ESTADO GLOBAL =====
@@ -96,7 +89,7 @@ const questionsPerLevel = {
 
 // ===== SISTEMA DE 4 LOTES =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v4';
-const LOTES_VERSION = '4.0.0';
+const LOTES_VERSION = '4.1.0';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -113,21 +106,17 @@ function generarLotes() {
         return a;
     };
 
-    // Para Competencia Lectora: agrupar por lectura, luego dividir en 4 lotes
     const lectoraPorLectura = agruparPorLectura(todasLectora);
     const lecturasKeys = shuffleArr(Object.keys(lectoraPorLectura));
     
     const dividirLecturasEn4 = () => {
-        const total = lecturasKeys.length; // 10 lecturas
-        const porLote = Math.floor(total / 4); // 2 lecturas completas por lote
-        const sobrantes = total % 4; // 2 lecturas para dividir
-        
+        const total = lecturasKeys.length;
+        const porLote = Math.floor(total / 4);
+        const sobrantes = total % 4;
         const resultado = [];
         let idx = 0;
-        
         for (let i = 0; i < 4; i++) {
             const lote = [];
-            // Agregar 2 lecturas completas
             for (let j = 0; j < porLote; j++) {
                 const key = lecturasKeys[idx];
                 lote.push(...lectoraPorLectura[key]);
@@ -135,25 +124,18 @@ function generarLotes() {
             }
             resultado.push(lote);
         }
-        
-        // Distribuir las 2 lecturas sobrantes como parciales (5 preguntas cada una)
         for (let i = 0; i < sobrantes; i++) {
             const key = lecturasKeys[idx];
             const preguntas = lectoraPorLectura[key];
             const mitad = Math.ceil(preguntas.length / 2);
-            
-            // Primer lote recibe la primera mitad, segundo lote la segunda mitad
             resultado[i].push(...preguntas.slice(0, mitad));
             resultado[i + 2].push(...preguntas.slice(mitad));
             idx++;
         }
-        
         return resultado;
     };
 
     const lecParts = dividirLecturasEn4();
-    
-    // Para M1, M2 y Ciencias: shuffle simple y dividir en 4
     const m1Shuffle = shuffleArr(todasM1);
     const m2Shuffle = shuffleArr(todasM2);
     const cienciasShuffle = shuffleArr(todasCiencias);
@@ -175,25 +157,22 @@ function generarLotes() {
 
     const lotes = [];
     for (let i = 0; i < 4; i++) {
-        const m1Lote = m1Parts[i].slice(0, questionsPerLevel[2]);
-        const m2Lote = m2Parts[i].slice(0, questionsPerLevel[3]);
-        const cienciasLote = cienciasParts[i].slice(0, questionsPerLevel[4]);
-        const lecLote = lecParts[i].slice(0, questionsPerLevel[1]);
-
         lotes.push({
             id: i + 1,
             generado: Date.now(),
             version: LOTES_VERSION,
             preguntas: {
-                lectora: lecLote,
-                matematica1: m1Lote,
-                matematica2: m2Lote,
-                ciencias: cienciasLote
+                lectora: lecParts[i].slice(0, questionsPerLevel[1]),
+                matematica1: m1Parts[i].slice(0, questionsPerLevel[2]),
+                matematica2: m2Parts[i].slice(0, questionsPerLevel[3]),
+                ciencias: cienciasParts[i].slice(0, questionsPerLevel[4])
             },
-            totalPreguntas: lecLote.length + m1Lote.length + m2Lote.length + cienciasLote.length
+            totalPreguntas: lecParts[i].slice(0, questionsPerLevel[1]).length + 
+                           m1Parts[i].slice(0, questionsPerLevel[2]).length + 
+                           m2Parts[i].slice(0, questionsPerLevel[3]).length + 
+                           cienciasParts[i].slice(0, questionsPerLevel[4]).length
         });
     }
-
     return lotes;
 }
 
@@ -206,7 +185,6 @@ function agruparPorLectura(preguntas) {
             grupos[q.textKey].push(q);
         }
     });
-    // Ordenar preguntas dentro de cada grupo por ID
     Object.values(grupos).forEach(g => g.sort((a, b) => a.id - b.id));
     return grupos;
 }
@@ -362,11 +340,10 @@ function reiniciarLotes() {
     for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
     localStorage.removeItem(LOTES_STORAGE_KEY);
     state.lotesDisponibles = cargarLotes();
-    state.currentLote = null;
-    state.loteData = null;
+    state.currentLote = null; state.loteData = null;
     actualizarSelectorLotes(state.lotesDisponibles);
-    const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
-    const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('lote-confirmacion').style.display = 'none';
     if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡4 nuevas partidas! 🦉', { icon:'🔄', bg:'linear-gradient(135deg,#8B5CF6,#6D28D9)', duration:2500 });
 }
 
@@ -400,9 +377,9 @@ function showScreen(id) {
     if (id === 'screen-leaderboard') loadLeaderboard();
     if (id === 'screen-welcome') {
         cargarYMostrarLotes();
-        const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
-        const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
-        const sel = document.getElementById('lote-selector'); if (sel) sel.style.display = 'block';
+        document.getElementById('btn-start').style.display = 'none';
+        document.getElementById('lote-confirmacion').style.display = 'none';
+        document.getElementById('lote-selector').style.display = 'block';
     }
     if (typeof injectBuhoSVGs === 'function') setTimeout(injectBuhoSVGs, 100);
 }
@@ -422,10 +399,8 @@ function startGame() {
         return;
     }
     if (window.effectsManager) window.effectsManager.ensureAudio();
-    state.desafioStartTime = Date.now();
-    state.desafioEndTime = null;
-    state.tiempoTotalDesafio = 0;
-    state.totalPreguntasRespondidas = 0;
+    state.desafioStartTime = Date.now(); state.desafioEndTime = null;
+    state.tiempoTotalDesafio = 0; state.totalPreguntasRespondidas = 0;
     state.score = 0; state.levelScore = 0; state.streak = 0; state.maxStreak = 0;
     state.currentQuestion = 0; state.currentLevel = 1; state.topicScores = {};
     state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
@@ -492,17 +467,220 @@ function updateBuhoReaction(r) {
     if (sp) { sp.textContent = list[Math.floor(Math.random()*list.length)]; sp.className = 'character-speech state-'+r; sp.style.animation='none'; void sp.offsetHeight; sp.style.animation='speechBubbleIn 0.4s ease-out'; }
 }
 
-// ===== LECTURA =====
-function mostrarLectura(q) {
-    const lc = document.getElementById('lectura-container');
-    if (!lc) return;
-    if (q.textKey && typeof paesTexts !== 'undefined' && paesTexts[q.textKey]) {
-        const t = paesTexts[q.textKey];
-        state.lecturaActiva = q.textKey;
-        lc.style.display = 'block';
-        lc.innerHTML = `<div class="lectura-panel"><div class="lectura-header"><strong>📖 ${t.title}</strong><span class="lectura-author">— ${t.author}</span></div><div class="lectura-body">${t.body.replace(/\n/g,'<br>')}</div></div>`;
-    } else { lc.style.display = 'none'; state.lecturaActiva = null; }
+// ===== VISUALIZACIÓN DE LECTURA CON PANTALLA COMPLETA Y RESALTADO =====
+function mostrarLectura(question) {
+    const lecturaContainer = document.getElementById('lectura-container');
+    if (!lecturaContainer) return;
+    
+    if (question.textKey && typeof paesTexts !== 'undefined' && paesTexts[question.textKey]) {
+        const texto = paesTexts[question.textKey];
+        state.lecturaActiva = question.textKey;
+        
+        const resaltadosKey = `paes_resaltados_${question.textKey}`;
+        const resaltadosGuardados = JSON.parse(safeLocalGet(resaltadosKey, '[]'));
+        
+        lecturaContainer.style.display = 'block';
+        lecturaContainer.innerHTML = `
+            <div class="lectura-panel" id="lectura-panel-${question.textKey}">
+                <div class="lectura-header">
+                    <strong>📖 ${texto.title}</strong>
+                    <button class="btn-lectura-fullscreen" onclick="abrirLecturaFullscreen('${question.textKey}')" title="Ver en pantalla completa">⛶</button>
+                    <span class="lectura-author">— ${texto.author}</span>
+                </div>
+                <div class="lectura-body lectura-selectable" id="lectura-body-${question.textKey}">
+                    ${texto.body.replace(/\n/g, '<br>')}
+                </div>
+                <div class="lectura-toolbar">
+                    <button onclick="resaltarSeleccion('${question.textKey}')" title="Resaltar selección">🖍️ Resaltar</button>
+                    <button onclick="limpiarResaltados('${question.textKey}')" title="Limpiar resaltados">🗑️ Limpiar</button>
+                    <button class="btn-lectura-fullscreen" onclick="abrirLecturaFullscreen('${question.textKey}')" title="Pantalla completa">⛶ Completa</button>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => aplicarResaltadosGuardados(question.textKey, resaltadosGuardados), 100);
+        
+    } else {
+        lecturaContainer.style.display = 'none';
+        state.lecturaActiva = null;
+    }
 }
+
+// ===== FUNCIONES DE RESALTADO =====
+
+function resaltarSeleccion(textKey) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        if (window.effectsManager) window.effectsManager.triggerToastAcademico('Selecciona un texto primero', { icon: '📝', duration: 2000 });
+        return;
+    }
+    
+    const range = selection.getRangeAt(0);
+    const bodyEl = document.getElementById(`lectura-body-${textKey}`);
+    if (!bodyEl || !bodyEl.contains(range.commonAncestorContainer)) return;
+    
+    const span = document.createElement('span');
+    span.className = 'lectura-resaltado';
+    span.dataset.textKey = textKey;
+    span.dataset.timestamp = Date.now();
+    
+    try {
+        range.surroundContents(span);
+    } catch (e) {
+        const fragment = range.extractContents();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'lectura-resaltado';
+        newSpan.dataset.textKey = textKey;
+        newSpan.dataset.timestamp = Date.now();
+        newSpan.appendChild(fragment);
+        range.insertNode(newSpan);
+    }
+    
+    selection.removeAllRanges();
+    guardarResaltados(textKey);
+    if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Texto resaltado!', { icon: '🖍️', duration: 1500 });
+}
+
+function guardarResaltados(textKey) {
+    const bodyEl = document.getElementById(`lectura-body-${textKey}`);
+    if (!bodyEl) return;
+    const resaltados = [];
+    const spans = bodyEl.querySelectorAll('.lectura-resaltado');
+    spans.forEach((span, index) => {
+        resaltados.push({ texto: span.textContent, posicion: index, timestamp: span.dataset.timestamp || Date.now() });
+    });
+    safeLocalSet(`paes_resaltados_${textKey}`, JSON.stringify(resaltados));
+}
+
+function aplicarResaltadosGuardados(textKey, resaltados) {
+    if (!resaltados || resaltados.length === 0) return;
+    const bodyEl = document.getElementById(`lectura-body-${textKey}`);
+    if (!bodyEl) return;
+    resaltados.forEach(res => {
+        const regex = new RegExp(`(${escapeRegExp(res.texto)})`, 'g');
+        const html = bodyEl.innerHTML;
+        let encontrado = false;
+        bodyEl.innerHTML = html.replace(regex, (match) => {
+            if (!encontrado && !html.substring(0, html.indexOf(match)).includes('lectura-resaltado')) {
+                encontrado = true;
+                return `<span class="lectura-resaltado" data-textkey="${textKey}" data-timestamp="${res.timestamp}">${match}</span>`;
+            }
+            return match;
+        });
+    });
+}
+
+function limpiarResaltados(textKey) {
+    const bodyEl = document.getElementById(`lectura-body-${textKey}`);
+    if (!bodyEl) return;
+    const spans = bodyEl.querySelectorAll('.lectura-resaltado');
+    spans.forEach(span => {
+        const parent = span.parentNode;
+        parent.replaceChild(document.createTextNode(span.textContent), span);
+    });
+    bodyEl.normalize();
+    safeLocalSet(`paes_resaltados_${textKey}`, '[]');
+    if (window.effectsManager) window.effectsManager.triggerToastAcademico('Resaltados eliminados', { icon: '🗑️', duration: 1500 });
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ===== PANTALLA COMPLETA DE LECTURA =====
+
+function abrirLecturaFullscreen(textKey) {
+    if (typeof paesTexts === 'undefined' || !paesTexts[textKey]) return;
+    const texto = paesTexts[textKey];
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'lectura-fullscreen-overlay';
+    overlay.id = 'lectura-fullscreen-overlay';
+    
+    const bodyEl = document.getElementById(`lectura-body-${textKey}`);
+    let bodyHTML = texto.body.replace(/\n/g, '<br>');
+    if (bodyEl) bodyHTML = bodyEl.innerHTML;
+    
+    overlay.innerHTML = `
+        <div class="lectura-fullscreen-header">
+            <div>
+                <div class="lectura-fullscreen-title">📖 ${texto.title}</div>
+                <div class="lectura-fullscreen-author">${texto.author}</div>
+            </div>
+            <button class="btn-lectura-cerrar" onclick="cerrarLecturaFullscreen()">✕ Cerrar</button>
+        </div>
+        <div class="lectura-fullscreen-content lectura-selectable" id="lectura-fullscreen-body">
+            ${bodyHTML}
+        </div>
+        <div style="max-width:900px;width:100%;margin:10px auto 0;display:flex;gap:8px;">
+            <button class="btn-lectura-cerrar" onclick="resaltarDesdeFullscreen('${textKey}')" style="background:#F59E0B;border-color:#F59E0B;">🖍️ Resaltar</button>
+            <button class="btn-lectura-cerrar" onclick="limpiarResaltadosFullscreen('${textKey}')" style="background:#EF4444;border-color:#EF4444;">🗑️ Limpiar</button>
+            <button class="btn-lectura-cerrar" onclick="cerrarLecturaFullscreen()">✕ Cerrar</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    const content = document.getElementById('lectura-fullscreen-body');
+    if (content) content.scrollTop = 0;
+}
+
+function cerrarLecturaFullscreen() {
+    const overlay = document.getElementById('lectura-fullscreen-overlay');
+    if (overlay) { sincronizarResaltadosFullscreen(); overlay.remove(); }
+    document.body.style.overflow = '';
+}
+
+function resaltarDesdeFullscreen(textKey) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        if (window.effectsManager) window.effectsManager.triggerToastAcademico('Selecciona un texto primero', { icon: '📝', duration: 2000 });
+        return;
+    }
+    const range = selection.getRangeAt(0);
+    const bodyEl = document.getElementById('lectura-fullscreen-body');
+    if (!bodyEl || !bodyEl.contains(range.commonAncestorContainer)) return;
+    const span = document.createElement('span');
+    span.className = 'lectura-resaltado';
+    span.dataset.textKey = textKey;
+    span.dataset.timestamp = Date.now();
+    try { range.surroundContents(span); }
+    catch (e) {
+        const fragment = range.extractContents();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'lectura-resaltado';
+        newSpan.dataset.textKey = textKey;
+        newSpan.dataset.timestamp = Date.now();
+        newSpan.appendChild(fragment);
+        range.insertNode(newSpan);
+    }
+    selection.removeAllRanges();
+    if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Texto resaltado!', { icon: '🖍️', duration: 1500 });
+}
+
+function limpiarResaltadosFullscreen(textKey) {
+    const bodyEl = document.getElementById('lectura-fullscreen-body');
+    if (!bodyEl) return;
+    const spans = bodyEl.querySelectorAll('.lectura-resaltado');
+    spans.forEach(span => { const parent = span.parentNode; parent.replaceChild(document.createTextNode(span.textContent), span); });
+    bodyEl.normalize();
+    if (window.effectsManager) window.effectsManager.triggerToastAcademico('Resaltados eliminados', { icon: '🗑️', duration: 1500 });
+}
+
+function sincronizarResaltadosFullscreen() {
+    const textKey = state.lecturaActiva;
+    if (!textKey) return;
+    const fullscreenBody = document.getElementById('lectura-fullscreen-body');
+    const panelBody = document.getElementById(`lectura-body-${textKey}`);
+    if (fullscreenBody && panelBody) { panelBody.innerHTML = fullscreenBody.innerHTML; guardarResaltados(textKey); }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('lectura-fullscreen-overlay');
+        if (overlay) cerrarLecturaFullscreen();
+    }
+});
 
 // ===== CARGA DE PREGUNTAS =====
 function loadQuestion() {
@@ -807,6 +985,10 @@ function showFinalResults() {
         else if (state.score >= 3000) sp.textContent = '¡Buen esfuerzo! Sigue practicando. 📚💪';
         else sp.textContent = '¡El aprendizaje es un camino diario! 💡📖';
     }
+    
+    // Enviar resultados a Google Sheets
+    enviarResultadosGoogleSheets();
+    
     if (state.currentLote) marcarLoteComoUsado(state.currentLote);
     showScreen('screen-results');
     if (window.effectsManager) window.effectsManager.triggerFuegosAcademicos();
@@ -827,9 +1009,9 @@ function restartGame() {
     document.getElementById('streak-display')?.classList.remove('on-fire');
     updateScore(); updateStreak(); updateProgress(); updateLevelDisplay();
     cargarYMostrarLotes();
-    const btn = document.getElementById('btn-start'); if (btn) btn.style.display = 'none';
-    const conf = document.getElementById('lote-confirmacion'); if (conf) conf.style.display = 'none';
-    const sel = document.getElementById('lote-selector'); if (sel) sel.style.display = 'block';
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('lote-confirmacion').style.display = 'none';
+    document.getElementById('lote-selector').style.display = 'block';
     showScreen('screen-welcome');
 }
 
@@ -964,4 +1146,36 @@ function shareResults() {
     const text = `🎓 ¡${state.score} puntos en PAES Challenge! ⏱️ ${prom}s/pregunta. ¿Puedes superarme? 🦉`;
     if (navigator.share) navigator.share({title:'PAES Challenge',text,url:window.location.href}).catch(()=>{});
     else navigator.clipboard.writeText(text).then(()=>{ if(window.effectsManager) window.effectsManager.triggerToastAcademico('¡Copiado!',{icon:'📋',duration:2500}); }).catch(()=>{ if(window.effectsManager) window.effectsManager.triggerToastAcademico('No se pudo copiar',{icon:'⚠️',duration:2500}); });
+}
+
+// ===== ENVÍO DE RESULTADOS A GOOGLE SHEETS =====
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/TU_URL_AQUI/exec';
+
+function enviarResultadosGoogleSheets() {
+    const minutos = Math.floor(state.tiempoTotalDesafio / 60);
+    const segundos = Math.floor(state.tiempoTotalDesafio % 60);
+    const promedio = state.totalPreguntasRespondidas > 0 
+        ? (state.tiempoTotalDesafio / state.totalPreguntasRespondidas).toFixed(1) 
+        : 0;
+    
+    const data = {
+        jugador: localStorage.getItem('paes_jugador_nombre') || 'Anónimo',
+        partida: state.currentLote || 1,
+        puntaje: state.score,
+        promedio: parseFloat(promedio),
+        correctas: Object.values(state.topicScores).reduce((sum, t) => sum + (t.correct || 0), 0),
+        total: state.totalPreguntasRespondidas,
+        insignias: Object.values(state.badges).filter(Boolean).length,
+        tiempoTotal: `${minutos}m ${segundos}s`,
+        nivel: state.currentLevel
+    };
+    
+    fetch(GOOGLE_SHEETS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(() => console.log('📊 Resultados enviados a Google Sheets'))
+    .catch(err => console.warn('⚠️ No se pudieron enviar los resultados:', err));
 }
