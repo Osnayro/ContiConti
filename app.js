@@ -1,13 +1,14 @@
 
 /**
  * ============================================================
- * PAES Challenge Engine v4.3.1 — Producción
+ * PAES Challenge Engine v4.4.0 — Producción
  * Lógica del juego + 4 Lotes + Sabiondo 🦉 + 4 Niveles
  * + Cronómetro de desempeño + Sonido next.mp3
  * + Agrupación de preguntas por lectura (Nivel 1)
  * + Pantalla completa de lectura + Resaltado de texto
  * + Evidencia en lectura al responder (usa evidenceText)
  * + Limpieza automática de resaltados antiguos (>30 días)
+ * + Botón Salir + Guardar/Continuar partida
  * + Envío de resultados a Google Sheets (con cola offline)
  * Para "PAES Challenge: Desafío de Admisión Universitaria"
  * ============================================================
@@ -91,7 +92,7 @@ const questionsPerLevel = {
 
 // ===== SISTEMA DE 4 LOTES =====
 const LOTES_STORAGE_KEY = 'paes_lotes_v4';
-const LOTES_VERSION = '4.3.1';
+const LOTES_VERSION = '4.4.0';
 
 function generarLotes() {
     const todasLectora = [...(typeof paesLenguajeQuestions !== 'undefined' ? paesLenguajeQuestions : [])];
@@ -347,10 +348,7 @@ function seleccionarLote(lote) {
 function reiniciarLotes() {
     for (let i = 1; i <= 4; i++) safeLocalSet(`paes_lote_${i}_usado_v4`, 'false');
     localStorage.removeItem(LOTES_STORAGE_KEY);
-    
-    // Limpiar resaltados antiguos al regenerar lotes
     limpiarTodosResaltados();
-    
     state.lotesDisponibles = cargarLotes();
     state.currentLote = null; state.loteData = null;
     actualizarSelectorLotes(state.lotesDisponibles);
@@ -404,23 +402,205 @@ function selectMode(m) {
     updatePowerupButtons();
 }
 
-// ===== INICIO =====
+// ===== INICIO DEL JUEGO =====
 function startGame() {
     if (!state.currentLote || !state.loteData) {
         if (window.effectsManager) window.effectsManager.triggerToastAcademico('¡Elige una partida! 🦉', { icon:'⚠️', bg:'linear-gradient(135deg,#F59E0B,#D97706)', duration:2500 });
         return;
     }
+    
+    if (hayProgresoGuardado()) {
+        mostrarModalContinuar();
+        return;
+    }
+    
+    iniciarJuegoNuevo();
+}
+
+function mostrarModalContinuar() {
+    const progresoGuardado = JSON.parse(safeLocalGet('paes_progreso_actual', '{}'));
+    const nivelNombre = levelNames[progresoGuardado.currentLevel] || 'desconocido';
+    
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;padding:20px';
+    
+    const box = document.createElement('div');
+    box.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32)';
+    box.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:10px;">🎯</div>
+        <div style="font-weight:800;font-size:1.1rem;margin-bottom:6px;color:#1E293B;">¿Continuar o reiniciar?</div>
+        <div style="margin-bottom:16px;color:#64748B;font-size:0.85rem;">
+            Tienes una partida guardada:<br>
+            <b>${nivelNombre}</b><br>
+            Pregunta ${progresoGuardado.currentQuestion + 1} de ${progresoGuardado.totalQuestions}<br>
+            Puntaje: <b>${progresoGuardado.score} pts</b>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;">
+            <button id="continuar-partida" style="flex:1;padding:12px 0;border-radius:10px;border:none;background:linear-gradient(135deg,#10B981,#059669);color:white;font-weight:700;cursor:pointer;font-family:inherit;">▶ Continuar</button>
+        </div>
+        <button id="reiniciar-partida" style="width:100%;padding:12px 0;border-radius:10px;border:none;background:#EF4444;color:white;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Reiniciar desde cero</button>`;
+    
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    
+    box.querySelector('#continuar-partida').addEventListener('click', () => {
+        overlay.remove();
+        restaurarProgreso(progresoGuardado);
+    });
+    
+    box.querySelector('#reiniciar-partida').addEventListener('click', () => {
+        overlay.remove();
+        borrarProgreso();
+        iniciarJuegoNuevo();
+    });
+}
+
+function restaurarProgreso(progreso) {
     if (window.effectsManager) window.effectsManager.ensureAudio();
-    state.desafioStartTime = Date.now(); state.desafioEndTime = null;
-    state.tiempoTotalDesafio = 0; state.totalPreguntasRespondidas = 0;
-    state.score = 0; state.levelScore = 0; state.streak = 0; state.maxStreak = 0;
-    state.currentQuestion = 0; state.currentLevel = 1; state.topicScores = {};
-    state.isFrozen = false; state.powerupsUsedThisLevel = false; state.levelPerfect = true;
-    state.levelStars = {}; state.ultimoEstadoBocadillo = null; state.lecturaActiva = null;
+    
+    state.score = progreso.score;
+    state.levelScore = progreso.levelScore;
+    state.streak = progreso.streak;
+    state.currentQuestion = progreso.currentQuestion;
+    state.totalQuestions = progreso.totalQuestions;
+    state.currentLevel = progreso.currentLevel;
+    state.questions = progreso.questions;
+    state.correctInLevel = progreso.correctInLevel;
+    state.topicScores = progreso.topicScores || {};
+    state.currentLote = progreso.loteId;
+    state.loteData = progreso.loteData;
+    state.powerups = progreso.powerups;
+    state.isFrozen = false;
+    state.powerupsUsedThisLevel = false;
+    state.levelPerfect = true;
+    state.desafioStartTime = Date.now();
+    state.lecturaActiva = null;
+    
+    document.body.className = `level-${state.currentLevel}`;
+    updatePowerupButtons();
+    updateLevelDisplay();
+    updateScore();
+    updateStreak();
+    updateProgress();
+    showScreen('screen-question');
+    updateBuhoReaction('thinking');
+    loadQuestion();
+    
+    borrarProgreso();
+    
+    if (window.effectsManager) {
+        window.effectsManager.triggerToastAcademico('¡Partida restaurada! 🎯', { icon:'▶', bg:'linear-gradient(135deg,#10B981,#059669)', duration:2500 });
+    }
+}
+
+function iniciarJuegoNuevo() {
+    if (window.effectsManager) window.effectsManager.ensureAudio();
+    state.desafioStartTime = Date.now();
+    state.desafioEndTime = null;
+    state.tiempoTotalDesafio = 0;
+    state.totalPreguntasRespondidas = 0;
+    state.score = 0;
+    state.levelScore = 0;
+    state.streak = 0;
+    state.maxStreak = 0;
+    state.currentQuestion = 0;
+    state.currentLevel = 1;
+    state.topicScores = {};
+    state.isFrozen = false;
+    state.powerupsUsedThisLevel = false;
+    state.levelPerfect = true;
+    state.levelStars = {};
+    state.ultimoEstadoBocadillo = null;
+    state.lecturaActiva = null;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null;
     document.body.className = 'level-1';
     startLevel(1);
+}
+
+// ===== GUARDAR / BORRAR PROGRESO =====
+function guardarProgreso() {
+    const progreso = {
+        score: state.score,
+        levelScore: state.levelScore,
+        streak: state.streak,
+        currentQuestion: state.currentQuestion,
+        totalQuestions: state.totalQuestions,
+        currentLevel: state.currentLevel,
+        questions: state.questions,
+        correctInLevel: state.correctInLevel,
+        topicScores: state.topicScores,
+        loteId: state.currentLote,
+        loteData: state.loteData,
+        powerups: state.powerups,
+        timestamp: Date.now()
+    };
+    safeLocalSet('paes_progreso_actual', JSON.stringify(progreso));
+}
+
+function borrarProgreso() {
+    localStorage.removeItem('paes_progreso_actual');
+}
+
+function hayProgresoGuardado() {
+    const saved = safeLocalGet('paes_progreso_actual', null);
+    if (!saved) return false;
+    try {
+        const data = JSON.parse(saved);
+        return (Date.now() - data.timestamp) < 2 * 60 * 60 * 1000;
+    } catch (e) {
+        return false;
+    }
+}
+
+// ===== SALIR DEL JUEGO =====
+function confirmarSalir() {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
+    if (state._boredTimeout) clearTimeout(state._boredTimeout);
+    
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;padding:20px';
+    
+    const box = document.createElement('div');
+    box.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32)';
+    box.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:10px;">🚪</div>
+        <div style="font-weight:800;font-size:1.1rem;margin-bottom:6px;color:#1E293B;">¿Salir del desafío?</div>
+        <div style="margin-bottom:16px;color:#64748B;font-size:0.85rem;">
+            Estás en <b>${levelNames[state.currentLevel]}</b><br>
+            Pregunta ${state.currentQuestion + 1} de ${state.totalQuestions}<br>
+            Puntaje actual: <b>${state.score} pts</b>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button id="salir-cancelar" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer;font-family:inherit;">Continuar</button>
+            <button id="salir-confirmar" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#EF4444;color:white;font-weight:700;cursor:pointer;font-family:inherit;">Salir</button>
+        </div>`;
+    
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    
+    box.querySelector('#salir-cancelar').addEventListener('click', () => {
+        overlay.remove();
+        if (state.mode === 'timed' && !state.isFrozen && document.getElementById('btn-next').style.display === 'none') {
+            startTimer();
+        }
+    });
+    
+    box.querySelector('#salir-confirmar').addEventListener('click', () => {
+        guardarProgreso();
+        overlay.remove();
+        restartGame();
+    });
+    
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 
 function startLevel(lv) {
@@ -560,7 +740,6 @@ function guardarResaltados(textKey) {
         resaltados.push({ texto: span.textContent, posicion: index, timestamp: span.dataset.timestamp || Date.now() });
     });
     
-    // Limpiar resaltados antiguos (más de 30 días)
     const ahora = Date.now();
     const treintaDias = 30 * 24 * 60 * 60 * 1000;
     const filtrados = resaltados.filter(r => (ahora - r.timestamp) < treintaDias);
@@ -1074,6 +1253,7 @@ function showFinalResults() {
 }
 
 function restartGame() {
+    borrarProgreso();
     clearInterval(state.timerInterval); state.timerInterval = null;
     if (state._freezeTimeout) clearTimeout(state._freezeTimeout);
     state._freezeTimeout = null; state.isFrozen = false;
