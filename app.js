@@ -288,11 +288,100 @@ document.addEventListener('DOMContentLoaded', () => {
     flushPendingGoogleSheets();
     limpiarResaltadosAntiguos();
     setupPantallaRegistro();
+    setupInstalacionPWA();
 });
 
 window.addEventListener('online', () => {
     flushPendingGoogleSheets();
 });
+
+// ===== INSTALACIÓN PWA (Android / iPhone) =====
+// Android: capturamos 'beforeinstallprompt' y mostramos nuestro propio botón
+// "Instalar" — al tocarlo se dispara el diálogo nativo de Chrome.
+// iOS/iPadOS: Safari NO dispara 'beforeinstallprompt' ni permite instalar
+// por código (restricción de Apple, no hay forma de saltarla), así que
+// mostramos un banner con instrucciones manuales (Compartir → Agregar a
+// inicio). En ambos casos, si la app ya está instalada (modo standalone)
+// o el usuario ya cerró el banner antes, no se vuelve a mostrar.
+const INSTALL_DISMISSED_KEY_PREFIX = 'paes_install_dismissed_';
+let _deferredInstallPrompt = null;
+let _splashYaCerrado = false;
+
+function estaEnModoStandalone() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+           window.navigator.standalone === true; // Safari iOS (propiedad antigua)
+}
+
+function esIOS() {
+    const ua = window.navigator.userAgent || '';
+    const esIPhoneIPad = /iPad|iPhone|iPod/.test(ua);
+    // iPadOS 13+ se reporta como 'MacIntel' pero con soporte táctil
+    const esIPadDisfrazado = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return esIPhoneIPad || esIPadDisfrazado;
+}
+
+function bannerFueDescartado(tipo) {
+    return safeLocalGet(INSTALL_DISMISSED_KEY_PREFIX + tipo, 'false') === 'true';
+}
+
+function mostrarBannerInstalacionAndroid() {
+    if (bannerFueDescartado('android') || estaEnModoStandalone()) return;
+    const banner = document.getElementById('install-banner-android');
+    if (banner) banner.style.display = 'flex';
+}
+
+function mostrarBannerInstalacionIOS() {
+    if (bannerFueDescartado('ios') || estaEnModoStandalone()) return;
+    const banner = document.getElementById('install-banner-ios');
+    if (banner) banner.style.display = 'flex';
+}
+
+function ocultarBannerInstalacion(tipo) {
+    const banner = document.getElementById(`install-banner-${tipo}`);
+    if (banner) banner.style.display = 'none';
+}
+
+function cerrarBannerInstalacion(tipo) {
+    ocultarBannerInstalacion(tipo);
+    safeLocalSet(INSTALL_DISMISSED_KEY_PREFIX + tipo, 'true');
+}
+
+function instalarPWAAndroid() {
+    if (!_deferredInstallPrompt) { ocultarBannerInstalacion('android'); return; }
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then((choice) => {
+        console.log(choice.outcome === 'accepted' ? '✅ PWA instalada' : 'Instalación descartada por el usuario');
+        _deferredInstallPrompt = null;
+        ocultarBannerInstalacion('android');
+    });
+}
+
+function setupInstalacionPWA() {
+    if (estaEnModoStandalone()) return; // ya instalada: no mostrar nada
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); // evitamos el mini-banner por defecto del navegador, usamos el nuestro
+        _deferredInstallPrompt = e;
+        if (_splashYaCerrado) mostrarBannerInstalacionAndroid();
+    });
+
+    window.addEventListener('appinstalled', () => {
+        _deferredInstallPrompt = null;
+        ocultarBannerInstalacion('android');
+        safeLocalSet(INSTALL_DISMISSED_KEY_PREFIX + 'android', 'true');
+    });
+
+    document.getElementById('skip-splash-btn')?.addEventListener('click', () => {
+        _splashYaCerrado = true;
+        // Pequeño retraso para no competir visualmente con la pantalla de
+        // bienvenida/registro que aparece justo al cerrar el splash.
+        setTimeout(() => {
+            if (estaEnModoStandalone()) return;
+            if (_deferredInstallPrompt) mostrarBannerInstalacionAndroid();
+            else if (esIOS()) mostrarBannerInstalacionIOS();
+        }, 1500);
+    }, { once: true });
+}
 
 // ===== REGISTRO INICIAL (nombre + clave, solo la primera vez) =====
 // Nota: esto NO es un sistema de autenticación real — la clave vive en
@@ -303,12 +392,14 @@ window.addEventListener('online', () => {
 // un servidor, no en el navegador del usuario.
 const LOCK_REGISTERED_KEY = 'paes_registrado_v1';
 const LOCK_PASSWORD = 'Atenea'; // clave de acceso — cámbiala aquí si es necesario
+const LOCK_SCREEN_ENABLED = false; // <- pon en true para reactivar la pantalla de registro inicial
 
 function estaRegistrado() {
     return safeLocalGet(LOCK_REGISTERED_KEY, 'false') === 'true';
 }
 
 function setupPantallaRegistro() {
+    if (!LOCK_SCREEN_ENABLED) return; // pantalla de registro desactivada
     const skipBtn = document.getElementById('skip-splash-btn');
     if (!skipBtn) return;
     skipBtn.addEventListener('click', () => {
