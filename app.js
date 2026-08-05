@@ -391,8 +391,8 @@ function setupInstalacionPWA() {
 // seguro. Si necesitas seguridad real, la validación debe hacerse en
 // un servidor, no en el navegador del usuario.
 const LOCK_REGISTERED_KEY = 'paes_registrado_v1';
-const LOCK_PASSWORD = 'AteneaC'; // clave de acceso — cámbiala aquí si es necesario
-const LOCK_SCREEN_ENABLED = false; // <- pon en true para reactivar la pantalla de registro inicial
+const LOCK_PASSWORD = 'Atenea'; // clave de acceso — cámbiala aquí si es necesario
+const LOCK_SCREEN_ENABLED = true; // <- pon en true para reactivar la pantalla de registro inicial
 
 function estaRegistrado() {
     return safeLocalGet(LOCK_REGISTERED_KEY, 'false') === 'true';
