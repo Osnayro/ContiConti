@@ -244,6 +244,91 @@ body.level-4 { background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%); }
 }
 
 /* ================================================================
+   BANNERS DE INSTALACIÓN PWA (Android / iOS)
+   ================================================================ */
+.install-banner {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: 420px;
+    margin: 0 auto;
+    background: var(--blanco);
+    border-radius: 16px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
+    padding: 12px 12px 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1500;
+    animation: installBannerIn 0.4s ease-out;
+}
+
+@keyframes installBannerIn {
+    from { transform: translateY(120%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.install-banner-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.install-banner-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.install-banner-text strong {
+    font-size: 0.85rem;
+    color: #1E293B;
+}
+
+.install-banner-text span {
+    font-size: 0.72rem;
+    color: #64748B;
+    line-height: 1.3;
+}
+
+.install-banner-btn {
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.install-banner-close {
+    background: none;
+    border: none;
+    color: #94A3B8;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+}
+
+.install-banner-ios .ios-share-icon {
+    display: inline-block;
+}
+
+@media (max-width: 380px) {
+    .install-banner-text strong { font-size: 0.78rem; }
+    .install-banner-text span { font-size: 0.68rem; }
+}
+
+/* ================================================================
    PANTALLA DE REGISTRO INICIAL (LOCK SCREEN)
    Se muestra solo la primera vez que se abre la app. No es un
    sistema de autenticación real (la clave vive en el JS del
