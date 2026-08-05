@@ -41,6 +41,21 @@
     </div>
 
     <!-- ============================================================ -->
+    <!-- PANTALLA DE REGISTRO INICIAL (solo la primera vez) -->
+    <!-- ============================================================ -->
+    <div id="lock-screen">
+        <div class="lock-card">
+            <img src="buho.PNG" alt="Sabiondo" class="lock-buho-img" onerror="this.style.display='none';">
+            <h1 class="lock-title">PAES Challenge</h1>
+            <p class="lock-subtitle">Ingresa tu nombre y la clave de acceso para comenzar</p>
+            <input type="text" id="lock-name-input" class="lock-input" placeholder="Tu nombre" maxlength="20" autocomplete="off">
+            <input type="password" id="lock-password-input" class="lock-input" placeholder="Clave de acceso" maxlength="30" autocomplete="off">
+            <div id="lock-error" class="lock-error" style="display:none;"></div>
+            <button id="lock-submit-btn" class="main-btn pulse-ready" onclick="intentarIngresoInicial()">Ingresar 🔑</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- APP PRINCIPAL -->
     <!-- ============================================================ -->
     <div class="app-card" id="app-card">
