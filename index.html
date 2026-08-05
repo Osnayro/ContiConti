@@ -300,6 +300,28 @@
     </div>
 
     <!-- ============================================================ -->
+    <!-- BANNERS DE INSTALACIÓN PWA -->
+    <!-- ============================================================ -->
+    <div id="install-banner-android" class="install-banner" style="display:none;">
+        <img src="buho.PNG" alt="" class="install-banner-icon" onerror="this.style.display='none';">
+        <div class="install-banner-text">
+            <strong>Instala PAES Challenge</strong>
+            <span>Accede más rápido, incluso sin conexión</span>
+        </div>
+        <button class="install-banner-btn" id="install-android-btn" onclick="instalarPWAAndroid()">Instalar</button>
+        <button class="install-banner-close" onclick="cerrarBannerInstalacion('android')" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div id="install-banner-ios" class="install-banner install-banner-ios" style="display:none;">
+        <img src="buho.PNG" alt="" class="install-banner-icon" onerror="this.style.display='none';">
+        <div class="install-banner-text">
+            <strong>Instala PAES Challenge en tu iPhone</strong>
+            <span>Toca <b>Compartir</b> <span class="ios-share-icon">⬆️</span> y luego <b>"Agregar a inicio"</b></span>
+        </div>
+        <button class="install-banner-close" onclick="cerrarBannerInstalacion('ios')" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- SCRIPTS -->
     <!-- ============================================================ -->
     <script src="banco-lectora.js"></script>
