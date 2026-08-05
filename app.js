@@ -287,11 +287,95 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof injectBuhoSVGs === 'function') injectBuhoSVGs();
     flushPendingGoogleSheets();
     limpiarResaltadosAntiguos();
+    setupPantallaRegistro();
 });
 
 window.addEventListener('online', () => {
     flushPendingGoogleSheets();
 });
+
+// ===== REGISTRO INICIAL (nombre + clave, solo la primera vez) =====
+// Nota: esto NO es un sistema de autenticación real — la clave vive en
+// este archivo JS, así que cualquiera con acceso al código fuente puede
+// leerla o saltarse el paso borrando el localStorage. Es un paso de
+// bienvenida/registro de nombre para personalizar la app, no un login
+// seguro. Si necesitas seguridad real, la validación debe hacerse en
+// un servidor, no en el navegador del usuario.
+const LOCK_REGISTERED_KEY = 'paes_registrado_v1';
+const LOCK_PASSWORD = 'AteneaC'; // clave de acceso — cámbiala aquí si es necesario
+
+function estaRegistrado() {
+    return safeLocalGet(LOCK_REGISTERED_KEY, 'false') === 'true';
+}
+
+function setupPantallaRegistro() {
+    const skipBtn = document.getElementById('skip-splash-btn');
+    if (!skipBtn) return;
+    skipBtn.addEventListener('click', () => {
+        if (!estaRegistrado()) mostrarPantallaRegistro();
+    }, { once: true });
+
+    const nameInput = document.getElementById('lock-name-input');
+    const passInput = document.getElementById('lock-password-input');
+    nameInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') passInput?.focus(); });
+    passInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') intentarIngresoInicial(); });
+}
+
+function mostrarPantallaRegistro() {
+    const lock = document.getElementById('lock-screen');
+    if (!lock) return;
+    lock.style.display = 'flex';
+    setTimeout(() => document.getElementById('lock-name-input')?.focus(), 300);
+}
+
+function ocultarPantallaRegistro() {
+    const lock = document.getElementById('lock-screen');
+    if (lock) lock.style.display = 'none';
+}
+
+function mostrarErrorRegistro(msg) {
+    const errorBox = document.getElementById('lock-error');
+    if (!errorBox) return;
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+}
+
+function intentarIngresoInicial() {
+    const nameInput = document.getElementById('lock-name-input');
+    const passInput = document.getElementById('lock-password-input');
+    const nombre = (nameInput?.value || '').trim();
+    const clave = (passInput?.value || '').trim();
+
+    if (!nombre) {
+        mostrarErrorRegistro('Por favor ingresa tu nombre.');
+        nameInput?.focus();
+        return;
+    }
+    if (clave !== LOCK_PASSWORD) {
+        mostrarErrorRegistro('Clave incorrecta. Intenta nuevamente.');
+        if (passInput) passInput.value = '';
+        passInput?.focus();
+        return;
+    }
+
+    safeLocalSet(LOCK_REGISTERED_KEY, 'true');
+    safeLocalSet('paes_jugador_nombre', nombre);
+    ocultarPantallaRegistro();
+    enviarRegistroInicialGoogleSheets(nombre);
+}
+
+function enviarRegistroInicialGoogleSheets(nombre) {
+    const payload = {
+        tipo: 'registro_inicial',
+        jugador: nombre,
+        fecha: new Date().toISOString()
+    };
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        encolarEnvioPendiente(payload);
+        return;
+    }
+    intentarEnviarGoogleSheets(payload).catch(() => encolarEnvioPendiente(payload));
+}
 
 function cargarYMostrarLotes() {
     state.lotesDisponibles = cargarLotes();
@@ -1362,13 +1446,15 @@ function saveBadges() { safeLocalSet('paes_badges_v4', JSON.stringify(state.badg
 
 // ===== LEADERBOARD =====
 function showNamePromptModal(cb) {
+    const nombreGuardado = safeLocalGet('paes_jugador_nombre', '');
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:3000;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;padding:20px';
     const bx = document.createElement('div');
     bx.style.cssText = 'background:white;padding:26px 24px;border-radius:18px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.32)';
-    bx.innerHTML = `<div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B">¡Buen trabajo! 🦉</div><div style="margin-bottom:16px;color:#64748B;font-size:0.9rem">Ingresa tu nombre</div><input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;margin-bottom:16px;font-family:inherit;font-size:1rem"><div style="display:flex;gap:10px;justify-content:center"><button id="paes-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer">Omitir</button><button id="paes-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:white;font-weight:700;cursor:pointer">Guardar</button></div>`;
+    bx.innerHTML = `<div style="font-weight:800;font-size:1.15rem;margin-bottom:8px;color:#1E293B">¡Buen trabajo! 🦉</div><div style="margin-bottom:16px;color:#64748B;font-size:0.9rem">Ingresa tu nombre</div><input id="paes-name-input" type="text" maxlength="20" placeholder="Jugador" value="${nombreGuardado.replace(/"/g,'&quot;')}" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #CBD5E1;margin-bottom:16px;font-family:inherit;font-size:1rem"><div style="display:flex;gap:10px;justify-content:center"><button id="paes-name-skip" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:#E2E8F0;color:#334155;font-weight:700;cursor:pointer">Omitir</button><button id="paes-name-ok" style="flex:1;padding:11px 0;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:white;font-weight:700;cursor:pointer">Guardar</button></div>`;
     ov.appendChild(bx); document.body.appendChild(ov);
     const inp = bx.querySelector('#paes-name-input'); inp.focus();
+    if (nombreGuardado) inp.select();
     const close = (v) => { ov.remove(); cb(v); };
     bx.querySelector('#paes-name-ok').addEventListener('click', () => close(inp.value.trim()||'Jugador'));
     bx.querySelector('#paes-name-skip').addEventListener('click', () => close(null));
